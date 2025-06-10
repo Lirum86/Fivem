@@ -3030,23 +3030,28 @@ function RadiantHub:gatherAllSettings()
                 -- Durchlaufe alle Elemente
                 for elementName, element in pairs(section.elements) do
                     if element and element.getValue and element.type then
-                        local value = element.getValue()
-                        
-                        -- Spezielle Behandlung für Color3
-                        if element.type == 'colorpicker' then
-                            value = {
-                                r = math.floor(value.R * 255),
-                                g = math.floor(value.G * 255),
-                                b = math.floor(value.B * 255)
+                        -- Skip buttons and labels - they don't have saveable state
+                        if element.type == 'button' or element.type == 'label' then
+                            -- Skip these element types
+                        else
+                            local value = element.getValue()
+                            
+                            -- Spezielle Behandlung für Color3
+                            if element.type == 'colorpicker' then
+                                value = {
+                                    r = math.floor(value.R * 255),
+                                    g = math.floor(value.G * 255),
+                                    b = math.floor(value.B * 255)
+                                }
+                            elseif element.type == 'keybind' then
+                                value = tostring(value)
+                            end
+                            
+                            settings.tabs[tabName].sections[sectionName].elements[elementName] = {
+                                type = element.type,
+                                value = value
                             }
-                        elseif element.type == 'keybind' then
-                            value = tostring(value)
                         end
-                        
-                        settings.tabs[tabName].sections[sectionName].elements[elementName] = {
-                            type = element.type,
-                            value = value
-                        }
                     end
                 end
             end
@@ -3082,7 +3087,9 @@ function RadiantHub:applySettings(settings)
                         for elementName, elementData in pairs(sectionData.elements) do
                             local element = self.tabs[tabName].sections[sectionName].elements[elementName]
                             
-                            if element and element.setValue and element.type == elementData.type then
+                            -- Skip buttons and labels when applying settings
+                            if element and element.setValue and element.type == elementData.type and 
+                               elementData.type ~= 'button' and elementData.type ~= 'label' then
                                 local value = elementData.value
                                 
                                 -- Spezielle Behandlung für verschiedene Typen
