@@ -1899,10 +1899,14 @@ function RadiantHub:addKeybind(tabName, sectionName, title, defaultKey, callback
         callback = callback, -- CALLBACK HINZUGEFÜGT
         getValue = function() return currentKey end,
         setValue = function(key) 
-            -- Handle both string and EnumItem input
+            -- Handle both string and EnumItem input, plus mouse buttons
             if typeof(key) == "EnumItem" then
                 currentKey = key.Name
                 keyBtn.Text = key.Name
+            elseif type(key) == "string" and (key == 'RMB' or key == 'LMB' or key == 'MMB' or key == 'X1' or key == 'X2') then
+                -- Mouse buttons - keep as string
+                currentKey = key
+                keyBtn.Text = key
             else
                 currentKey = tostring(key)
                 keyBtn.Text = tostring(key)
@@ -3085,7 +3089,14 @@ function RadiantHub:applySettings(settings)
                                 if elementData.type == 'colorpicker' then
                                     value = Color3.fromRGB(value.r or 255, value.g or 255, value.b or 255)
                                 elseif elementData.type == 'keybind' then
-                                    value = Enum.KeyCode[value] or Enum.KeyCode.F
+                                    -- Handle both keyboard keys and mouse buttons
+                                    if value == 'RMB' or value == 'LMB' or value == 'MMB' or value == 'X1' or value == 'X2' then
+                                        -- Mouse buttons - keep as string for display
+                                        value = value
+                                    else
+                                        -- Keyboard keys - convert to KeyCode
+                                        value = Enum.KeyCode[value] or Enum.KeyCode.F
+                                    end
                                 end
                                 
                                 -- KRITISCHER FIX: Erst setValue, dann Callback ausführen
