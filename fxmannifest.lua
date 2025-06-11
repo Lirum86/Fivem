@@ -3097,12 +3097,21 @@ function RadiantHub:applySettings(settings)
                                     value = Color3.fromRGB(value.r or 255, value.g or 255, value.b or 255)
                                 elseif elementData.type == 'keybind' then
                                     -- Handle both keyboard keys and mouse buttons
-                                    if value == 'RMB' or value == 'LMB' or value == 'MMB' or value == 'X1' or value == 'X2' then
-                                        -- Mouse buttons - keep as string for display
-                                        value = value
+                                    if value == 'RMB' or value == 'LMB' or value == 'MMB' or value == 'X1' or value == 'X2' or 
+                                       value == 'RightMouseButton' or value == 'LeftMouseButton' or value == 'MiddleMouseButton' then
+                                        -- Mouse buttons - convert to standard format
+                                        if value == 'RightMouseButton' then value = 'RMB'
+                                        elseif value == 'LeftMouseButton' then value = 'LMB'
+                                        elseif value == 'MiddleMouseButton' then value = 'MMB'
+                                        end
                                     else
                                         -- Keyboard keys - convert to KeyCode
-                                        value = Enum.KeyCode[value] or Enum.KeyCode.F
+                                        local keyCode = Enum.KeyCode[value]
+                                        if keyCode then
+                                            value = keyCode
+                                        else
+                                            value = Enum.KeyCode.F  -- Fallback
+                                        end
                                     end
                                 end
                                 
