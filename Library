@@ -1,0 +1,886 @@
+-- Modern GUI Library v2.0
+-- Core library for creating modern dark mode GUIs in Roblox
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local ModernGUI = {}
+ModernGUI.__index = ModernGUI
+
+-- Constructor
+function ModernGUI.new(config)
+    local self = setmetatable({}, ModernGUI)
+    
+    -- Use provided config or create a default one
+    if not config then
+        warn("No config provided, using default config")
+        config = {
+            colors = {
+                background = Color3.fromRGB(20, 20, 25),
+                sidebar = Color3.fromRGB(15, 15, 20),
+                accent = Color3.fromRGB(220, 50, 50),
+                text = Color3.fromRGB(255, 255, 255),
+                textSecondary = Color3.fromRGB(180, 180, 180),
+                button = Color3.fromRGB(35, 35, 40),
+                buttonHover = Color3.fromRGB(45, 45, 50),
+                input = Color3.fromRGB(25, 25, 30)
+            },
+            gui = {
+                name = "ModernGUI",
+                title = "Modern GUI",
+                subtitle = "v2.0 - Premium Edition"
+            },
+            defaultTabs = {"Main", "Player", "Settings"}
+        }
+    end
+    
+    self.config = config
+    self.player = Players.LocalPlayer
+    self.playerGui = self.player:WaitForChild("PlayerGui")
+    
+    -- Initialize GUI components
+    self.screenGui = nil
+    self.mainFrame = nil
+    self.tabNavBar = nil
+    self.contentArea = nil
+    self.titleBar = nil
+    self.secondaryTabBar = nil
+    
+    -- Tab system
+    self.tabs = {}
+    self.activeTab = "Main"
+    self.animationTweens = {}
+    self.contentFrames = {}
+    self.tabButtons = {}
+    
+    -- Main tab state
+    self.activeMainCategory = "Features"
+    self.activeSubCategory = "Basic"
+    self.savedMainState = {
+        category = "Features",
+        subCategory = "Basic"
+    }
+    
+    return self
+end
+
+-- Initialize the GUI structure
+function ModernGUI:Initialize()
+    self:CreateScreenGui()
+    self:CreateTabNavigation()
+    self:CreateMainFrame()
+    self:CreateTitleBar()
+    self:CreateSecondaryTabBar()
+    self:CreateContentArea()
+    self:SetupDragFunctionality()
+    self:SetupKeyboardShortcuts()
+    
+    return self
+end
+
+-- Create main ScreenGui
+function ModernGUI:CreateScreenGui()
+    self.screenGui = Instance.new("ScreenGui")
+    self.screenGui.Name = self.config.gui.name or "ModernGUI"
+    self.screenGui.Parent = self.playerGui
+    self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    self.screenGui.IgnoreGuiInset = true
+end
+
+-- Create tab navigation bar
+function ModernGUI:CreateTabNavigation()
+    self.tabNavBar = Instance.new("Frame")
+    self.tabNavBar.Name = "TabNavBar"
+    self.tabNavBar.Size = UDim2.new(0, 75, 0, 200)
+    self.tabNavBar.Position = UDim2.new(0, 20, 0.5, -100)
+    self.tabNavBar.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+    self.tabNavBar.BackgroundTransparency = 0.02
+    self.tabNavBar.BorderSizePixel = 0
+    self.tabNavBar.ZIndex = 100
+    self.tabNavBar.Parent = self.screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = self.tabNavBar
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = self.config.colors.accent
+    stroke.Thickness = 0.5
+    stroke.Transparency = 0.85
+    stroke.Parent = self.tabNavBar
+
+    -- Shadow effect
+    local shadowFrame = Instance.new("Frame")
+    shadowFrame.Name = "Shadow"
+    shadowFrame.Size = UDim2.new(1, 6, 1, 6)
+    shadowFrame.Position = UDim2.new(0, -3, 0, -3)
+    shadowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    shadowFrame.BackgroundTransparency = 0.85
+    shadowFrame.BorderSizePixel = 0
+    shadowFrame.ZIndex = 99
+    shadowFrame.Parent = self.tabNavBar
+
+    local shadowCorner = Instance.new("UICorner")
+    shadowCorner.CornerRadius = UDim.new(0, 12)
+    shadowCorner.Parent = shadowFrame
+end
+
+-- Create main frame
+function ModernGUI:CreateMainFrame()
+    self.mainFrame = Instance.new("Frame")
+    self.mainFrame.Name = "MainFrame"
+    self.mainFrame.Size = UDim2.new(0, 900, 0, 600)
+    self.mainFrame.Position = UDim2.new(0.5, -350, 0.5, -300)
+    self.mainFrame.BackgroundColor3 = self.config.colors.background
+    self.mainFrame.BackgroundTransparency = 0.1
+    self.mainFrame.BorderSizePixel = 0
+    self.mainFrame.ZIndex = 50
+    self.mainFrame.Parent = self.screenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = self.mainFrame
+end
+
+-- Create title bar
+function ModernGUI:CreateTitleBar()
+    self.titleBar = Instance.new("Frame")
+    self.titleBar.Name = "TitleBar"
+    self.titleBar.Size = UDim2.new(1, 0, 0, 45)
+    self.titleBar.Position = UDim2.new(0, 0, 0, 0)
+    self.titleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+    self.titleBar.BackgroundTransparency = 0.1
+    self.titleBar.BorderSizePixel = 0
+    self.titleBar.ZIndex = 51
+    self.titleBar.Parent = self.mainFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = self.titleBar
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = self.config.colors.accent
+    stroke.Thickness = 1
+    stroke.Transparency = 0.85
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = self.titleBar
+
+    -- Title text
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, -100, 1, 0)
+    titleLabel.Position = UDim2.new(0, 15, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = self.config.gui.title or "Modern GUI"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 16
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = self.titleBar
+
+    -- Subtitle
+    local subtitleLabel = Instance.new("TextLabel")
+    subtitleLabel.Name = "SubtitleLabel"
+    subtitleLabel.Size = UDim2.new(1, -100, 0, 12)
+    subtitleLabel.Position = UDim2.new(0, 15, 1, -15)
+    subtitleLabel.BackgroundTransparency = 1
+    subtitleLabel.Text = self.config.gui.subtitle or "v2.0 - Premium Edition"
+    subtitleLabel.TextColor3 = Color3.fromRGB(160, 160, 170)
+    subtitleLabel.TextSize = 10
+    subtitleLabel.Font = Enum.Font.Gotham
+    subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    subtitleLabel.Parent = self.titleBar
+
+    self:CreateStatusIndicator()
+    self:CreateCloseButton()
+    self:CreateTitleSeparator()
+end
+
+-- Create status indicator
+function ModernGUI:CreateStatusIndicator()
+    local statusDot = Instance.new("Frame")
+    statusDot.Name = "StatusDot"
+    statusDot.Size = UDim2.new(0, 8, 0, 8)
+    statusDot.Position = UDim2.new(0, 120, 0, 6)
+    statusDot.BackgroundColor3 = self.config.colors.accent
+    statusDot.BorderSizePixel = 0
+    statusDot.Parent = self.titleBar
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 4)
+    corner.Parent = statusDot
+
+    local glow = Instance.new("Frame")
+    glow.Name = "StatusGlow"
+    glow.Size = UDim2.new(1, 4, 1, 4)
+    glow.Position = UDim2.new(0, -2, 0, -2)
+    glow.BackgroundColor3 = self.config.colors.accent
+    glow.BackgroundTransparency = 0.7
+    glow.BorderSizePixel = 0
+    glow.ZIndex = statusDot.ZIndex - 1
+    glow.Parent = statusDot
+
+    local glowCorner = Instance.new("UICorner")
+    glowCorner.CornerRadius = UDim.new(0, 6)
+    glowCorner.Parent = glow
+
+    local glowTween = TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        BackgroundTransparency = 0.9
+    })
+    glowTween:Play()
+end
+
+-- Create close button
+function ModernGUI:CreateCloseButton()
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 32, 0, 32)
+    closeButton.Position = UDim2.new(1, -38, 0, 6)
+    closeButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    closeButton.BackgroundTransparency = 0.8
+    closeButton.Text = "X"
+    closeButton.TextColor3 = self.config.colors.accent
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.ZIndex = 52
+    closeButton.Parent = self.titleBar
+    closeButton.AutoButtonColor = false
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = closeButton
+
+    closeButton.MouseButton1Click:Connect(function()
+        self.screenGui:Destroy()
+    end)
+end
+
+-- Create title separator
+function ModernGUI:CreateTitleSeparator()
+    local separator = Instance.new("Frame")
+    separator.Name = "TitleSeparator"
+    separator.Size = UDim2.new(1, -20, 0, 1)
+    separator.Position = UDim2.new(0, 10, 0, 44)
+    separator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    separator.BackgroundTransparency = 0.92
+    separator.BorderSizePixel = 0
+    separator.Parent = self.titleBar
+end
+
+-- Create secondary tab bar
+function ModernGUI:CreateSecondaryTabBar()
+    self.secondaryTabBar = Instance.new("Frame")
+    self.secondaryTabBar.Name = "SecondaryTabBar"
+    self.secondaryTabBar.Size = UDim2.new(1, 0, 0, 40)
+    self.secondaryTabBar.Position = UDim2.new(0, 0, 0, 45)
+    self.secondaryTabBar.BackgroundColor3 = Color3.fromRGB(18, 18, 23)
+    self.secondaryTabBar.BackgroundTransparency = 0.1
+    self.secondaryTabBar.BorderSizePixel = 0
+    self.secondaryTabBar.Visible = false
+    self.secondaryTabBar.ZIndex = 51
+    self.secondaryTabBar.Parent = self.mainFrame
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = self.secondaryTabBar
+
+    local separator = Instance.new("Frame")
+    separator.Name = "SecondaryTabSeparator"
+    separator.Size = UDim2.new(1, -20, 0, 1)
+    separator.Position = UDim2.new(0, 10, 1, -1)
+    separator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    separator.BackgroundTransparency = 0.92
+    separator.BorderSizePixel = 0
+    separator.Parent = self.secondaryTabBar
+end
+
+-- Create content area
+function ModernGUI:CreateContentArea()
+    self.contentArea = Instance.new("Frame")
+    self.contentArea.Name = "ContentArea"
+    self.contentArea.Size = UDim2.new(1, 0, 1, -85)
+    self.contentArea.Position = UDim2.new(0, 0, 0, 85)
+    self.contentArea.BackgroundTransparency = 1
+    self.contentArea.ZIndex = 50
+    self.contentArea.Parent = self.mainFrame
+end
+
+-- Create tab function
+function ModernGUI:CreateTab(name, index)
+    local tabData = {
+        name = name,
+        index = index,
+        isActive = false,
+        isHovered = false,
+        tweens = {}
+    }
+    
+    local button = Instance.new("TextButton")
+    button.Name = name .. "Tab"
+    button.Size = UDim2.new(1, -10, 0, 55)
+    button.Position = UDim2.new(0, 5, 0, 8 + (index - 1) * 65)
+    button.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    button.BackgroundTransparency = 0.2
+    button.BorderSizePixel = 0
+    button.Text = ""
+    button.AutoButtonColor = false
+    button.ZIndex = 101
+    button.Parent = self.tabNavBar
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    local activeIndicator = Instance.new("Frame")
+    activeIndicator.Name = "ActiveIndicator"
+    activeIndicator.Size = UDim2.new(0, 3, 0, 0)
+    activeIndicator.Position = UDim2.new(0, -1, 0.5, 0)
+    activeIndicator.AnchorPoint = Vector2.new(0, 0.5)
+    activeIndicator.BackgroundColor3 = self.config.colors.accent
+    activeIndicator.BorderSizePixel = 0
+    activeIndicator.Visible = false
+    activeIndicator.ZIndex = 102
+    activeIndicator.Parent = button
+    
+    local indicatorCorner = Instance.new("UICorner")
+    indicatorCorner.CornerRadius = UDim.new(0, 2)
+    indicatorCorner.Parent = activeIndicator
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "TextLabel"
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = name:upper()
+    textLabel.TextColor3 = Color3.fromRGB(120, 120, 130)
+    textLabel.TextSize = 12
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextScaled = false
+    textLabel.ZIndex = 102
+    textLabel.Parent = button
+    
+    local glowEffect = Instance.new("Frame")
+    glowEffect.Name = "GlowEffect"
+    glowEffect.Size = UDim2.new(1, 4, 1, 4)
+    glowEffect.Position = UDim2.new(0, -2, 0, -2)
+    glowEffect.BackgroundColor3 = self.config.colors.accent
+    glowEffect.BackgroundTransparency = 1
+    glowEffect.BorderSizePixel = 0
+    glowEffect.ZIndex = 100
+    glowEffect.Parent = button
+    
+    local glowCorner = Instance.new("UICorner")
+    glowCorner.CornerRadius = UDim.new(0, 10)
+    glowCorner.Parent = glowEffect
+    
+    tabData.button = button
+    tabData.textLabel = textLabel
+    tabData.activeIndicator = activeIndicator
+    tabData.glowEffect = glowEffect
+    
+    self.tabs[name] = tabData
+    
+    return button
+end
+
+-- Animation management
+function ModernGUI:StopAllTweens(tab)
+    if not tab or not tab.tweens then
+        return
+    end
+    
+    for tweenName, tween in pairs(tab.tweens) do
+        if tween and tween.PlaybackState ~= Enum.PlaybackState.Completed then
+            tween:Cancel()
+        end
+    end
+    tab.tweens = {}
+    
+    if tab.isActive and tab.activeIndicator then
+        tab.activeIndicator.Visible = true
+    end
+end
+
+-- Set active tab
+function ModernGUI:SetActiveTab(tabName)
+    if not self.tabs then
+        return
+    end
+    
+    for name, tab in pairs(self.tabs) do
+        if tab then
+            self:StopAllTweens(tab)
+        end
+    end
+    
+    for name, tab in pairs(self.tabs) do
+        if tab then
+            if name == tabName then
+                self:ActivateTab(tab)
+                self.activeTab = tabName
+            else
+                self:DeactivateTab(tab)
+            end
+        end
+    end
+end
+
+-- Activate tab animation
+function ModernGUI:ActivateTab(tab)
+    tab.isActive = true
+    self:StopAllTweens(tab)
+    
+    tab.tweens.buttonBg = TweenService:Create(tab.button, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(35, 35, 45),
+        BackgroundTransparency = 0.05
+    })
+    tab.tweens.buttonBg:Play()
+    
+    tab.tweens.textColor = TweenService:Create(tab.textLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        TextColor3 = Color3.fromRGB(255, 255, 255)
+    })
+    tab.tweens.textColor:Play()
+    
+    tab.activeIndicator.Visible = true
+    tab.activeIndicator.Size = UDim2.new(0, 3, 0, 0)
+    tab.tweens.indicator = TweenService:Create(tab.activeIndicator, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 3, 0, 30)
+    })
+    tab.tweens.indicator:Play()
+    
+    tab.tweens.glow = TweenService:Create(tab.glowEffect, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundTransparency = 0.92
+    })
+    tab.tweens.glow:Play()
+end
+
+-- Deactivate tab animation
+function ModernGUI:DeactivateTab(tab)
+    tab.isActive = false
+    self:StopAllTweens(tab)
+    
+    tab.tweens.buttonBg = TweenService:Create(tab.button, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(15, 15, 20),
+        BackgroundTransparency = 0.2
+    })
+    tab.tweens.buttonBg:Play()
+    
+    tab.tweens.textColor = TweenService:Create(tab.textLabel, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        TextColor3 = Color3.fromRGB(120, 120, 130)
+    })
+    tab.tweens.textColor:Play()
+    
+    if not tab.isActive then
+        tab.tweens.indicator = TweenService:Create(tab.activeIndicator, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 3, 0, 0)
+        })
+        tab.tweens.indicator:Play()
+        
+        tab.tweens.indicator.Completed:Connect(function()
+            if not tab.isActive then
+                tab.activeIndicator.Visible = false
+            end
+        end)
+    end
+    
+    tab.tweens.glow = TweenService:Create(tab.glowEffect, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 1
+    })
+    tab.tweens.glow:Play()
+end
+
+-- Add hover effects
+function ModernGUI:AddHoverEffects(tab)
+    tab.button.MouseEnter:Connect(function()
+        if not tab.isActive then
+            tab.isHovered = true
+            
+            if tab.tweens.hoverBg then tab.tweens.hoverBg:Cancel() end
+            if tab.tweens.hoverText then tab.tweens.hoverText:Cancel() end
+            if tab.tweens.hoverGlow then tab.tweens.hoverGlow:Cancel() end
+            
+            tab.tweens.hoverBg = TweenService:Create(tab.button, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+                BackgroundColor3 = Color3.fromRGB(35, 25, 25),
+                BackgroundTransparency = 0.1
+            })
+            tab.tweens.hoverBg:Play()
+            
+            tab.tweens.hoverText = TweenService:Create(tab.textLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+                TextColor3 = Color3.fromRGB(200, 180, 180)
+            })
+            tab.tweens.hoverText:Play()
+            
+            tab.tweens.hoverGlow = TweenService:Create(tab.glowEffect, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 0.95
+            })
+            tab.tweens.hoverGlow:Play()
+        end
+    end)
+    
+    tab.button.MouseLeave:Connect(function()
+        if not tab.isActive then
+            tab.isHovered = false
+            
+            if tab.tweens.hoverBg then tab.tweens.hoverBg:Cancel() end
+            if tab.tweens.hoverText then tab.tweens.hoverText:Cancel() end
+            if tab.tweens.hoverGlow then tab.tweens.hoverGlow:Cancel() end
+            
+            tab.tweens.hoverBg = TweenService:Create(tab.button, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+                BackgroundColor3 = Color3.fromRGB(15, 15, 20),
+                BackgroundTransparency = 0.2
+            })
+            tab.tweens.hoverBg:Play()
+            
+            tab.tweens.hoverText = TweenService:Create(tab.textLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quart), {
+                TextColor3 = Color3.fromRGB(120, 120, 130)
+            })
+            tab.tweens.hoverText:Play()
+            
+            tab.tweens.hoverGlow = TweenService:Create(tab.glowEffect, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 1
+            })
+            tab.tweens.hoverGlow:Play()
+        end
+    end)
+end
+
+-- Create content frame
+function ModernGUI:CreateContentFrame(name)
+    local frame = Instance.new("Frame")
+    frame.Name = name .. "Content"
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    frame.Visible = false
+    frame.Parent = self.contentArea
+    return frame
+end
+
+-- UI Element creation functions
+function ModernGUI:CreateModernCheckbox(text, parent, yPosition)
+    local checkboxFrame = Instance.new("Frame")
+    checkboxFrame.Size = UDim2.new(1, -20, 0, 35)
+    checkboxFrame.Position = UDim2.new(0, 10, 0, yPosition)
+    checkboxFrame.BackgroundTransparency = 1
+    checkboxFrame.Parent = parent
+    
+    local checkbox = Instance.new("TextButton")
+    checkbox.Size = UDim2.new(0, 22, 0, 22)
+    checkbox.Position = UDim2.new(0, 0, 0, 6)
+    checkbox.BackgroundColor3 = self.config.colors.input
+    checkbox.BorderSizePixel = 0
+    checkbox.Text = ""
+    checkbox.Parent = checkboxFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 5)
+    corner.Parent = checkbox
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -32, 1, 0)
+    label.Position = UDim2.new(0, 32, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = self.config.colors.text
+    label.TextSize = 14
+    label.Font = Enum.Font.Gotham
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = checkboxFrame
+    
+    local checked = false
+    checkbox.MouseButton1Click:Connect(function()
+        checked = not checked
+        checkbox.BackgroundColor3 = checked and self.config.colors.accent or self.config.colors.input
+        if checked then
+            checkbox.Text = "✓"
+            checkbox.TextColor3 = self.config.colors.text
+            checkbox.TextSize = 16
+            checkbox.Font = Enum.Font.GothamBold
+        else
+            checkbox.Text = ""
+        end
+    end)
+    
+    return yPosition + 40
+end
+
+function ModernGUI:CreateModernButton(text, parent, yPosition)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, -20, 0, 38)
+    button.Position = UDim2.new(0, 10, 0, yPosition)
+    button.BackgroundColor3 = self.config.colors.accent
+    button.BorderSizePixel = 0
+    button.Text = text
+    button.TextColor3 = self.config.colors.text
+    button.TextSize = 14
+    button.Font = Enum.Font.GothamBold
+    button.AutoButtonColor = false
+    button.Parent = parent
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
+    
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(240, 60, 60)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = self.config.colors.accent}):Play()
+    end)
+    
+    return yPosition + 45
+end
+
+-- Create two section layout
+function ModernGUI:CreateTwoSectionLayout(parent, leftTitle, rightTitle)
+    local leftSection = Instance.new("ScrollingFrame")
+    leftSection.Name = "LeftSection"
+    leftSection.Size = UDim2.new(0.48, 0, 1, 0)
+    leftSection.Position = UDim2.new(0, 0, 0, 0)
+    leftSection.BackgroundColor3 = self.config.colors.sidebar
+    leftSection.BackgroundTransparency = 0.15
+    leftSection.BorderSizePixel = 0
+    leftSection.ScrollBarThickness = 4
+    leftSection.ScrollBarImageColor3 = self.config.colors.accent
+    leftSection.Parent = parent
+    
+    local leftCorner = Instance.new("UICorner")
+    leftCorner.CornerRadius = UDim.new(0, 8)
+    leftCorner.Parent = leftSection
+    
+    local rightSection = Instance.new("ScrollingFrame")
+    rightSection.Name = "RightSection"
+    rightSection.Size = UDim2.new(0.48, 0, 1, 0)
+    rightSection.Position = UDim2.new(0.52, 0, 0, 0)
+    rightSection.BackgroundColor3 = self.config.colors.sidebar
+    rightSection.BackgroundTransparency = 0.15
+    rightSection.BorderSizePixel = 0
+    rightSection.ScrollBarThickness = 4
+    rightSection.ScrollBarImageColor3 = self.config.colors.accent
+    rightSection.Parent = parent
+    
+    local rightCorner = Instance.new("UICorner")
+    rightCorner.CornerRadius = UDim.new(0, 8)
+    rightCorner.Parent = rightSection
+    
+    local leftTitleLabel = Instance.new("TextLabel")
+    leftTitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    leftTitleLabel.Position = UDim2.new(0, 10, 0, 10)
+    leftTitleLabel.BackgroundTransparency = 1
+    leftTitleLabel.Text = leftTitle or "Primary"
+    leftTitleLabel.TextColor3 = self.config.colors.accent
+    leftTitleLabel.TextSize = 16
+    leftTitleLabel.Font = Enum.Font.GothamBold
+    leftTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    leftTitleLabel.Parent = leftSection
+    
+    local rightTitleLabel = Instance.new("TextLabel")
+    rightTitleLabel.Size = UDim2.new(1, -20, 0, 30)
+    rightTitleLabel.Position = UDim2.new(0, 10, 0, 10)
+    rightTitleLabel.BackgroundTransparency = 1
+    rightTitleLabel.Text = rightTitle or "Advanced"
+    rightTitleLabel.TextColor3 = self.config.colors.accent
+    rightTitleLabel.TextSize = 16
+    rightTitleLabel.Font = Enum.Font.GothamBold
+    rightTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    rightTitleLabel.Parent = rightSection
+    
+    return leftSection, rightSection
+end
+
+-- Populate content based on configuration
+function ModernGUI:PopulateContent(leftSection, rightSection, contentConfig)
+    if not contentConfig then return end
+    
+    local leftYPos = 50
+    local rightYPos = 50
+    
+    -- Populate left section
+    if contentConfig.left and contentConfig.left.items then
+        for _, item in ipairs(contentConfig.left.items) do
+            if item.type == "checkbox" then
+                leftYPos = self:CreateModernCheckbox(item.text, leftSection, leftYPos)
+            elseif item.type == "button" then
+                leftYPos = self:CreateModernButton(item.text, leftSection, leftYPos)
+            end
+        end
+    end
+    
+    -- Populate right section
+    if contentConfig.right and contentConfig.right.items then
+        for _, item in ipairs(contentConfig.right.items) do
+            if item.type == "checkbox" then
+                rightYPos = self:CreateModernCheckbox(item.text, rightSection, rightYPos)
+            elseif item.type == "button" then
+                rightYPos = self:CreateModernButton(item.text, rightSection, rightYPos)
+            end
+        end
+    end
+    
+    -- Set canvas sizes
+    leftSection.CanvasSize = UDim2.new(0, 0, 0, leftYPos + 20)
+    rightSection.CanvasSize = UDim2.new(0, 0, 0, rightYPos + 20)
+end
+
+-- Create main tab layout with sub-categories
+function ModernGUI:CreateMainTabLayout(parentFrame)
+    local leftTabBar = Instance.new("Frame")
+    leftTabBar.Name = "LeftTabBar"
+    leftTabBar.Size = UDim2.new(0, 180, 1, 0)
+    leftTabBar.Position = UDim2.new(0, 0, 0, 0)
+    leftTabBar.BackgroundColor3 = self.config.colors.sidebar
+    leftTabBar.BackgroundTransparency = 0.1
+    leftTabBar.BorderSizePixel = 0
+    leftTabBar.Parent = parentFrame
+    
+    local leftTabCorner = Instance.new("UICorner")
+    leftTabCorner.CornerRadius = UDim.new(0, 8)
+    leftTabCorner.Parent = leftTabBar
+    
+    local rightContentArea = Instance.new("Frame")
+    rightContentArea.Name = "RightContentArea"
+    rightContentArea.Size = UDim2.new(1, -190, 1, 0)
+    rightContentArea.Position = UDim2.new(0, 190, 0, 0)
+    rightContentArea.BackgroundTransparency = 1
+    rightContentArea.Parent = parentFrame
+    
+    local topSubTabBar = Instance.new("Frame")
+    topSubTabBar.Name = "TopSubTabBar"
+    topSubTabBar.Size = UDim2.new(1, 0, 0, 40)
+    topSubTabBar.Position = UDim2.new(0, 0, 0, 0)
+    topSubTabBar.BackgroundColor3 = self.config.colors.background
+    topSubTabBar.BackgroundTransparency = 0.2
+    topSubTabBar.BorderSizePixel = 0
+    topSubTabBar.Parent = rightContentArea
+    
+    local topSubTabCorner = Instance.new("UICorner")
+    topSubTabCorner.CornerRadius = UDim.new(0, 6)
+    topSubTabCorner.Parent = topSubTabBar
+    
+    local mainContentArea = Instance.new("Frame")
+    mainContentArea.Name = "MainContentArea"
+    mainContentArea.Size = UDim2.new(1, 0, 1, -50)
+    mainContentArea.Position = UDim2.new(0, 0, 0, 50)
+    mainContentArea.BackgroundTransparency = 1
+    mainContentArea.Parent = rightContentArea
+    
+    return leftTabBar, topSubTabBar, mainContentArea
+end
+
+-- Setup drag functionality
+function ModernGUI:SetupDragFunctionality()
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+
+    self.titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.mainFrame.Position
+            
+            TweenService:Create(self.titleBar, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.05
+            }):Play()
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            self.mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+            
+            TweenService:Create(self.titleBar, TweenInfo.new(0.2), {
+                BackgroundTransparency = 0.1
+            }):Play()
+        end
+    end)
+end
+
+-- Setup keyboard shortcuts
+function ModernGUI:SetupKeyboardShortcuts()
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed then
+            if input.KeyCode == Enum.KeyCode.F3 then
+                self.mainFrame.Visible = not self.mainFrame.Visible
+                self.tabNavBar.Visible = true
+            elseif input.KeyCode == Enum.KeyCode.F4 then
+                self.tabNavBar.Visible = not self.tabNavBar.Visible
+            end
+        end
+    end)
+end
+
+-- Add tab to GUI
+function ModernGUI:AddTab(name, onActivate)
+    local tabIndex = #self.tabButtons + 1
+    local button = self:CreateTab(name, tabIndex)
+    self.tabButtons[name] = button
+    self.contentFrames[name] = self:CreateContentFrame(name)
+    
+    if self.tabs[name] then
+        self:AddHoverEffects(self.tabs[name])
+    end
+    
+    button.MouseButton1Click:Connect(function()
+        if not self.mainFrame.Visible then
+            self.mainFrame.Visible = true
+        end
+        
+        if self.activeTab ~= name then
+            if self.contentFrames[self.activeTab] then
+                self.contentFrames[self.activeTab].Visible = false
+            end
+            if self.contentFrames[name] then
+                self.contentFrames[name].Visible = true
+            end
+            self:SetActiveTab(name)
+            
+            if onActivate then
+                onActivate(self.contentFrames[name])
+            end
+        end
+    end)
+    
+    return self.contentFrames[name]
+end
+
+-- Get the GUI object for external manipulation
+function ModernGUI:GetGUI()
+    return self.screenGui
+end
+
+-- Get content frame by tab name
+function ModernGUI:GetContentFrame(tabName)
+    return self.contentFrames[tabName]
+end
+
+-- Show/Hide GUI
+function ModernGUI:SetVisible(visible)
+    self.mainFrame.Visible = visible
+end
+
+-- Set tab navigation visibility
+function ModernGUI:SetTabNavVisible(visible)
+    self.tabNavBar.Visible = visible
+end
+
+-- Initialize GUI and show first tab
+function ModernGUI:Show()
+    self.mainFrame.Visible = false
+    self.tabNavBar.Visible = true
+    
+    if self.contentFrames[self.activeTab] then
+        self.contentFrames[self.activeTab].Visible = true
+    end
+    self:SetActiveTab(self.activeTab)
+end
+
+return ModernGUI 
