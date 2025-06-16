@@ -1,0 +1,433 @@
+-- Modern GUI Configuration v2.0
+-- All settings and configurations for the Modern GUI Library
+
+local ModernGUI_Config = {}
+
+-- Color scheme configuration
+ModernGUI_Config.colors = {
+    background = Color3.fromRGB(20, 20, 25),
+    sidebar = Color3.fromRGB(15, 15, 20),
+    accent = Color3.fromRGB(220, 50, 50),
+    text = Color3.fromRGB(255, 255, 255),
+    textSecondary = Color3.fromRGB(180, 180, 180),
+    button = Color3.fromRGB(35, 35, 40),
+    buttonHover = Color3.fromRGB(45, 45, 50),
+    input = Color3.fromRGB(25, 25, 30)
+}
+
+-- GUI general settings
+ModernGUI_Config.gui = {
+    name = "ModernGUI",
+    title = "Modern GUI",
+    subtitle = "v2.0 - Premium Edition",
+    size = {
+        width = 900,
+        height = 600
+    },
+    position = {
+        anchorX = 0.5,
+        anchorY = 0.5,
+        offsetX = -350,
+        offsetY = -300
+    }
+}
+
+-- Tab configuration
+ModernGUI_Config.tabs = {
+    -- Main tab sub-categories
+    main = {
+        categories = {"Features", "Visuals", "Combat", "Misc"},
+        subTabs = {
+            Features = {"Basic", "Advanced", "Premium"},
+            Visuals = {"Basic", "Advanced", "ESP"},
+            Combat = {"Basic", "Advanced", "Auto"},
+            Misc = {"Movement", "Teleport", "Utility"}
+        }
+    },
+    
+    -- Player tab sub-categories
+    player = {"Info", "Inventory", "Teleport", "Actions"},
+    
+    -- Settings tab sub-categories
+    settings = {"General", "Performance", "Security", "About"}
+}
+
+-- Content configurations for different tab types
+ModernGUI_Config.content = {
+    ["Features Basic"] = {
+        left = {
+            title = "Primary Features Basic",
+            items = {
+                {type = "checkbox", text = "Auto Farm Vegetables"},
+                {type = "checkbox", text = "Auto Water Plants"},
+                {type = "checkbox", text = "Auto Harvest"},
+                {type = "checkbox", text = "Auto Plant Seeds"},
+                {type = "button", text = "Start Basic Farming"}
+            }
+        },
+        right = {
+            title = "Advanced Features Basic",
+            items = {
+                {type = "checkbox", text = "Auto Collect Drops"},
+                {type = "checkbox", text = "Auto Sell Items"},
+                {type = "checkbox", text = "Auto Buy Seeds"},
+                {type = "checkbox", text = "Inventory Manager"},
+                {type = "button", text = "Enable Collection"}
+            }
+        }
+    },
+    
+    ["Features Advanced"] = {
+        left = {
+            title = "Primary Features Advanced",
+            items = {
+                {type = "checkbox", text = "Smart Crop Rotation"},
+                {type = "checkbox", text = "Optimal Plot Selection"},
+                {type = "checkbox", text = "Weather Prediction"},
+                {type = "checkbox", text = "Profit Calculator"},
+                {type = "button", text = "Advanced Farming"}
+            }
+        },
+        right = {
+            title = "Advanced Features Advanced",
+            items = {
+                {type = "checkbox", text = "Multi-Account Support"},
+                {type = "checkbox", text = "Market Analysis"},
+                {type = "checkbox", text = "Auto Trading"},
+                {type = "checkbox", text = "Resource Optimization"},
+                {type = "button", text = "Enable Automation"}
+            }
+        }
+    },
+    
+    ["Features Premium"] = {
+        left = {
+            title = "Primary Features Premium",
+            items = {
+                {type = "checkbox", text = "AI Farm Management"},
+                {type = "checkbox", text = "Instant Growth Hack"},
+                {type = "checkbox", text = "Unlimited Money"},
+                {type = "checkbox", text = "VIP Crop Varieties"},
+                {type = "button", text = "Activate Premium"}
+            }
+        },
+        right = {
+            title = "Advanced Features Premium",
+            items = {
+                {type = "checkbox", text = "God Mode Farming"},
+                {type = "checkbox", text = "Time Manipulation"},
+                {type = "checkbox", text = "Weather Control"},
+                {type = "checkbox", text = "Season Skip"},
+                {type = "button", text = "Premium Tools"}
+            }
+        }
+    },
+    
+    ["Visuals Basic"] = {
+        left = {
+            title = "Primary Visuals Basic",
+            items = {
+                {type = "checkbox", text = "Player ESP"},
+                {type = "checkbox", text = "Player Names"},
+                {type = "checkbox", text = "Player Distance"},
+                {type = "checkbox", text = "Player Health"},
+                {type = "button", text = "Enable Player ESP"}
+            }
+        },
+        right = {
+            title = "Advanced Visuals Basic",
+            items = {
+                {type = "checkbox", text = "Crop ESP"},
+                {type = "checkbox", text = "Seed ESP"},
+                {type = "checkbox", text = "Tool ESP"},
+                {type = "checkbox", text = "Money ESP"},
+                {type = "button", text = "Enable Item ESP"}
+            }
+        }
+    },
+    
+    ["Visuals Advanced"] = {
+        left = {
+            title = "Primary Visuals Advanced",
+            items = {
+                {type = "checkbox", text = "Fullbright"},
+                {type = "checkbox", text = "No Fog"},
+                {type = "checkbox", text = "Enhanced Graphics"},
+                {type = "checkbox", text = "Custom Lighting"},
+                {type = "button", text = "Visual Enhancements"}
+            }
+        },
+        right = {
+            title = "Advanced Visuals Advanced",
+            items = {
+                {type = "checkbox", text = "Custom Crosshair"},
+                {type = "checkbox", text = "FPS Counter"},
+                {type = "checkbox", text = "Ping Display"},
+                {type = "checkbox", text = "Server Info"},
+                {type = "button", text = "UI Modifications"}
+            }
+        }
+    },
+    
+    ["Visuals ESP"] = {
+        left = {
+            title = "Primary Visuals ESP",
+            items = {
+                {type = "checkbox", text = "ESP Boxes"},
+                {type = "checkbox", text = "ESP Tracers"},
+                {type = "checkbox", text = "ESP Snaplines"},
+                {type = "checkbox", text = "ESP Chams"},
+                {type = "button", text = "Configure ESP"}
+            }
+        },
+        right = {
+            title = "Advanced Visuals ESP",
+            items = {
+                {type = "checkbox", text = "Through Walls"},
+                {type = "checkbox", text = "Distance Limit"},
+                {type = "checkbox", text = "Team Check"},
+                {type = "checkbox", text = "Custom Colors"},
+                {type = "button", text = "Advanced ESP"}
+            }
+        }
+    },
+    
+    ["Combat Basic"] = {
+        left = {
+            title = "Primary Combat Basic",
+            items = {
+                {type = "checkbox", text = "Auto Attack"},
+                {type = "checkbox", text = "Auto Block"},
+                {type = "checkbox", text = "Auto Dodge"},
+                {type = "checkbox", text = "Quick Heal"},
+                {type = "button", text = "Enable Basic PVP"}
+            }
+        },
+        right = {
+            title = "Advanced Combat Basic",
+            items = {
+                {type = "checkbox", text = "Anti-Grief"},
+                {type = "checkbox", text = "Safe Zone Alert"},
+                {type = "checkbox", text = "Player Warning"},
+                {type = "checkbox", text = "Auto Escape"},
+                {type = "button", text = "Defense Systems"}
+            }
+        }
+    },
+    
+    ["Combat Advanced"] = {
+        left = {
+            title = "Primary Combat Advanced",
+            items = {
+                {type = "checkbox", text = "Kill Aura"},
+                {type = "checkbox", text = "Critical Hits"},
+                {type = "checkbox", text = "Auto Combo"},
+                {type = "checkbox", text = "Perfect Timing"},
+                {type = "button", text = "Advanced Combat"}
+            }
+        },
+        right = {
+            title = "Advanced Combat Advanced",
+            items = {
+                {type = "checkbox", text = "Reach Extend"},
+                {type = "checkbox", text = "Anti-Knockback"},
+                {type = "checkbox", text = "No Fall Damage"},
+                {type = "checkbox", text = "God Mode"},
+                {type = "button", text = "Combat Exploits"}
+            }
+        }
+    },
+    
+    ["Combat Auto"] = {
+        left = {
+            title = "Primary Combat Auto",
+            items = {
+                {type = "checkbox", text = "Auto Farm Guards"},
+                {type = "checkbox", text = "Auto Defend Base"},
+                {type = "checkbox", text = "Auto Target Enemies"},
+                {type = "checkbox", text = "Auto Use Items"},
+                {type = "button", text = "Auto Combat"}
+            }
+        },
+        right = {
+            title = "Advanced Combat Auto",
+            items = {
+                {type = "checkbox", text = "AI Target Selection"},
+                {type = "checkbox", text = "Threat Assessment"},
+                {type = "checkbox", text = "Strategic Retreat"},
+                {type = "checkbox", text = "Team Coordination"},
+                {type = "button", text = "AI Combat"}
+            }
+        }
+    },
+    
+    ["Misc Movement"] = {
+        left = {
+            title = "Primary Misc Movement",
+            items = {
+                {type = "checkbox", text = "Speed Boost"},
+                {type = "checkbox", text = "Jump Boost"},
+                {type = "checkbox", text = "No Fall Damage"},
+                {type = "checkbox", text = "Auto Sprint"},
+                {type = "button", text = "Movement Boosts"}
+            }
+        },
+        right = {
+            title = "Advanced Misc Movement",
+            items = {
+                {type = "checkbox", text = "Fly Mode"},
+                {type = "checkbox", text = "No Clip"},
+                {type = "checkbox", text = "Infinite Jump"},
+                {type = "checkbox", text = "Wall Walk"},
+                {type = "button", text = "Advanced Movement"}
+            }
+        }
+    },
+    
+    ["Misc Teleport"] = {
+        left = {
+            title = "Primary Misc Teleport",
+            items = {
+                {type = "checkbox", text = "Farm Teleport"},
+                {type = "checkbox", text = "Shop Teleport"},
+                {type = "checkbox", text = "Spawn Teleport"},
+                {type = "checkbox", text = "Player Teleport"},
+                {type = "button", text = "Quick Teleports"}
+            }
+        },
+        right = {
+            title = "Advanced Misc Teleport",
+            items = {
+                {type = "checkbox", text = "Click Teleport"},
+                {type = "checkbox", text = "Auto Teleport"},
+                {type = "checkbox", text = "Safe Teleport"},
+                {type = "checkbox", text = "Teleport History"},
+                {type = "button", text = "Teleport Tools"}
+            }
+        }
+    },
+    
+    ["Misc Utility"] = {
+        left = {
+            title = "Primary Misc Utility",
+            items = {
+                {type = "checkbox", text = "Anti-AFK"},
+                {type = "checkbox", text = "Auto Rejoin"},
+                {type = "checkbox", text = "Server Hop"},
+                {type = "checkbox", text = "FPS Unlocker"},
+                {type = "button", text = "General Utils"}
+            }
+        },
+        right = {
+            title = "Advanced Misc Utility",
+            items = {
+                {type = "checkbox", text = "Chat Spam"},
+                {type = "checkbox", text = "Auto Chat"},
+                {type = "checkbox", text = "Name Spoof"},
+                {type = "checkbox", text = "Game Stats"},
+                {type = "button", text = "Advanced Utils"}
+            }
+        }
+    }
+}
+
+-- Animation settings
+ModernGUI_Config.animations = {
+    tabTransition = {
+        duration = 0.4,
+        easingStyle = Enum.EasingStyle.Quart,
+        easingDirection = Enum.EasingDirection.Out
+    },
+    hoverEffect = {
+        duration = 0.25,
+        easingStyle = Enum.EasingStyle.Quart
+    },
+    glowEffect = {
+        duration = 2,
+        easingStyle = Enum.EasingStyle.Sine,
+        easingDirection = Enum.EasingDirection.InOut,
+        repeatCount = -1,
+        reverses = true
+    }
+}
+
+-- Keyboard shortcuts
+ModernGUI_Config.shortcuts = {
+    toggleMain = Enum.KeyCode.F3,
+    toggleTabs = Enum.KeyCode.F4
+}
+
+-- Default tab navigation configuration
+ModernGUI_Config.defaultTabs = {"Main", "Player", "Settings"}
+
+-- Alternative color schemes (can be switched)
+ModernGUI_Config.colorSchemes = {
+    red = {
+        background = Color3.fromRGB(20, 20, 25),
+        sidebar = Color3.fromRGB(15, 15, 20),
+        accent = Color3.fromRGB(220, 50, 50),
+        text = Color3.fromRGB(255, 255, 255),
+        textSecondary = Color3.fromRGB(180, 180, 180),
+        button = Color3.fromRGB(35, 35, 40),
+        buttonHover = Color3.fromRGB(45, 45, 50),
+        input = Color3.fromRGB(25, 25, 30)
+    },
+    
+    blue = {
+        background = Color3.fromRGB(20, 20, 25),
+        sidebar = Color3.fromRGB(15, 15, 20),
+        accent = Color3.fromRGB(50, 150, 220),
+        text = Color3.fromRGB(255, 255, 255),
+        textSecondary = Color3.fromRGB(180, 180, 180),
+        button = Color3.fromRGB(35, 35, 40),
+        buttonHover = Color3.fromRGB(45, 45, 50),
+        input = Color3.fromRGB(25, 25, 30)
+    },
+    
+    green = {
+        background = Color3.fromRGB(20, 25, 20),
+        sidebar = Color3.fromRGB(15, 20, 15),
+        accent = Color3.fromRGB(50, 220, 80),
+        text = Color3.fromRGB(255, 255, 255),
+        textSecondary = Color3.fromRGB(180, 180, 180),
+        button = Color3.fromRGB(35, 40, 35),
+        buttonHover = Color3.fromRGB(45, 50, 45),
+        input = Color3.fromRGB(25, 30, 25)
+    },
+    
+    purple = {
+        background = Color3.fromRGB(22, 20, 25),
+        sidebar = Color3.fromRGB(17, 15, 20),
+        accent = Color3.fromRGB(150, 50, 220),
+        text = Color3.fromRGB(255, 255, 255),
+        textSecondary = Color3.fromRGB(180, 180, 180),
+        button = Color3.fromRGB(37, 35, 40),
+        buttonHover = Color3.fromRGB(47, 45, 50),
+        input = Color3.fromRGB(27, 25, 30)
+    }
+}
+
+-- Function to switch color scheme
+function ModernGUI_Config:SetColorScheme(schemeName)
+    if self.colorSchemes[schemeName] then
+        self.colors = self.colorSchemes[schemeName]
+        return true
+    end
+    return false
+end
+
+-- Function to get content configuration for a specific tab type
+function ModernGUI_Config:GetContentConfig(tabType)
+    return self.content[tabType] or {
+        left = {
+            title = "Primary " .. tabType,
+            items = {}
+        },
+        right = {
+            title = "Advanced " .. tabType,
+            items = {}
+        }
+    }
+end
+
+return ModernGUI_Config 
