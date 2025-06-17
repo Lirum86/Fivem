@@ -221,8 +221,8 @@ function WatermarkManager:updateStats(fps)
     self.fpsLabel.TextColor3 = fpsColor
 
     if self.fpsBar then
-        local maxWidth = isMobile and 55 or 65
-        local barHeight = isMobile and 3 or 4
+        local maxWidth = isMobile and 50 or 65
+        local barHeight = isMobile and 2 or 4
         tween(self.fpsBar, 0.3, {
             Size = UDim2.new(0, math.clamp(fps / 120 * maxWidth, 5, maxWidth), 0, barHeight),
             BackgroundColor3 = fpsColor,
@@ -237,8 +237,8 @@ function WatermarkManager:updateStats(fps)
     self.pingLabel.TextColor3 = pingColor
 
     if self.pingBar then
-        local maxWidth = isMobile and 55 or 65
-        local barHeight = isMobile and 3 or 4
+        local maxWidth = isMobile and 50 or 65
+        local barHeight = isMobile and 2 or 4
         tween(self.pingBar, 0.3, {
             Size = UDim2.new(0, math.clamp((1 - ping / 300) * maxWidth, 5, maxWidth), 0, barHeight),
             BackgroundColor3 = pingColor,
@@ -249,9 +249,18 @@ end
 function WatermarkManager:getPing()
     local ping = 0
     pcall(function()
-        local net = Services.Stats.Network
-        if net and net.ServerStatsItem['Data Ping'] then
-            ping = math.floor(net.ServerStatsItem['Data Ping']:GetValue())
+        local stats = Services.Stats
+        if stats and stats.Network and stats.Network.ServerStatsItem then
+            local pingItem = stats.Network.ServerStatsItem["Data Ping"]
+            if pingItem then
+                local pingValue = pingItem:GetValue()
+                -- Convert from seconds to milliseconds and round properly
+                ping = math.floor(pingValue * 1000)
+                -- Cap unrealistic ping values
+                if ping > 2000 or ping < 0 then
+                    ping = 0
+                end
+            end
         end
     end)
     return ping
@@ -263,7 +272,7 @@ function WatermarkManager:setVisible(visible)
 
     if visible then
         self.container.Visible = true
-        tween(self.container, 0.3, { Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
+        tween(self.container, 0.3, { Position = isMobile and UDim2.new(1, -240, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
     else
         tween(self.container, 0.3, { Position = UDim2.new(1, 20, 0, 20) }):Play()
         task.delay(0.3, function()
@@ -580,7 +589,7 @@ function RadiantHub:createMain()
     })
 
     self.tabContainer = create('Frame', {
-        Size = UDim2.new(0, 85, 1, -10),
+        Size = UDim2.new(0, isMobile and 70 or 85, 1, -10), -- Smaller tab container for mobile
         Position = UDim2.new(0, 10, 0, 10),
         BackgroundColor3 = Config.Colors.Background,
         Parent = self.main,
@@ -629,8 +638,8 @@ function RadiantHub:createMain()
     self:createLogo()
 
     self.header = create('Frame', {
-        Size = UDim2.new(1, -105, 0, 70),
-        Position = UDim2.new(0, 105, 0, 10),
+        Size = UDim2.new(1, isMobile and -90 or -105, 0, isMobile and 60 or 70), -- Smaller header for mobile
+        Position = UDim2.new(0, isMobile and 90 or 105, 0, 10),
         BackgroundColor3 = Config.Colors.Header,
         Parent = self.main,
     })
@@ -642,7 +651,7 @@ function RadiantHub:createMain()
         BackgroundTransparency = 1,
         Text = 'RadiantHub',
         TextColor3 = Config.Colors.Text,
-        TextSize = 22,
+        TextSize = isMobile and 18 or 22,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = self.header,
@@ -655,7 +664,7 @@ function RadiantHub:createMain()
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Right, -- Rechtsbündig damit es zur Avatar-Kante zeigt
         Parent = self.header,
@@ -675,12 +684,12 @@ function RadiantHub:createMain()
     })
 
     local avatar = create('Frame', {
-        Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -165, 0.5, -22.5),
+        Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
+        Position = UDim2.new(1, isMobile and -140 or -165, 0.5, isMobile and -17.5 or -22.5),
         BackgroundColor3 = Config.Colors.Hover,
         Parent = self.header,
     })
-    addCorner(avatar, 22.5)
+    addCorner(avatar, isMobile and 17.5 or 22.5)
     addStroke(avatar, Config.Colors.Active, 2)
 
     local avatarImg = create('ImageLabel', {
@@ -689,23 +698,23 @@ function RadiantHub:createMain()
         Image = 'https://www.roblox.com/headshot-thumbnail/image?userId=' .. Player.UserId .. '&width=150&height=150&format=png',
         Parent = avatar,
     })
-    addCorner(avatarImg, 22.5)
+    addCorner(avatarImg, isMobile and 17.5 or 22.5)
 
     -- Minimize Button
     self.minimizeBtn = create('TextButton', {
-        Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -103, 0.5, -15.5),
+        Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
+        Position = UDim2.new(1, isMobile and -85 or -103, 0.5, isMobile and -12.5 or -15.5),
         BackgroundTransparency = 1,
         Text = '−',
         TextColor3 = Config.Colors.Text,
-        TextSize = 32,
+        TextSize = isMobile and 24 or 32,
         Font = Enum.Font.GothamBold,
         Parent = self.header,
     })
 
     self.closeBtn = create('TextButton', {
-        Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -60, 0.5, -22.5),
+        Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
+        Position = UDim2.new(1, isMobile and -45 or -60, 0.5, isMobile and -17.5 or -22.5),
         BackgroundTransparency = 1,
         Text = '×',
         TextColor3 = Config.Colors.Text,
@@ -715,8 +724,8 @@ function RadiantHub:createMain()
     })
 
     self.contentFrame = create('Frame', {
-        Size = UDim2.new(1, -105, 1, -90),
-        Position = UDim2.new(0, 105, 0, 90),
+        Size = UDim2.new(1, isMobile and -90 or -105, 1, isMobile and -80 or -90), -- Smaller content frame for mobile
+        Position = UDim2.new(0, isMobile and 90 or 105, 0, isMobile and 80 or 90),
         BackgroundColor3 = Config.Colors.Background,
         Parent = self.main,
     })
@@ -1901,6 +1910,7 @@ function RadiantHub:createMinimizedLogo()
         BackgroundTransparency = 1,
         Text = '',
         ZIndex = 4,
+        Active = false, -- ✅ KRITISCHE ÄNDERUNG: Deaktiviere Active damit Dragging funktioniert
         Parent = self.minimizedLogo,
     })
     
