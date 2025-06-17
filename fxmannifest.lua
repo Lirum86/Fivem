@@ -123,7 +123,7 @@ function WatermarkManager:createWatermark()
         Size = UDim2.new(0, 120, 0, 18),
         Position = UDim2.new(0, 15, 0, 33),
         BackgroundTransparency = 1,
-        Text = 'v2.1 Premium',
+        Text = 'Free',
         TextColor3 = Config.Colors.SubText,
         TextSize = 11,
         Font = Enum.Font.Gotham,
@@ -642,9 +642,22 @@ function RadiantHub:createMain()
         Parent = self.header,
     })
 
+    -- Player Name Label
+    local playerNameLabel = create('TextLabel', {
+        Size = UDim2.new(0, 120, 0, 20),
+        Position = UDim2.new(1, -220, 0.5, -10),
+        BackgroundTransparency = 1,
+        Text = Player.Name,
+        TextColor3 = Config.Colors.Text,
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = self.header,
+    })
+
     local avatar = create('Frame', {
         Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -110, 0.5, -22.5),
+        Position = UDim2.new(1, -165, 0.5, -22.5),
         BackgroundColor3 = Config.Colors.Hover,
         Parent = self.header,
     })
@@ -658,6 +671,18 @@ function RadiantHub:createMain()
         Parent = avatar,
     })
     addCorner(avatarImg, 22.5)
+
+    -- Minimize Button
+    self.minimizeBtn = create('TextButton', {
+        Size = UDim2.new(0, 45, 0, 45),
+        Position = UDim2.new(1, -115, 0.5, -22.5),
+        BackgroundTransparency = 1,
+        Text = '−',
+        TextColor3 = Config.Colors.Text,
+        TextSize = 32,
+        Font = Enum.Font.GothamBold,
+        Parent = self.header,
+    })
 
     self.closeBtn = create('TextButton', {
         Size = UDim2.new(0, 45, 0, 45),
@@ -1913,6 +1938,22 @@ function RadiantHub:setupEvents()
         end
     end)
 
+    -- Minimize Button Events
+    self.minimizeBtn.MouseEnter:Connect(function()
+        self.minimizeBtn.TextColor3 = Color3.fromRGB(120, 255, 120)
+        tween(self.minimizeBtn, 0.1, { TextSize = 34 }):Play()
+    end)
+
+    self.minimizeBtn.MouseLeave:Connect(function()
+        self.minimizeBtn.TextColor3 = Config.Colors.Text
+        tween(self.minimizeBtn, 0.1, { TextSize = 32 }):Play()
+    end)
+
+    self.minimizeBtn.MouseButton1Click:Connect(function()
+        self:toggleMinimize()
+    end)
+
+    -- Close Button Events
     self.closeBtn.MouseEnter:Connect(function()
         self.closeBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
         tween(self.closeBtn, 0.1, { TextSize = 34 }):Play()
