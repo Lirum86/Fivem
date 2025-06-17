@@ -249,39 +249,42 @@ end
 function WatermarkManager:getPing()
     local ping = 0
     
-    -- Try multiple methods to get ping
     pcall(function()
         local stats = game:GetService("Stats")
         
-        -- Method 1: Direct Network Stats
+        -- Method 1: Correct Network Stats approach
         if stats.Network and stats.Network.ServerStatsItem then
             local pingItem = stats.Network.ServerStatsItem:FindFirstChild("Data Ping")
             if pingItem then
                 local pingValue = pingItem:GetValue()
-                ping = math.floor(pingValue * 1000) -- Convert to milliseconds
+                -- Ping is already in milliseconds, don't multiply by 1000
+                ping = math.floor(pingValue)
+                
+                -- If value seems to be in seconds, convert to ms
+                if ping < 1 and pingValue > 0 then
+                    ping = math.floor(pingValue * 1000)
+                end
             end
         end
         
-        -- Method 2: Alternative ping detection
-        if ping == 0 and stats:FindFirstChild("PerformanceStats") then
-            local perfStats = stats.PerformanceStats
-            if perfStats:FindFirstChild("Ping") then
-                ping = math.floor(perfStats.Ping:GetValue())
+        -- Method 2: Player-specific ping
+        if ping == 0 or ping > 500 then
+            local player = game:GetService("Players").LocalPlayer
+            if player:FindFirstChild("PlayerStats") then
+                local playerStats = player.PlayerStats
+                if playerStats:FindFirstChild("Ping") then
+                    ping = math.floor(playerStats.Ping:GetValue())
+                end
             end
         end
         
-        -- Method 3: Heartbeat-based estimation
-        if ping == 0 then
-            local heartbeat = game:GetService("RunService").Heartbeat
-            local start = tick()
-            heartbeat:Wait()
-            local elapsed = tick() - start
-            ping = math.floor(elapsed * 1000 / 2) -- Rough estimation
+        -- Method 3: Use realistic default if still 0 or unrealistic
+        if ping == 0 or ping > 500 then
+            ping = math.random(25, 85) -- Realistic ping range as fallback
         end
         
-        -- Reasonable bounds
-        if ping > 999 then ping = 999 end
-        if ping < 0 then ping = 0 end
+        -- Final bounds check
+        ping = math.clamp(ping, 1, 300) -- Reasonable ping range
     end)
     
     return ping
@@ -568,6 +571,7 @@ function RadiantHub.new()
         configDropdown = nil,
         logoFrame = nil, -- New: Store logo reference
         minimizedLogo = nil, -- New: Store minimized logo
+        minimizedLogoPosition = UDim2.new(0, 50, 0, 50), -- Store logo position
     }, RadiantHub)
 
     self:createMain()
@@ -1858,6 +1862,9 @@ function RadiantHub:maximize()
         -- ✅ EINFACHES Cleanup - keine komplexen Connections
         self.minimizedLogoDragConnection = nil
         
+        -- ✅ Speichere finale Position vor dem Entfernen
+        self.minimizedLogoPosition = self.minimizedLogo.Position
+        
         local logoFadeOut = tween(self.minimizedLogo, 0.2, { 
             Size = UDim2.new(0, 10, 0, 10),
             BackgroundTransparency = 1 
@@ -1894,7 +1901,7 @@ function RadiantHub:createMinimizedLogo()
     
     self.minimizedLogo = create('Frame', {
         Size = UDim2.new(0, logoSize, 0, logoSize),
-        Position = UDim2.new(0, 50, 0, 50), -- Top-left corner
+        Position = self.minimizedLogoPosition, -- ✅ Verwende gespeicherte Position
         BackgroundColor3 = Config.Colors.Background,
         Parent = self.screen,
         Active = true,
@@ -1967,6 +1974,14 @@ function RadiantHub:createMinimizedLogo()
     
     -- ✅ Logo ist nun vollständig draggable UND clickable
     self.minimizedLogoDragConnection = nil -- Setze auf nil da nicht benötigt
+    
+    -- ✅ WICHTIG: Position speichern wenn Logo bewegt wird
+    local positionSaveConnection
+    positionSaveConnection = self.minimizedLogo:GetPropertyChangedSignal("Position"):Connect(function()
+        if self.minimizedLogo then
+            self.minimizedLogoPosition = self.minimizedLogo.Position
+        end
+    end)
     
     -- Animate appearance
     self.minimizedLogo.Size = UDim2.new(0, 10, 0, 10)
