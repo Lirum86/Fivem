@@ -650,27 +650,27 @@ function RadiantHub:createMain()
 
     -- Player Name Label
     local playerNameLabel = create('TextLabel', {
-        Size = UDim2.new(0, 120, 0, 16),
-        Position = UDim2.new(1, -220, 0.5, -18),
+        Size = UDim2.new(0, 100, 0, 16),
+        Position = UDim2.new(1, -210, 0.5, -18),
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
         TextSize = 14,
         Font = Enum.Font.GothamBold,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextXAlignment = Enum.TextXAlignment.Right,
         Parent = self.header,
     })
 
     -- License Label (Free)
     local licenseLabel = create('TextLabel', {
-        Size = UDim2.new(0, 120, 0, 12),
-        Position = UDim2.new(1, -220, 0.5, -2),
+        Size = UDim2.new(0, 100, 0, 12),
+        Position = UDim2.new(1, -210, 0.5, -2),
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
         TextSize = 11,
         Font = Enum.Font.Gotham,
-        TextXAlignment = Enum.TextXAlignment.Left,
+        TextXAlignment = Enum.TextXAlignment.Right,
         Parent = self.header,
     })
 
@@ -694,7 +694,7 @@ function RadiantHub:createMain()
     -- Minimize Button
     self.minimizeBtn = create('TextButton', {
         Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -108, 0.5, -15.5),
+        Position = UDim2.new(1, -103, 0.5, -15.5),
         BackgroundTransparency = 1,
         Text = '−',
         TextColor3 = Config.Colors.Text,
