@@ -15,8 +15,8 @@ local isMobile = Services.UserInputService.TouchEnabled and not Services.UserInp
 
 -- Library Configuration
 local Config = {
-    Size = isMobile and { 600, 450 } or { 750, 550 }, -- Smaller size for mobile
-    TabIconSize = isMobile and 35 or 45, -- Smaller icons for mobile
+    Size = isMobile and { 520, 390 } or { 750, 550 }, -- Smaller size for mobile
+    TabIconSize = isMobile and 32 or 45, -- Smaller icons for mobile
     DefaultTab = 'Player',
     Logo = 'rbxassetid://72668739203416',
     MaxTabs = 6,
@@ -311,8 +311,8 @@ function NotificationManager:createContainer()
 
     self.container = create('Frame', {
         Name = 'NotificationContainer',
-        Size = UDim2.new(0, 350, 1, -80),
-        Position = UDim2.new(1, -370, 0, 40),
+        Size = isMobile and UDim2.new(0, 280, 1, -80) or UDim2.new(0, 350, 1, -80),
+        Position = isMobile and UDim2.new(1, -300, 0, 40) or UDim2.new(1, -370, 0, 40),
         BackgroundTransparency = 1,
         Parent = notifGui,
     })
@@ -355,7 +355,7 @@ function NotificationManager:createNotification(title, message, duration, notifT
     local scheme = colors[notifType] or colors.info
 
     local notifFrame = create('Frame', {
-        Size = UDim2.new(0, 340, 0, 65),
+        Size = isMobile and UDim2.new(0, 270, 0, 55) or UDim2.new(0, 340, 0, 65),
         BackgroundColor3 = Color3.fromRGB(22, 22, 22),
         BorderSizePixel = 0,
         Parent = self.container,
@@ -391,12 +391,12 @@ function NotificationManager:createNotification(title, message, duration, notifT
         info = 'ℹ',
     }
     local icon = create('TextLabel', {
-        Size = UDim2.new(0, 35, 0, 35),
-        Position = UDim2.new(0, 12, 0, 15),
+        Size = isMobile and UDim2.new(0, 28, 0, 28) or UDim2.new(0, 35, 0, 35),
+        Position = isMobile and UDim2.new(0, 10, 0, 13.5) or UDim2.new(0, 12, 0, 15),
         BackgroundColor3 = scheme.bg,
         Text = icons[notifType] or icons.info,
         TextColor3 = scheme.icon,
-        TextSize = 16,
+        TextSize = isMobile and 14 or 16,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -406,12 +406,12 @@ function NotificationManager:createNotification(title, message, duration, notifT
     addStroke(icon, scheme.accent, 1)
 
     create('TextLabel', {
-        Size = UDim2.new(1, -80, 0, 18),
-        Position = UDim2.new(0, 55, 0, 16),
+        Size = isMobile and UDim2.new(1, -65, 0, 16) or UDim2.new(1, -80, 0, 18),
+        Position = isMobile and UDim2.new(0, 45, 0, 14) or UDim2.new(0, 55, 0, 16),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Color3.fromRGB(245, 245, 250),
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
@@ -419,12 +419,12 @@ function NotificationManager:createNotification(title, message, duration, notifT
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -80, 0, 14),
-        Position = UDim2.new(0, 55, 0, 35),
+        Size = isMobile and UDim2.new(1, -65, 0, 12) or UDim2.new(1, -80, 0, 14),
+        Position = isMobile and UDim2.new(0, 45, 0, 30) or UDim2.new(0, 55, 0, 35),
         BackgroundTransparency = 1,
         Text = message,
         TextColor3 = Color3.fromRGB(170, 170, 180),
-        TextSize = 11,
+        TextSize = isMobile and 10 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextWrapped = true,
@@ -432,12 +432,12 @@ function NotificationManager:createNotification(title, message, duration, notifT
     })
 
     local closeBtn = create('TextButton', {
-        Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(1, -25, 0, 5),
+        Size = isMobile and UDim2.new(0, 18, 0, 18) or UDim2.new(0, 20, 0, 20),
+        Position = isMobile and UDim2.new(1, -22, 0, 4) or UDim2.new(1, -25, 0, 5),
         BackgroundColor3 = Color3.fromRGB(35, 35, 40),
         Text = '×',
         TextColor3 = Color3.fromRGB(170, 170, 180),
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamBold,
         Parent = notifFrame,
     })
@@ -464,13 +464,15 @@ function NotificationManager:createNotification(title, message, duration, notifT
     closeBtn.MouseEnter:Connect(function()
         closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         closeBtn.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
-        tween(closeBtn, 0.1, { Size = UDim2.new(0, 22, 0, 22) }):Play()
+        local hoverSize = isMobile and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 22, 0, 22)
+        tween(closeBtn, 0.1, { Size = hoverSize }):Play()
     end)
 
     closeBtn.MouseLeave:Connect(function()
         closeBtn.TextColor3 = Color3.fromRGB(190, 190, 200)
         closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-        tween(closeBtn, 0.1, { Size = UDim2.new(0, 20, 0, 20) }):Play()
+        local normalSize = isMobile and UDim2.new(0, 18, 0, 18) or UDim2.new(0, 20, 0, 20)
+        tween(closeBtn, 0.1, { Size = normalSize }):Play()
     end)
 
     progressTween.Completed:Connect(removeNotification)
@@ -648,13 +650,26 @@ function RadiantHub:createMain()
 
     -- Player Name Label
     local playerNameLabel = create('TextLabel', {
-        Size = UDim2.new(0, 120, 0, 20),
-        Position = UDim2.new(1, -280, 0.5, -10),
+        Size = UDim2.new(0, 120, 0, 16),
+        Position = UDim2.new(1, -220, 0.5, -18),
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
         TextSize = 14,
         Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = self.header,
+    })
+
+    -- License Label (Free)
+    local licenseLabel = create('TextLabel', {
+        Size = UDim2.new(0, 120, 0, 12),
+        Position = UDim2.new(1, -220, 0.5, -2),
+        BackgroundTransparency = 1,
+        Text = 'Free',
+        TextColor3 = Config.Colors.SubText,
+        TextSize = 11,
+        Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = self.header,
     })
@@ -679,7 +694,7 @@ function RadiantHub:createMain()
     -- Minimize Button
     self.minimizeBtn = create('TextButton', {
         Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -112, 0.5, -19.5),
+        Position = UDim2.new(1, -108, 0.5, -15.5),
         BackgroundTransparency = 1,
         Text = '−',
         TextColor3 = Config.Colors.Text,
