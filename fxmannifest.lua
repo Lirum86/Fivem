@@ -16,7 +16,7 @@
     -- Library Configuration
     local Config = {
         Size = isMobile and { 420, 320 } or { 750, 550 }, -- Much smaller size for mobile
-        TabIconSize = isMobile and 28 or 45, -- Smaller icons for mobile
+        TabIconSize = isMobile and 20 or 45, -- Much smaller icons for mobile
         DefaultTab = 'Player',
         Logo = 'rbxassetid://72668739203416',
         MaxTabs = 6,
@@ -614,7 +614,7 @@
         })
 
         self.tabContainer = create('Frame', {
-            Size = UDim2.new(0, isMobile and 80 or 85, 1, -10), -- Proper size for mobile tabs
+            Size = UDim2.new(0, isMobile and 60 or 85, 1, -10), -- Much smaller for mobile
             Position = UDim2.new(0, 10, 0, 10),
             BackgroundColor3 = Config.Colors.Background,
             Parent = self.main,
@@ -623,99 +623,101 @@
         
         -- Container for normal tabs (Logo + normal tabs) - takes upper area
         self.normalTabsContainer = create('Frame', {
-            Size = UDim2.new(1, 0, 1, isMobile and -85 or -95), -- Mobile responsive bottom space
+            Size = UDim2.new(1, 0, 1, isMobile and -60 or -95), -- Mobile responsive bottom space
             Position = UDim2.new(0, 0, 0, 0),
             BackgroundTransparency = 1,
             Parent = self.tabContainer,
         })
         
         create('UIPadding', {
-            PaddingTop = UDim.new(0, isMobile and 12 or 15),
-            PaddingLeft = UDim.new(0, isMobile and 12 or 15),
-            PaddingRight = UDim.new(0, isMobile and 12 or 15),
-            PaddingBottom = UDim.new(0, isMobile and 12 or 15),
+            PaddingTop = UDim.new(0, isMobile and 8 or 15),
+            PaddingLeft = UDim.new(0, isMobile and 8 or 15),
+            PaddingRight = UDim.new(0, isMobile and 8 or 15),
+            PaddingBottom = UDim.new(0, isMobile and 8 or 15),
             Parent = self.normalTabsContainer,
         })
 
         create('UIListLayout', {
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
-            Padding = UDim.new(0, isMobile and 8 or 10),
+            Padding = UDim.new(0, isMobile and 5 or 10),
             Parent = self.normalTabsContainer,
         })
         
         -- Container for settings tab - fixed at bottom
         self.settingsContainer = create('Frame', {
-            Size = UDim2.new(1, 0, 0, isMobile and 85 or 95), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 1, isMobile and -85 or -95), -- Fixed at bottom 
+            Size = UDim2.new(1, 0, 0, isMobile and 60 or 95), -- Much smaller for mobile
+            Position = UDim2.new(0, 0, 1, isMobile and -60 or -95), -- Fixed at bottom 
             BackgroundTransparency = 1,
             Parent = self.tabContainer,
         })
         
         create('UIPadding', {
-            PaddingTop = UDim.new(0, isMobile and 12 or 15),
-            PaddingLeft = UDim.new(0, isMobile and 12 or 15),
-            PaddingRight = UDim.new(0, isMobile and 12 or 15),
-            PaddingBottom = UDim.new(0, isMobile and 12 or 15),
+            PaddingTop = UDim.new(0, isMobile and 8 or 15),
+            PaddingLeft = UDim.new(0, isMobile and 8 or 15),
+            PaddingRight = UDim.new(0, isMobile and 8 or 15),
+            PaddingBottom = UDim.new(0, isMobile and 8 or 15),
             Parent = self.settingsContainer,
         })
 
         self:createLogo()
 
         self.header = create('Frame', {
-            Size = UDim2.new(1, isMobile and -100 or -105, 0, isMobile and 60 or 70), -- Adjusted for new tab size
-            Position = UDim2.new(0, isMobile and 100 or 105, 0, 10),
+            Size = UDim2.new(1, isMobile and -80 or -105, 0, isMobile and 50 or 70), -- Smaller for mobile
+            Position = UDim2.new(0, isMobile and 80 or 105, 0, 10),
             BackgroundColor3 = Config.Colors.Header,
             Parent = self.main,
         })
         addCorner(self.header, 12)
 
         self.title = create('TextLabel', {
-            Size = UDim2.new(0, 200, 1, 0),
-            Position = UDim2.new(0, 25, 0, 0),
+            Size = UDim2.new(0, isMobile and 120 or 200, 1, 0),
+            Position = UDim2.new(0, isMobile and 15 or 25, 0, 0),
             BackgroundTransparency = 1,
             Text = 'RadiantHub',
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 18 or 22,
+            TextSize = isMobile and 14 or 22,
             Font = Enum.Font.GothamBold,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = self.header,
         })
 
-        -- Player Name Label (Links neben Avatar)
-        local playerNameLabel = create('TextLabel', {
-            Size = UDim2.new(0, 120, 0, 16),
-            Position = UDim2.new(1, -290, 0.5, -15), -- 3px nach unten (von -18 zu -15)
-            BackgroundTransparency = 1,
-            Text = Player.Name,
-            TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 12 or 14,
-            Font = Enum.Font.GothamBold,
-            TextXAlignment = Enum.TextXAlignment.Right, -- Rechtsbündig damit es zur Avatar-Kante zeigt
-            Parent = self.header,
-        })
+        -- Player Name Label (Links neben Avatar) - nur für Desktop
+        if not isMobile then
+            local playerNameLabel = create('TextLabel', {
+                Size = UDim2.new(0, 120, 0, 16),
+                Position = UDim2.new(1, -290, 0.5, -15),
+                BackgroundTransparency = 1,
+                Text = Player.Name,
+                TextColor3 = Config.Colors.Text,
+                TextSize = 14,
+                Font = Enum.Font.GothamBold,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                Parent = self.header,
+            })
 
-        -- License Label (Free) - direkt unter dem Namen
-        local licenseLabel = create('TextLabel', {
-            Size = UDim2.new(0, 120, 0, 12),
-            Position = UDim2.new(1, -290, 0.5, 1), -- 3px nach unten (von -2 zu 1)
-            BackgroundTransparency = 1,
-            Text = 'Free',
-            TextColor3 = Config.Colors.SubText,
-            TextSize = 11,
-            Font = Enum.Font.Gotham,
-            TextXAlignment = Enum.TextXAlignment.Right,
-            Parent = self.header,
-        })
+            -- License Label (Free) - direkt unter dem Namen
+            local licenseLabel = create('TextLabel', {
+                Size = UDim2.new(0, 120, 0, 12),
+                Position = UDim2.new(1, -290, 0.5, 1),
+                BackgroundTransparency = 1,
+                Text = 'Free',
+                TextColor3 = Config.Colors.SubText,
+                TextSize = 11,
+                Font = Enum.Font.Gotham,
+                TextXAlignment = Enum.TextXAlignment.Right,
+                Parent = self.header,
+            })
+        end
 
         local avatar = create('Frame', {
-            Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
-            Position = UDim2.new(1, isMobile and -140 or -165, 0.5, isMobile and -17.5 or -22.5),
+            Size = UDim2.new(0, isMobile and 25 or 45, 0, isMobile and 25 or 45),
+            Position = UDim2.new(1, isMobile and -95 or -165, 0.5, isMobile and -12.5 or -22.5),
             BackgroundColor3 = Config.Colors.Hover,
             Parent = self.header,
         })
-        addCorner(avatar, isMobile and 17.5 or 22.5)
-        addStroke(avatar, Config.Colors.Active, 2)
+        addCorner(avatar, isMobile and 12.5 or 22.5)
+        addStroke(avatar, Config.Colors.Active, isMobile and 1 or 2)
 
         local avatarImg = create('ImageLabel', {
             Size = UDim2.new(1, 0, 1, 0),
@@ -723,34 +725,34 @@
             Image = 'https://www.roblox.com/headshot-thumbnail/image?userId=' .. Player.UserId .. '&width=150&height=150&format=png',
             Parent = avatar,
         })
-        addCorner(avatarImg, isMobile and 17.5 or 22.5)
+        addCorner(avatarImg, isMobile and 12.5 or 22.5)
 
         -- Minimize Button
         self.minimizeBtn = create('TextButton', {
-            Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
-            Position = UDim2.new(1, isMobile and -85 or -103, 0.5, isMobile and -12.5 or -15.5),
+            Size = UDim2.new(0, isMobile and 25 or 45, 0, isMobile and 25 or 45),
+            Position = UDim2.new(1, isMobile and -65 or -103, 0.5, isMobile and -12.5 or -15.5),
             BackgroundTransparency = 1,
             Text = '−',
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 24 or 32,
+            TextSize = isMobile and 16 or 32,
             Font = Enum.Font.GothamBold,
             Parent = self.header,
         })
 
         self.closeBtn = create('TextButton', {
-            Size = UDim2.new(0, isMobile and 35 or 45, 0, isMobile and 35 or 45),
-            Position = UDim2.new(1, isMobile and -45 or -60, 0.5, isMobile and -17.5 or -22.5),
+            Size = UDim2.new(0, isMobile and 25 or 45, 0, isMobile and 25 or 45),
+            Position = UDim2.new(1, isMobile and -35 or -60, 0.5, isMobile and -12.5 or -22.5),
             BackgroundTransparency = 1,
             Text = '×',
             TextColor3 = Config.Colors.Text,
-            TextSize = 32,
+            TextSize = isMobile and 16 or 32,
             Font = Enum.Font.GothamBold,
             Parent = self.header,
         })
 
         self.contentFrame = create('Frame', {
-            Size = UDim2.new(1, isMobile and -100 or -105, 1, isMobile and -80 or -90), -- Adjusted for new tab size
-            Position = UDim2.new(0, isMobile and 100 or 105, 0, isMobile and 80 or 90),
+            Size = UDim2.new(1, isMobile and -80 or -105, 1, isMobile and -70 or -90), -- Smaller for mobile
+            Position = UDim2.new(0, isMobile and 80 or 105, 0, isMobile and 70 or 90),
             BackgroundColor3 = Config.Colors.Background,
             Parent = self.main,
         })
@@ -759,22 +761,27 @@
     end
 
     function RadiantHub:createLogo()
+        -- Fixed sizes for mobile vs desktop
+        local logoSize = isMobile and 40 or (Config.TabIconSize + 20)
+        local glowOffset = isMobile and 4 or 8
+        local imageInset = isMobile and 6 or 8
+        
         local logoContainer = create('Frame', {
-            Size = UDim2.new(0, Config.TabIconSize + 20, 0, Config.TabIconSize + 20), -- Mobile responsive
+            Size = UDim2.new(0, logoSize, 0, logoSize),
             BackgroundTransparency = 1,
             LayoutOrder = 0,
             Parent = self.normalTabsContainer, -- Logo goes to normal tabs container
         })
 
         local glow = create('Frame', {
-            Size = UDim2.new(1, 8, 1, 8),
-            Position = UDim2.new(0, -4, 0, -4),
+            Size = UDim2.new(1, glowOffset * 2, 1, glowOffset * 2),
+            Position = UDim2.new(0, -glowOffset, 0, -glowOffset),
             BackgroundColor3 = Config.Colors.Active,
             BackgroundTransparency = 0.85,
             ZIndex = 1,
             Parent = logoContainer,
         })
-        addCorner(glow, (Config.TabIconSize + 20) / 2 + 3)
+        addCorner(glow, logoSize / 2 + glowOffset)
 
         self.logoFrame = create('Frame', {
             Size = UDim2.new(1, 0, 1, 0),
@@ -782,36 +789,59 @@
             ZIndex = 2,
             Parent = logoContainer,
         })
-        addCorner(self.logoFrame, (Config.TabIconSize + 20) / 2)
-        addStroke(self.logoFrame, Config.Colors.Active, 2)
+        addCorner(self.logoFrame, logoSize / 2)
+        addStroke(self.logoFrame, Config.Colors.Active, isMobile and 1 or 2)
 
         local logoImg = create('ImageLabel', {
-            Size = UDim2.new(1, -8, 1, -8),
-            Position = UDim2.new(0, 4, 0, 4),
+            Size = UDim2.new(1, -imageInset, 1, -imageInset),
+            Position = UDim2.new(0, imageInset / 2, 0, imageInset / 2),
             BackgroundTransparency = 1,
             Image = Config.Logo,
             ZIndex = 3,
             Parent = self.logoFrame,
         })
-        addCorner(logoImg, (Config.TabIconSize + 20) / 2 - 4)
+        addCorner(logoImg, logoSize / 2 - imageInset / 2)
 
-        local logoBtn = create('TextButton', {
-            Size = UDim2.new(1, 0, 1, 0),
-            BackgroundTransparency = 1,
-            Text = '',
-            ZIndex = 4,
-            Parent = self.logoFrame,
-        })
+        -- Improved click detection that doesn't interfere with dragging
+        local clickStartTime = 0
+        local clickStartPosition = nil
+        local isDragging = false
 
-        -- Logo click to minimize/maximize
-        logoBtn.MouseButton1Click:Connect(function()
-            self:toggleMinimize()
+        self.logoFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                clickStartTime = tick()
+                clickStartPosition = input.Position
+                isDragging = false
+            end
+        end)
+
+        self.logoFrame.InputChanged:Connect(function(input)
+            if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and clickStartPosition then
+                local currentPos = input.Position
+                local distance = (currentPos - clickStartPosition).Magnitude
+                if distance > 5 then -- 5 pixel threshold
+                    isDragging = true
+                end
+            end
+        end)
+
+        self.logoFrame.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                local clickDuration = tick() - clickStartTime
+                if not isDragging and clickDuration < 0.3 then -- Short click = minimize
+                    self:toggleMinimize()
+                end
+                clickStartPosition = nil
+                isDragging = false
+            end
         end)
         
-        -- Mobile touch support
+        -- Mobile touch support (additional)
         if isMobile then
-            logoBtn.TouchTap:Connect(function()
-                self:toggleMinimize()
+            self.logoFrame.TouchTap:Connect(function()
+                if not isDragging then
+                    self:toggleMinimize()
+                end
             end)
         end
     end
@@ -822,14 +852,14 @@
         
         -- Create tab button with slight adjustment down and left
         local tabBtn = create('ImageButton', {
-            Size = UDim2.new(0, isMobile and 50 or 65, 0, isMobile and 50 or 65), -- Mobile responsive size
-            Position = UDim2.new(0, isMobile and -3 or -4, 0, isMobile and 3 or 5), -- Better positioning for mobile
+            Size = UDim2.new(0, isMobile and 40 or 65, 0, isMobile and 40 or 65), -- Much smaller for mobile
+            Position = UDim2.new(0, isMobile and 2 or -4, 0, isMobile and 2 or 5), -- Centered for mobile
             BackgroundColor3 = Config.Colors.Inactive,
             Image = '',
             Parent = self.settingsContainer, -- Use the settings container
         })
-        addCorner(tabBtn, 12)
-        addPadding(tabBtn, isMobile and 8 or 11) -- Smaller padding for mobile
+        addCorner(tabBtn, isMobile and 8 or 12)
+        addPadding(tabBtn, isMobile and 6 or 11) -- Much smaller padding for mobile
 
         local icon = create('ImageLabel', {
             Size = UDim2.new(0, Config.TabIconSize, 0, Config.TabIconSize),
@@ -955,14 +985,14 @@
         
         -- Create tab button
         local tabBtn = create('ImageButton', {
-            Size = UDim2.new(0, isMobile and 50 or 65, 0, isMobile and 50 or 65), -- Mobile responsive size
+            Size = UDim2.new(0, isMobile and 40 or 65, 0, isMobile and 40 or 65), -- Much smaller for mobile
             BackgroundColor3 = Config.Colors.Inactive,
             Image = '',
             LayoutOrder = self.currentLayoutOrder,
             Parent = self.normalTabsContainer, -- Normal tabs go to normal tabs container
         })
-        addCorner(tabBtn, 12)
-        addPadding(tabBtn, isMobile and 8 or 11) -- Smaller padding for mobile
+        addCorner(tabBtn, isMobile and 8 or 12)
+        addPadding(tabBtn, isMobile and 6 or 11) -- Much smaller padding for mobile
         
         self.currentLayoutOrder = self.currentLayoutOrder + 1
 
@@ -1897,7 +1927,7 @@
             self.minimizedLogo:Destroy()
         end
         
-        local logoSize = isMobile and 90 or 70 -- Größer für Mobile
+        local logoSize = isMobile and 60 or 70 -- Optimized size for mobile
         
         self.minimizedLogo = create('Frame', {
             Size = UDim2.new(0, logoSize, 0, logoSize),
@@ -1908,29 +1938,29 @@
             Draggable = true, -- Einfaches, robustes Dragging
         })
         addCorner(self.minimizedLogo, logoSize / 2)
-        addStroke(self.minimizedLogo, Config.Colors.Active, isMobile and 4 or 3) -- Dickerer Stroke für Mobile
+        addStroke(self.minimizedLogo, Config.Colors.Active, isMobile and 2 or 3)
         
         -- Glow effect
         local glow = create('Frame', {
-            Size = UDim2.new(1, isMobile and 15 or 10, 1, isMobile and 15 or 10),
-            Position = UDim2.new(0, isMobile and -7.5 or -5, 0, isMobile and -7.5 or -5),
+            Size = UDim2.new(1, isMobile and 8 or 10, 1, isMobile and 8 or 10),
+            Position = UDim2.new(0, isMobile and -4 or -5, 0, isMobile and -4 or -5),
             BackgroundColor3 = Config.Colors.Active,
-            BackgroundTransparency = 0.7, -- Weniger transparent für bessere Sichtbarkeit
+            BackgroundTransparency = 0.7,
             ZIndex = 1,
             Parent = self.minimizedLogo,
         })
-        addCorner(glow, logoSize / 2 + (isMobile and 7.5 or 5))
+        addCorner(glow, logoSize / 2 + (isMobile and 4 or 5))
         
         -- Logo image
         local logoImg = create('ImageLabel', {
-            Size = UDim2.new(1, isMobile and -20 or -15, 1, isMobile and -20 or -15),
-            Position = UDim2.new(0, isMobile and 10 or 7.5, 0, isMobile and 10 or 7.5),
+            Size = UDim2.new(1, isMobile and -12 or -15, 1, isMobile and -12 or -15),
+            Position = UDim2.new(0, isMobile and 6 or 7.5, 0, isMobile and 6 or 7.5),
             BackgroundTransparency = 1,
             Image = Config.Logo,
             ZIndex = 3,
             Parent = self.minimizedLogo,
         })
-        addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
+        addCorner(logoImg, logoSize / 2 - (isMobile and 6 or 7.5))
         
         -- ✅ BESSERE LÖSUNG: Logo selbst clickbar machen ohne Button der Dragging blockiert
         local clickStartTime = 0
