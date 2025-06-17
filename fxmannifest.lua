@@ -946,22 +946,22 @@
         end
 
         -- Left column - Menu Settings
-        local menuSection = self:createSettingsSection(columns[1], 'Menu Settings', UDim2.new(1, 0, 0, 160))
+        local menuSection = self:createSettingsSection(columns[1], 'Menu Settings', UDim2.new(1, 0, 0, isMobile and 140 or 180))
         
-        self.menuKeybind = self:createKeybind(menuSection, 'Menu Toggle Key', 'RightShift', UDim2.new(0, 0, 0, 40))
-        self.watermarkToggle = self:createToggle(menuSection, 'Show Watermark', 'Display performance watermark', true, UDim2.new(0, 0, 0, 90))
+        self.menuKeybind = self:createKeybind(menuSection, 'Menu Toggle Key', 'RightShift', UDim2.new(0, 0, 0, isMobile and 35 or 45))
+        self.watermarkToggle = self:createToggle(menuSection, 'Show Watermark', 'Display performance watermark', true, UDim2.new(0, 0, 0, isMobile and 75 or 100))
 
         -- Right column - Library Info
-        local infoSection = self:createSettingsSection(columns[2], 'Library Information', UDim2.new(1, 0, 0, 180))
+        local infoSection = self:createSettingsSection(columns[2], 'Library Information', UDim2.new(1, 0, 0, isMobile and 140 or 200))
         
         create('TextLabel', {
-            Size = UDim2.new(1, 0, 0, 120),
-            Position = UDim2.new(0, 0, 0, 40),
+            Size = UDim2.new(1, 0, 0, isMobile and 100 or 140),
+            Position = UDim2.new(0, 0, 0, isMobile and 30 or 40),
             BackgroundTransparency = 1,
             TextWrapped = true,
             Text = 'RadiantHub GUI Library v2.1\n\n✅ Dynamic Tab Creation\n✅ Auto-Resizing Sections\n✅ Complete Element Support\n✅ Notification System\n✅ Performance Watermark',
             TextColor3 = Config.Colors.Text,
-            TextSize = 12,
+            TextSize = isMobile and 10 or 12, -- Smaller text for mobile
             Font = Enum.Font.Gotham,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top,
@@ -1593,54 +1593,54 @@
         return section
     end
 
-    -- Helper functions for settings elements
-    function RadiantHub:createToggle(parent, title, desc, state, pos)
-        local frame = create('Frame', {
-            Size = UDim2.new(1, -5, 0, isMobile and 24 or 32), -- Mobile responsive
-            Position = pos or UDim2.new(0, 25, 0, 35),
-            BackgroundTransparency = 1,
-            Parent = parent,
-        })
+            -- Helper functions for settings elements
+        function RadiantHub:createToggle(parent, title, desc, state, pos)
+            local frame = create('Frame', {
+                Size = UDim2.new(1, -5, 0, isMobile and 30 or 40), -- Larger frame for better spacing
+                Position = pos or UDim2.new(0, 25, 0, 35),
+                BackgroundTransparency = 1,
+                Parent = parent,
+            })
 
-        create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -32 or -55, 0, isMobile and 12 or 16), -- Mobile responsive
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
-            BackgroundTransparency = 1,
-            Text = title,
-            TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 11 or 14, -- Smaller text for mobile
-            Font = Enum.Font.GothamMedium,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = frame,
-        })
+            create('TextLabel', {
+                Size = UDim2.new(1, isMobile and -35 or -55, 0, isMobile and 14 or 18), -- Better proportions
+                Position = UDim2.new(0, 0, 0, isMobile and 2 or 3),
+                BackgroundTransparency = 1,
+                Text = title,
+                TextColor3 = Config.Colors.Text,
+                TextSize = isMobile and 12 or 14, -- Slightly larger for readability
+                Font = Enum.Font.GothamMedium,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = frame,
+            })
 
-        create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -32 or -55, 0, isMobile and 8 or 12), -- Mobile responsive
-            Position = UDim2.new(0, 0, 0, isMobile and 12 or 18),
-            BackgroundTransparency = 1,
-            Text = desc,
-            TextColor3 = Config.Colors.SubText,
-            TextSize = isMobile and 9 or 11, -- Smaller text for mobile
-            Font = Enum.Font.Gotham,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = frame,
-        })
+            create('TextLabel', {
+                Size = UDim2.new(1, isMobile and -35 or -55, 0, isMobile and 10 or 14), -- Better proportions
+                Position = UDim2.new(0, 0, 0, isMobile and 16 or 21), -- Better spacing from title
+                BackgroundTransparency = 1,
+                Text = desc,
+                TextColor3 = Config.Colors.SubText,
+                TextSize = isMobile and 10 or 11, -- Slightly larger for readability
+                Font = Enum.Font.Gotham,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = frame,
+            })
 
-        local switch = create('Frame', {
-            Size = UDim2.new(0, isMobile and 28 or 45, 0, isMobile and 14 or 20), -- Mobile responsive
-            Position = UDim2.new(1, isMobile and -30 or -50, 0.5, isMobile and -7 or -10),
-            BackgroundColor3 = state and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
-            Parent = frame,
-        })
-        addCorner(switch, isMobile and 7 or 10)
+            local switch = create('Frame', {
+                Size = UDim2.new(0, isMobile and 30 or 45, 0, isMobile and 16 or 20), -- Slightly larger switch
+                Position = UDim2.new(1, isMobile and -32 or -50, 0.5, isMobile and -8 or -10), -- Centered better
+                BackgroundColor3 = state and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
+                Parent = frame,
+            })
+            addCorner(switch, isMobile and 8 or 10)
 
-        local knob = create('Frame', {
-            Size = UDim2.new(0, isMobile and 10 or 16, 0, isMobile and 10 or 16), -- Mobile responsive
-            Position = state and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8),
-            BackgroundColor3 = Config.Colors.Text,
-            Parent = switch,
-        })
-        addCorner(knob, isMobile and 5 or 8)
+            local knob = create('Frame', {
+                Size = UDim2.new(0, isMobile and 12 or 16, 0, isMobile and 12 or 16), -- Slightly larger knob
+                Position = state and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8), -- Better centering
+                BackgroundColor3 = Config.Colors.Text,
+                Parent = switch,
+            })
+            addCorner(knob, isMobile and 6 or 8)
 
         local btn = create('TextButton', {
             Size = UDim2.new(1, 0, 1, 0),
@@ -1672,38 +1672,38 @@
         return frame
     end
 
-    function RadiantHub:createKeybind(parent, title, key, pos)
-        local frame = create('Frame', {
-            Size = UDim2.new(1, -5, 0, isMobile and 22 or 32), -- Mobile responsive
-            Position = pos or UDim2.new(0, 25, 0, 35),
-            BackgroundTransparency = 1,
-            Parent = parent,
-        })
+            function RadiantHub:createKeybind(parent, title, key, pos)
+            local frame = create('Frame', {
+                Size = UDim2.new(1, -5, 0, isMobile and 26 or 36), -- Larger frame for better spacing
+                Position = pos or UDim2.new(0, 25, 0, 35),
+                BackgroundTransparency = 1,
+                Parent = parent,
+            })
 
-        create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -40 or -75, 0, isMobile and 12 or 16), -- Mobile responsive
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
-            BackgroundTransparency = 1,
-            Text = title,
-            TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 11 or 14, -- Smaller text for mobile
-            Font = Enum.Font.GothamMedium,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = frame,
-        })
+            create('TextLabel', {
+                Size = UDim2.new(1, isMobile and -45 or -80, 0, isMobile and 14 or 18), -- Better proportions
+                Position = UDim2.new(0, 0, 0, isMobile and 6 or 9), -- Better centering in larger frame
+                BackgroundTransparency = 1,
+                Text = title,
+                TextColor3 = Config.Colors.Text,
+                TextSize = isMobile and 12 or 14, -- Slightly larger for readability
+                Font = Enum.Font.GothamMedium,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = frame,
+            })
 
-        local keyBtn = create('TextButton', {
-            Size = UDim2.new(0, isMobile and 36 or 70, 0, isMobile and 16 or 24), -- Mobile responsive
-            Position = UDim2.new(1, isMobile and -38 or -75, 0.5, isMobile and -8 or -12), -- Mobile responsive
-            BackgroundColor3 = Color3.fromRGB(35, 35, 40),
-            Text = key,
-            TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 9 or 13, -- Smaller text for mobile
-            Font = Enum.Font.GothamBold,
-            Parent = frame,
-        })
-        addCorner(keyBtn, 8)
-        addStroke(keyBtn)
+            local keyBtn = create('TextButton', {
+                Size = UDim2.new(0, isMobile and 40 or 75, 0, isMobile and 18 or 26), -- Slightly larger button
+                Position = UDim2.new(1, isMobile and -42 or -80, 0.5, isMobile and -9 or -13), -- Better centering
+                BackgroundColor3 = Color3.fromRGB(35, 35, 40),
+                Text = key,
+                TextColor3 = Config.Colors.Text,
+                TextSize = isMobile and 10 or 13, -- Slightly larger text for readability
+                Font = Enum.Font.GothamBold,
+                Parent = frame,
+            })
+            addCorner(keyBtn, 8)
+            addStroke(keyBtn)
 
         local listening = false
         keyBtn.MouseButton1Click:Connect(function()
@@ -3550,7 +3550,7 @@
         local configSection = self:createSettingsSection(
             columns[2], 
             'Config Management', 
-            UDim2.new(1, 0, 0, 380)
+            UDim2.new(1, 0, 0, isMobile and 300 or 420) -- Responsive section height
         )
         configSection.Name = 'Config Management Section'
         
@@ -3559,7 +3559,7 @@
             configSection, 
             'Config Name', 
             'Enter config name...', 
-            UDim2.new(0, 0, 0, 40)
+            UDim2.new(0, 0, 0, isMobile and 35 or 45) -- Better spacing
         )
         
         -- Create Config Button
@@ -3567,7 +3567,7 @@
             configSection, 
             'Create Config', 
             'Create new configuration', 
-            UDim2.new(0, 0, 0, 80),
+            UDim2.new(0, 0, 0, isMobile and 65 or 90), -- Better spacing
             function()
                 local configName = self.configNameInput.Text
                 if configName and configName ~= '' and self.configManager then
@@ -3584,7 +3584,7 @@
             configSection, 
             'Select Config', 
             self.configManager and self.configManager:getConfigList() or {'default'},
-            UDim2.new(0, 0, 0, 120)
+            UDim2.new(0, 0, 0, isMobile and 100 or 135) -- Better spacing
         )
         
         -- Update dropdown when config manager is ready
@@ -3601,7 +3601,7 @@
             configSection, 
             'Load Config', 
             'Load selected configuration', 
-            UDim2.new(0, 0, 0, 160),
+            UDim2.new(0, 0, 0, isMobile and 130 or 170), -- Better spacing
             function()
                 if self.configManager and self.configDropdown then
                     local selectedConfig = self.configDropdown.selectedValue
@@ -3622,7 +3622,7 @@
             configSection, 
             'Save Config', 
             'Save current settings', 
-            UDim2.new(0, 0, 0, 200),
+            UDim2.new(0, 0, 0, isMobile and 160 or 215), -- Better spacing
             function()
                 if self.configManager and self.configDropdown then
                     local selectedConfig = self.configDropdown.selectedValue
@@ -3643,7 +3643,7 @@
             configSection, 
             'Delete Config', 
             'Delete selected configuration', 
-            UDim2.new(0, 0, 0, 240),
+            UDim2.new(0, 0, 0, isMobile and 190 or 260), -- Better spacing
             function()
                 if self.configManager and self.configDropdown then
                     local selectedConfig = self.configDropdown.selectedValue
@@ -3662,7 +3662,7 @@
             'Auto Load Selected', 
             'Automatically load selected config on startup', 
             false, 
-            UDim2.new(0, 0, 0, 280),
+            UDim2.new(0, 0, 0, isMobile and 220 or 305), -- Better spacing
             function(enabled)
                 if self.configManager and self.configDropdown then
                     local selectedConfig = self.configDropdown.selectedValue
@@ -3983,53 +3983,53 @@
         return dropdownWrapper
     end
 
-    function RadiantHub:createConfigToggle(parent, title, desc, state, pos, callback)
-        local frame = create('Frame', {
-            Size = UDim2.new(1, -5, 0, isMobile and 24 or 32), -- Mobile responsive
-            Position = pos,
-            BackgroundTransparency = 1,
-            Parent = parent,
-        })
+            function RadiantHub:createConfigToggle(parent, title, desc, state, pos, callback)
+            local frame = create('Frame', {
+                Size = UDim2.new(1, -5, 0, isMobile and 30 or 40), -- Larger frame for better spacing
+                Position = pos,
+                BackgroundTransparency = 1,
+                Parent = parent,
+            })
 
-        create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -32 or -55, 0, isMobile and 12 or 16), -- Mobile responsive
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
-            BackgroundTransparency = 1,
-            Text = title,
-            TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 11 or 14, -- Smaller text for mobile
-            Font = Enum.Font.GothamMedium,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = frame,
-        })
+            create('TextLabel', {
+                Size = UDim2.new(1, isMobile and -35 or -55, 0, isMobile and 14 or 18), -- Better proportions
+                Position = UDim2.new(0, 0, 0, isMobile and 2 or 3),
+                BackgroundTransparency = 1,
+                Text = title,
+                TextColor3 = Config.Colors.Text,
+                TextSize = isMobile and 12 or 14, -- Slightly larger for readability
+                Font = Enum.Font.GothamMedium,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = frame,
+            })
 
-        create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -32 or -55, 0, isMobile and 8 or 12), -- Mobile responsive
-            Position = UDim2.new(0, 0, 0, isMobile and 12 or 18),
-            BackgroundTransparency = 1,
-            Text = desc,
-            TextColor3 = Config.Colors.SubText,
-            TextSize = isMobile and 9 or 11, -- Smaller text for mobile
-            Font = Enum.Font.Gotham,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = frame,
-        })
+            create('TextLabel', {
+                Size = UDim2.new(1, isMobile and -35 or -55, 0, isMobile and 10 or 14), -- Better proportions
+                Position = UDim2.new(0, 0, 0, isMobile and 16 or 21), -- Better spacing from title
+                BackgroundTransparency = 1,
+                Text = desc,
+                TextColor3 = Config.Colors.SubText,
+                TextSize = isMobile and 10 or 11, -- Slightly larger for readability
+                Font = Enum.Font.Gotham,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = frame,
+            })
 
-        local switch = create('Frame', {
-            Size = UDim2.new(0, isMobile and 28 or 45, 0, isMobile and 14 or 20), -- Mobile responsive
-            Position = UDim2.new(1, isMobile and -30 or -50, 0.5, isMobile and -7 or -10),
-            BackgroundColor3 = state and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
-            Parent = frame,
-        })
-        addCorner(switch, isMobile and 7 or 10)
+            local switch = create('Frame', {
+                Size = UDim2.new(0, isMobile and 30 or 45, 0, isMobile and 16 or 20), -- Slightly larger switch
+                Position = UDim2.new(1, isMobile and -32 or -50, 0.5, isMobile and -8 or -10), -- Centered better
+                BackgroundColor3 = state and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
+                Parent = frame,
+            })
+            addCorner(switch, isMobile and 8 or 10)
 
-        local knob = create('Frame', {
-            Size = UDim2.new(0, isMobile and 10 or 16, 0, isMobile and 10 or 16), -- Mobile responsive
-            Position = state and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8),
-            BackgroundColor3 = Config.Colors.Text,
-            Parent = switch,
-        })
-        addCorner(knob, isMobile and 5 or 8)
+            local knob = create('Frame', {
+                Size = UDim2.new(0, isMobile and 12 or 16, 0, isMobile and 12 or 16), -- Slightly larger knob
+                Position = state and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8), -- Better centering
+                BackgroundColor3 = Config.Colors.Text,
+                Parent = switch,
+            })
+            addCorner(knob, isMobile and 6 or 8)
 
         local btn = create('TextButton', {
             Size = UDim2.new(1, 0, 1, 0),
@@ -4039,16 +4039,16 @@
         })
 
         local isToggled = state
-        btn.MouseButton1Click:Connect(function()
-            isToggled = not isToggled
+                    btn.MouseButton1Click:Connect(function()
+                isToggled = not isToggled
 
-            tween(switch, 0.2, {
-                BackgroundColor3 = isToggled and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
-            }):Play()
+                tween(switch, 0.2, {
+                    BackgroundColor3 = isToggled and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
+                }):Play()
 
-            tween(knob, 0.2, {
-                Position = isToggled and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8),
-            }):Play()
+                tween(knob, 0.2, {
+                    Position = isToggled and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8),
+                }):Play()
 
             if callback then
                 callback(isToggled)
