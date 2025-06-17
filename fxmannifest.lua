@@ -97,8 +97,8 @@ function WatermarkManager:createWatermark()
 
     self.container = create('Frame', {
         Name = 'WatermarkContainer',
-        Size = UDim2.new(0, 320, 0, 70),
-        Position = UDim2.new(1, -360, 0, 20),
+        Size = isMobile and UDim2.new(0, 250, 0, 55) or UDim2.new(0, 320, 0, 70),
+        Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20),
         BackgroundColor3 = Color3.fromRGB(25, 25, 30),
         BorderSizePixel = 0,
         Parent = watermarkGui,
@@ -108,11 +108,11 @@ function WatermarkManager:createWatermark()
 
     create('TextLabel', {
         Size = UDim2.new(0, 120, 0, 25),
-        Position = UDim2.new(0, 15, 0, 8),
+        Position = UDim2.new(0, 15, 0, isMobile and 6 or 8),
         BackgroundTransparency = 1,
         Text = 'RadiantHub',
         TextColor3 = Config.Colors.Active,
-        TextSize = 18,
+        TextSize = isMobile and 16 or 18,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -121,11 +121,11 @@ function WatermarkManager:createWatermark()
 
     create('TextLabel', {
         Size = UDim2.new(0, 120, 0, 18),
-        Position = UDim2.new(0, 15, 0, 33),
+        Position = UDim2.new(0, 15, 0, isMobile and 26 or 33),
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
-        TextSize = 11,
+        TextSize = isMobile and 10 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -133,12 +133,12 @@ function WatermarkManager:createWatermark()
     })
 
     self.fpsLabel = create('TextLabel', {
-        Size = UDim2.new(0, 70, 0, 22),
-        Position = UDim2.new(1, -190, 0, 20),
+        Size = isMobile and UDim2.new(0, 60, 0, 18) or UDim2.new(0, 70, 0, 22),
+        Position = isMobile and UDim2.new(1, -155, 0, 16) or UDim2.new(1, -190, 0, 20),
         BackgroundTransparency = 1,
         Text = 'FPS: 60',
         TextColor3 = Color3.fromRGB(0, 255, 0),
-        TextSize = 13,
+        TextSize = isMobile and 11 or 13,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -146,12 +146,12 @@ function WatermarkManager:createWatermark()
     })
 
     self.pingLabel = create('TextLabel', {
-        Size = UDim2.new(0, 70, 0, 22),
-        Position = UDim2.new(1, -115, 0, 20),
+        Size = isMobile and UDim2.new(0, 60, 0, 18) or UDim2.new(0, 70, 0, 22),
+        Position = isMobile and UDim2.new(1, -90, 0, 16) or UDim2.new(1, -115, 0, 20),
         BackgroundTransparency = 1,
         Text = 'Ping: 0ms',
         TextColor3 = Config.Colors.Active,
-        TextSize = 13,
+        TextSize = isMobile and 11 or 13,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -159,8 +159,8 @@ function WatermarkManager:createWatermark()
     })
 
     self.fpsBar = create('Frame', {
-        Size = UDim2.new(0, 65, 0, 4),
-        Position = UDim2.new(1, -187, 0, 44),
+        Size = isMobile and UDim2.new(0, 55, 0, 3) or UDim2.new(0, 65, 0, 4),
+        Position = isMobile and UDim2.new(1, -152, 0, 36) or UDim2.new(1, -187, 0, 44),
         BackgroundColor3 = Color3.fromRGB(0, 255, 0),
         BorderSizePixel = 0,
         Parent = self.container,
@@ -168,8 +168,8 @@ function WatermarkManager:createWatermark()
     addCorner(self.fpsBar, 2)
 
     self.pingBar = create('Frame', {
-        Size = UDim2.new(0, 65, 0, 4),
-        Position = UDim2.new(1, -112, 0, 44),
+        Size = isMobile and UDim2.new(0, 55, 0, 3) or UDim2.new(0, 65, 0, 4),
+        Position = isMobile and UDim2.new(1, -87, 0, 36) or UDim2.new(1, -112, 0, 44),
         BackgroundColor3 = Config.Colors.Active,
         BorderSizePixel = 0,
         Parent = self.container,
@@ -180,7 +180,7 @@ function WatermarkManager:createWatermark()
     self.container.Draggable = true
 
     self.container.Position = UDim2.new(1, 20, 0, 20)
-    tween(self.container, 0.5, { Position = UDim2.new(1, -360, 0, 20) }):Play()
+    tween(self.container, 0.5, { Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
 end
 
 function WatermarkManager:startUpdating()
@@ -221,8 +221,10 @@ function WatermarkManager:updateStats(fps)
     self.fpsLabel.TextColor3 = fpsColor
 
     if self.fpsBar then
+        local maxWidth = isMobile and 55 or 65
+        local barHeight = isMobile and 3 or 4
         tween(self.fpsBar, 0.3, {
-            Size = UDim2.new(0, math.clamp(fps / 120 * 65, 5, 65), 0, 4),
+            Size = UDim2.new(0, math.clamp(fps / 120 * maxWidth, 5, maxWidth), 0, barHeight),
             BackgroundColor3 = fpsColor,
         }):Play()
     end
@@ -235,8 +237,10 @@ function WatermarkManager:updateStats(fps)
     self.pingLabel.TextColor3 = pingColor
 
     if self.pingBar then
+        local maxWidth = isMobile and 55 or 65
+        local barHeight = isMobile and 3 or 4
         tween(self.pingBar, 0.3, {
-            Size = UDim2.new(0, math.clamp((1 - ping / 300) * 65, 5, 65), 0, 4),
+            Size = UDim2.new(0, math.clamp((1 - ping / 300) * maxWidth, 5, maxWidth), 0, barHeight),
             BackgroundColor3 = pingColor,
         }):Play()
     end
@@ -259,7 +263,7 @@ function WatermarkManager:setVisible(visible)
 
     if visible then
         self.container.Visible = true
-        tween(self.container, 0.3, { Position = UDim2.new(1, -360, 0, 20) }):Play()
+        tween(self.container, 0.3, { Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
     else
         tween(self.container, 0.3, { Position = UDim2.new(1, 20, 0, 20) }):Play()
         task.delay(0.3, function()
@@ -645,7 +649,7 @@ function RadiantHub:createMain()
     -- Player Name Label
     local playerNameLabel = create('TextLabel', {
         Size = UDim2.new(0, 120, 0, 20),
-        Position = UDim2.new(1, -220, 0.5, -10),
+        Position = UDim2.new(1, -280, 0.5, -10),
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
@@ -675,7 +679,7 @@ function RadiantHub:createMain()
     -- Minimize Button
     self.minimizeBtn = create('TextButton', {
         Size = UDim2.new(0, 45, 0, 45),
-        Position = UDim2.new(1, -115, 0.5, -22.5),
+        Position = UDim2.new(1, -112, 0.5, -19.5),
         BackgroundTransparency = 1,
         Text = '−',
         TextColor3 = Config.Colors.Text,
@@ -1837,7 +1841,7 @@ function RadiantHub:createMinimizedLogo()
         self.minimizedLogo:Destroy()
     end
     
-    local logoSize = isMobile and 80 or 70
+    local logoSize = isMobile and 90 or 70 -- Größer für Mobile
     
     self.minimizedLogo = create('Frame', {
         Size = UDim2.new(0, logoSize, 0, logoSize),
@@ -1848,29 +1852,29 @@ function RadiantHub:createMinimizedLogo()
         Draggable = true, -- Make it draggable
     })
     addCorner(self.minimizedLogo, logoSize / 2)
-    addStroke(self.minimizedLogo, Config.Colors.Active, 3)
+    addStroke(self.minimizedLogo, Config.Colors.Active, isMobile and 4 or 3) -- Dickerer Stroke für Mobile
     
     -- Glow effect
     local glow = create('Frame', {
-        Size = UDim2.new(1, 10, 1, 10),
-        Position = UDim2.new(0, -5, 0, -5),
+        Size = UDim2.new(1, isMobile and 15 or 10, 1, isMobile and 15 or 10),
+        Position = UDim2.new(0, isMobile and -7.5 or -5, 0, isMobile and -7.5 or -5),
         BackgroundColor3 = Config.Colors.Active,
-        BackgroundTransparency = 0.8,
+        BackgroundTransparency = 0.7, -- Weniger transparent für bessere Sichtbarkeit
         ZIndex = 1,
         Parent = self.minimizedLogo,
     })
-    addCorner(glow, logoSize / 2 + 5)
+    addCorner(glow, logoSize / 2 + (isMobile and 7.5 or 5))
     
     -- Logo image
     local logoImg = create('ImageLabel', {
-        Size = UDim2.new(1, -15, 1, -15),
-        Position = UDim2.new(0, 7.5, 0, 7.5),
+        Size = UDim2.new(1, isMobile and -20 or -15, 1, isMobile and -20 or -15),
+        Position = UDim2.new(0, isMobile and 10 or 7.5, 0, isMobile and 10 or 7.5),
         BackgroundTransparency = 1,
         Image = Config.Logo,
         ZIndex = 3,
         Parent = self.minimizedLogo,
     })
-    addCorner(logoImg, logoSize / 2 - 7.5)
+    addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
     
     -- Click to maximize button
     local maximizeBtn = create('TextButton', {
