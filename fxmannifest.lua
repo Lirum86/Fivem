@@ -344,8 +344,8 @@
 
         self.container = create('Frame', {
             Name = 'NotificationContainer',
-            Size = isMobile and UDim2.new(0, 280, 1, -80) or UDim2.new(0, 350, 1, -80),
-            Position = isMobile and UDim2.new(1, -300, 0, 40) or UDim2.new(1, -370, 0, 40),
+            Size = isMobile and UDim2.new(0, 240, 1, -80) or UDim2.new(0, 320, 1, -80), -- Smaller width
+            Position = isMobile and UDim2.new(1, -260, 0, 40) or UDim2.new(1, -340, 0, 40), -- Adjusted position
             BackgroundTransparency = 1,
             Parent = notifGui,
         })
@@ -388,7 +388,7 @@
         local scheme = colors[notifType] or colors.info
 
         local notifFrame = create('Frame', {
-            Size = isMobile and UDim2.new(0, 270, 0, 55) or UDim2.new(0, 340, 0, 65),
+            Size = isMobile and UDim2.new(0, 230, 0, 45) or UDim2.new(0, 310, 0, 60), -- Smaller size
             BackgroundColor3 = Color3.fromRGB(22, 22, 22),
             BorderSizePixel = 0,
             Parent = self.container,
@@ -424,12 +424,12 @@
             info = 'ℹ',
         }
         local icon = create('TextLabel', {
-            Size = isMobile and UDim2.new(0, 28, 0, 28) or UDim2.new(0, 35, 0, 35),
-            Position = isMobile and UDim2.new(0, 10, 0, 13.5) or UDim2.new(0, 12, 0, 15),
+            Size = isMobile and UDim2.new(0, 22, 0, 22) or UDim2.new(0, 30, 0, 30), -- Smaller icon
+            Position = isMobile and UDim2.new(0, 8, 0, 11.5) or UDim2.new(0, 10, 0, 15), -- Adjusted position
             BackgroundColor3 = scheme.bg,
             Text = icons[notifType] or icons.info,
             TextColor3 = scheme.icon,
-            TextSize = isMobile and 12 or 16,
+            TextSize = isMobile and 10 or 14, -- Smaller text
             Font = Enum.Font.GothamBold,
             TextXAlignment = Enum.TextXAlignment.Center,
             TextYAlignment = Enum.TextYAlignment.Center,
@@ -439,12 +439,12 @@
         addStroke(icon, scheme.accent, 1)
 
         create('TextLabel', {
-            Size = isMobile and UDim2.new(1, -65, 0, 16) or UDim2.new(1, -80, 0, 18),
-            Position = isMobile and UDim2.new(0, 45, 0, 14) or UDim2.new(0, 55, 0, 16),
+            Size = isMobile and UDim2.new(1, -50, 0, 14) or UDim2.new(1, -70, 0, 16), -- Smaller size
+            Position = isMobile and UDim2.new(0, 35, 0, 10) or UDim2.new(0, 50, 0, 14), -- Adjusted position
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = Color3.fromRGB(245, 245, 250),
-            TextSize = isMobile and 11 or 14,
+            TextSize = isMobile and 9 or 13, -- Smaller text
             Font = Enum.Font.GothamBold,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,
@@ -452,12 +452,12 @@
         })
 
         create('TextLabel', {
-            Size = isMobile and UDim2.new(1, -65, 0, 12) or UDim2.new(1, -80, 0, 14),
-            Position = isMobile and UDim2.new(0, 45, 0, 30) or UDim2.new(0, 55, 0, 35),
+            Size = isMobile and UDim2.new(1, -50, 0, 10) or UDim2.new(1, -70, 0, 12), -- Smaller size
+            Position = isMobile and UDim2.new(0, 35, 0, 24) or UDim2.new(0, 50, 0, 32), -- Adjusted position
             BackgroundTransparency = 1,
             Text = message,
             TextColor3 = Color3.fromRGB(170, 170, 180),
-            TextSize = isMobile and 10 or 11,
+            TextSize = isMobile and 8 or 10, -- Smaller text
             Font = Enum.Font.Gotham,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextWrapped = true,
@@ -465,12 +465,12 @@
         })
 
         local closeBtn = create('TextButton', {
-            Size = isMobile and UDim2.new(0, 18, 0, 18) or UDim2.new(0, 20, 0, 20),
-            Position = isMobile and UDim2.new(1, -22, 0, 4) or UDim2.new(1, -25, 0, 5),
+            Size = isMobile and UDim2.new(0, 14, 0, 14) or UDim2.new(0, 18, 0, 18), -- Smaller close button
+            Position = isMobile and UDim2.new(1, -18, 0, 3) or UDim2.new(1, -22, 0, 4), -- Adjusted position
             BackgroundColor3 = Color3.fromRGB(35, 35, 40),
             Text = '×',
             TextColor3 = Color3.fromRGB(170, 170, 180),
-            TextSize = isMobile and 12 or 14,
+            TextSize = isMobile and 10 or 12, -- Smaller text
             Font = Enum.Font.GothamBold,
             Parent = notifFrame,
         })
@@ -497,14 +497,14 @@
         closeBtn.MouseEnter:Connect(function()
             closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             closeBtn.BackgroundColor3 = Color3.fromRGB(220, 70, 70)
-            local hoverSize = isMobile and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 22, 0, 22)
+            local hoverSize = isMobile and UDim2.new(0, 16, 0, 16) or UDim2.new(0, 20, 0, 20) -- Adjusted hover size
             tween(closeBtn, 0.1, { Size = hoverSize }):Play()
         end)
 
         closeBtn.MouseLeave:Connect(function()
             closeBtn.TextColor3 = Color3.fromRGB(190, 190, 200)
             closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-            local normalSize = isMobile and UDim2.new(0, 18, 0, 18) or UDim2.new(0, 20, 0, 20)
+            local normalSize = isMobile and UDim2.new(0, 14, 0, 14) or UDim2.new(0, 18, 0, 18) -- Adjusted normal size
             tween(closeBtn, 0.1, { Size = normalSize }):Play()
         end)
 
@@ -1203,12 +1203,12 @@
         -- Fixed title at the top (not affected by UIListLayout)
         local sectionTitle = create('TextLabel', {
             Name = 'SectionTitle',
-            Size = UDim2.new(1, 0, 0, 25),
+            Size = UDim2.new(1, 0, 0, isMobile and 20 or 25), -- Smaller height for mobile
             Position = UDim2.new(0, 0, 0, 0), -- Fixed position at top
             BackgroundTransparency = 1,
             Text = sectionName,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 13 or 16, -- Smaller section titles for mobile
+            TextSize = isMobile and 11 or 16, -- Even smaller section titles for mobile
             Font = Enum.Font.GothamBold,
             TextXAlignment = Enum.TextXAlignment.Left,
             ZIndex = 10, -- Ensure title is above other elements
@@ -1218,8 +1218,8 @@
         -- Container for elements (positioned below title)
         local elementsContainer = create('Frame', {
             Name = 'ElementsContainer',
-            Size = UDim2.new(1, 0, 1, -35), -- Full size minus title height and padding
-            Position = UDim2.new(0, 0, 0, 35), -- Start below title
+            Size = UDim2.new(1, 0, 1, isMobile and -30 or -35), -- Smaller padding for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 30 or 35), -- Start below title, smaller offset for mobile
             BackgroundTransparency = 1,
             Parent = section,
         })
@@ -1230,32 +1230,33 @@
             FillDirection = Enum.FillDirection.Vertical,
             HorizontalAlignment = Enum.HorizontalAlignment.Left,
             VerticalAlignment = Enum.VerticalAlignment.Top,
-            Padding = UDim.new(0, 10),
+            Padding = UDim.new(0, isMobile and 6 or 10), -- Smaller padding for mobile
             Parent = elementsContainer,
         })
 
         -- Auto-resize functionality
         local function updateSectionSize()
-            local totalHeight = 35 -- Title height + padding
+            local titleHeight = isMobile and 30 or 35 -- Smaller title height for mobile
+            local totalHeight = titleHeight -- Title height + padding
             for _, child in ipairs(elementsContainer:GetChildren()) do
                 if child:IsA('Frame') then
-                    totalHeight = totalHeight + child.Size.Y.Offset + 10 -- Element height + padding
+                    totalHeight = totalHeight + child.Size.Y.Offset + (isMobile and 8 or 10) -- Smaller padding for mobile
                 end
             end
-            section.Size = UDim2.new(1, 0, 0, totalHeight + 15) -- Extra padding at bottom
+            section.Size = UDim2.new(1, 0, 0, totalHeight + (isMobile and 10 or 15)) -- Smaller bottom padding for mobile
             
             -- Update elements container size
-            elementsContainer.Size = UDim2.new(1, 0, 0, totalHeight - 35)
+            elementsContainer.Size = UDim2.new(1, 0, 0, totalHeight - titleHeight)
             
             -- Update scroll canvas with extra space for colorpicker
             local canvasHeight = 0
             for _, child in ipairs(targetColumn:GetChildren()) do
                 if child:IsA('Frame') then
-                    canvasHeight = canvasHeight + child.Size.Y.Offset + 15
+                    canvasHeight = canvasHeight + child.Size.Y.Offset + (isMobile and 10 or 15) -- Smaller spacing for mobile
                 end
             end
             -- Add extra space for dropdown/colorpicker expansion
-            canvasHeight = canvasHeight + 300
+            canvasHeight = canvasHeight + (isMobile and 200 or 300) -- Less extra space for mobile
             targetColumn.CanvasSize = UDim2.new(0, 0, 0, canvasHeight)
         end
 
@@ -1288,50 +1289,50 @@
         callback = callback or function() end
 
         local frame = create('Frame', {
-            Size = UDim2.new(1, -2, 0, isMobile and 26 or 32), -- Smaller height for mobile
+            Size = UDim2.new(1, -2, 0, isMobile and 22 or 32), -- Even smaller height for mobile
             BackgroundTransparency = 1,
             Parent = elementsContainer,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -35 or -50, 0, isMobile and 12 or 16), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
+            Size = UDim2.new(1, isMobile and -28 or -50, 0, isMobile and 10 or 16), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 1 or 4),
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 10 or 14, -- Much smaller text for mobile
+            TextSize = isMobile and 9 or 14, -- Even smaller text for mobile
             Font = Enum.Font.GothamMedium,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -35 or -50, 0, isMobile and 8 or 12), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 12 or 18),
+            Size = UDim2.new(1, isMobile and -28 or -50, 0, isMobile and 7 or 12), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 10 or 18),
             BackgroundTransparency = 1,
             Text = desc,
             TextColor3 = Config.Colors.SubText,
-            TextSize = isMobile and 8 or 11, -- Much smaller text for mobile
+            TextSize = isMobile and 7 or 11, -- Even smaller text for mobile
             Font = Enum.Font.Gotham,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         local switch = create('Frame', {
-            Size = UDim2.new(0, isMobile and 30 or 45, 0, isMobile and 14 or 20), -- Much smaller switch for mobile
-            Position = UDim2.new(1, isMobile and -32 or -47, 0.5, isMobile and -7 or -10), -- Adjusted position
+            Size = UDim2.new(0, isMobile and 24 or 45, 0, isMobile and 12 or 20), -- Even smaller switch for mobile
+            Position = UDim2.new(1, isMobile and -26 or -47, 0.5, isMobile and -6 or -10), -- Adjusted position
             BackgroundColor3 = defaultState and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
             Parent = frame,
         })
-        addCorner(switch, isMobile and 7 or 10)
+        addCorner(switch, isMobile and 6 or 10)
 
         local knob = create('Frame', {
-            Size = UDim2.new(0, isMobile and 10 or 16, 0, isMobile and 10 or 16), -- Much smaller knob for mobile
-            Position = defaultState and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8),
+            Size = UDim2.new(0, isMobile and 8 or 16, 0, isMobile and 8 or 16), -- Even smaller knob for mobile
+            Position = defaultState and UDim2.new(1, isMobile and -10 or -18, 0.5, isMobile and -4 or -8) or UDim2.new(0, 2, 0.5, isMobile and -4 or -8),
             BackgroundColor3 = Config.Colors.Text,
             Parent = switch,
         })
-        addCorner(knob, isMobile and 5 or 8)
+        addCorner(knob, isMobile and 4 or 8)
 
         local btn = create('TextButton', {
             Size = UDim2.new(1, 0, 1, 0),
@@ -1349,7 +1350,7 @@
             }):Play()
 
             tween(knob, 0.2, {
-                Position = isToggled and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8),
+                Position = isToggled and UDim2.new(1, isMobile and -10 or -18, 0.5, isMobile and -4 or -8) or UDim2.new(0, 2, 0.5, isMobile and -4 or -8),
             }):Play()
 
             callback(isToggled)
@@ -1374,7 +1375,7 @@
             setValue = function(value) 
                 isToggled = value
                 switch.BackgroundColor3 = isToggled and Config.Colors.Active or Color3.fromRGB(50, 50, 55)
-                knob.Position = isToggled and UDim2.new(1, isMobile and -12 or -18, 0.5, isMobile and -5 or -8) or UDim2.new(0, 2, 0.5, isMobile and -5 or -8)
+                knob.Position = isToggled and UDim2.new(1, isMobile and -10 or -18, 0.5, isMobile and -4 or -8) or UDim2.new(0, 2, 0.5, isMobile and -4 or -8)
             end,
         }
 
@@ -1396,53 +1397,53 @@
         callback = callback or function() end
 
         local frame = create('Frame', {
-            Size = UDim2.new(1, -2, 0, isMobile and 40 or 50), -- Much smaller height for mobile
+            Size = UDim2.new(1, -2, 0, isMobile and 32 or 50), -- Even smaller height for mobile
             BackgroundTransparency = 1,
             Parent = elementsContainer,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -45 or -65, 0, isMobile and 12 or 16), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
+            Size = UDim2.new(1, isMobile and -36 or -65, 0, isMobile and 10 or 16), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 1 or 4),
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 10 or 14, -- Much smaller text for mobile
+            TextSize = isMobile and 9 or 14, -- Even smaller text for mobile
             Font = Enum.Font.GothamMedium,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -45 or -65, 0, isMobile and 8 or 12), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 12 or 18),
+            Size = UDim2.new(1, isMobile and -36 or -65, 0, isMobile and 7 or 12), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 10 or 18),
             BackgroundTransparency = 1,
             Text = desc,
             TextColor3 = Config.Colors.SubText,
-            TextSize = isMobile and 8 or 11, -- Much smaller text for mobile
+            TextSize = isMobile and 7 or 11, -- Even smaller text for mobile
             Font = Enum.Font.Gotham,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         local valueBox = create('TextBox', {
-            Size = UDim2.new(0, isMobile and 40 or 60, 0, isMobile and 14 or 20), -- Much smaller for mobile
-            Position = UDim2.new(1, isMobile and -42 or -62, 0, isMobile and 1 or 2), -- Adjusted for mobile
+            Size = UDim2.new(0, isMobile and 32 or 60, 0, isMobile and 12 or 20), -- Even smaller for mobile
+            Position = UDim2.new(1, isMobile and -34 or -62, 0, isMobile and 1 or 2), -- Adjusted for mobile
             BackgroundColor3 = Color3.fromRGB(35, 35, 40),
             Text = tostring(defaultValue),
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 8 or 12, -- Much smaller text for mobile
+            TextSize = isMobile and 7 or 12, -- Even smaller text for mobile
             Font = Enum.Font.GothamBold,
             TextXAlignment = Enum.TextXAlignment.Center,
             ClearTextOnFocus = false,
             Parent = frame,
         })
-        addCorner(valueBox, isMobile and 4 or 6)
+        addCorner(valueBox, isMobile and 3 or 6)
         addStroke(valueBox)
 
         local sliderTrack = create('Frame', {
-            Size = UDim2.new(1, isMobile and -52 or -72, 0, isMobile and 4 or 6), -- Much smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 25 or 37), -- Adjusted Y position for mobile
+            Size = UDim2.new(1, isMobile and -40 or -72, 0, isMobile and 3 or 6), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 20 or 37), -- Adjusted Y position for mobile
             BackgroundColor3 = Color3.fromRGB(45, 45, 55),
             BorderSizePixel = 0,
             Parent = frame,
@@ -2131,30 +2132,30 @@
         callback = callback or function() end
 
         local frame = create('Frame', {
-            Size = UDim2.new(1, -2, 0, isMobile and 26 or 32), -- Smaller height for mobile
+            Size = UDim2.new(1, -2, 0, isMobile and 20 or 32), -- Even smaller height for mobile
             BackgroundTransparency = 1,
             Parent = elementsContainer,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -45 or -65, 0, isMobile and 12 or 16), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
+            Size = UDim2.new(1, isMobile and -36 or -65, 0, isMobile and 10 or 16), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 1 or 4),
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 10 or 14, -- Much smaller text for mobile
+            TextSize = isMobile and 9 or 14, -- Even smaller text for mobile
             Font = Enum.Font.GothamMedium,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         local keyBtn = create('TextButton', {
-            Size = UDim2.new(0, isMobile and 40 or 62, 0, isMobile and 16 or 24), -- Much smaller for mobile
-            Position = UDim2.new(1, isMobile and -42 or -64, 0.5, isMobile and -8 or -12), -- Adjusted for mobile
+            Size = UDim2.new(0, isMobile and 32 or 62, 0, isMobile and 14 or 24), -- Even smaller for mobile
+            Position = UDim2.new(1, isMobile and -34 or -64, 0.5, isMobile and -7 or -12), -- Adjusted for mobile
             BackgroundColor3 = Color3.fromRGB(35, 35, 40),
             Text = defaultKey,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 8 or 13, -- Much smaller text for mobile
+            TextSize = isMobile and 7 or 13, -- Even smaller text for mobile
             Font = Enum.Font.GothamBold,
             Parent = frame,
         })
@@ -2270,26 +2271,26 @@
         callback = callback or function() end
 
         local frame = create('Frame', {
-            Size = UDim2.new(1, -2, 0, isMobile and 26 or 32), -- Smaller height for mobile
+            Size = UDim2.new(1, -2, 0, isMobile and 20 or 32), -- Even smaller height for mobile
             BackgroundTransparency = 1,
             Parent = elementsContainer,
         })
 
         create('TextLabel', {
-            Size = UDim2.new(1, isMobile and -65 or -95, 0, isMobile and 12 or 16), -- Smaller for mobile
-            Position = UDim2.new(0, 0, 0, isMobile and 2 or 4),
+            Size = UDim2.new(1, isMobile and -50 or -95, 0, isMobile and 10 or 16), -- Even smaller for mobile
+            Position = UDim2.new(0, 0, 0, isMobile and 1 or 4),
             BackgroundTransparency = 1,
             Text = title,
             TextColor3 = Config.Colors.Text,
-            TextSize = isMobile and 10 or 14, -- Much smaller text for mobile
+            TextSize = isMobile and 9 or 14, -- Even smaller text for mobile
             Font = Enum.Font.GothamMedium,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = frame,
         })
 
         local dropdown = create('Frame', {
-            Size = UDim2.new(0, isMobile and 60 or 92, 0, isMobile and 18 or 26), -- Much smaller for mobile
-            Position = UDim2.new(1, isMobile and -62 or -94, 0.5, isMobile and -9 or -13), -- Adjusted for mobile
+            Size = UDim2.new(0, isMobile and 48 or 92, 0, isMobile and 16 or 26), -- Even smaller for mobile
+            Position = UDim2.new(1, isMobile and -50 or -94, 0.5, isMobile and -8 or -13), -- Adjusted for mobile
             BackgroundColor3 = Color3.fromRGB(35, 35, 40),
             Parent = frame,
         })
