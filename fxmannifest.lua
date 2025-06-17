@@ -10,10 +10,13 @@ local Services = {
 
 local Player = Services.Players.LocalPlayer
 
+-- Mobile Detection
+local isMobile = Services.UserInputService.TouchEnabled and not Services.UserInputService.MouseEnabled
+
 -- Library Configuration
 local Config = {
-    Size = { 750, 550 },
-    TabIconSize = 45,
+    Size = isMobile and { 600, 450 } or { 750, 550 }, -- Smaller size for mobile
+    TabIconSize = isMobile and 35 or 45, -- Smaller icons for mobile
     DefaultTab = 'Player',
     Logo = 'rbxassetid://72668739203416',
     MaxTabs = 6,
@@ -518,6 +521,7 @@ function RadiantHub.new()
         isDragging = false,
         menuToggleKey = Enum.KeyCode.RightShift,
         isVisible = true,
+        isMinimized = false, -- New: Track minimized state
         isSettingKeybind = false,
         watermark = nil,
         notifications = nil,
@@ -526,6 +530,8 @@ function RadiantHub.new()
         configManager = nil, -- Config system integration
         configNameInput = nil,
         configDropdown = nil,
+        logoFrame = nil, -- New: Store logo reference
+        minimizedLogo = nil, -- New: Store minimized logo
     }, RadiantHub)
 
     self:createMain()
@@ -676,7 +682,7 @@ end
 
 function RadiantHub:createLogo()
     local logoContainer = create('Frame', {
-        Size = UDim2.new(0, 65, 0, 65),
+        Size = UDim2.new(0, Config.TabIconSize + 20, 0, Config.TabIconSize + 20), -- Mobile responsive
         BackgroundTransparency = 1,
         LayoutOrder = 0,
         Parent = self.normalTabsContainer, -- Logo goes to normal tabs container
@@ -690,16 +696,16 @@ function RadiantHub:createLogo()
         ZIndex = 1,
         Parent = logoContainer,
     })
-    addCorner(glow, 35)
+    addCorner(glow, (Config.TabIconSize + 20) / 2 + 3)
 
-    local logoFrame = create('Frame', {
+    self.logoFrame = create('Frame', {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundColor3 = Config.Colors.Inactive,
         ZIndex = 2,
         Parent = logoContainer,
     })
-    addCorner(logoFrame, 32)
-    addStroke(logoFrame, Config.Colors.Active, 2)
+    addCorner(self.logoFrame, (Config.TabIconSize + 20) / 2)
+    addStroke(self.logoFrame, Config.Colors.Active, 2)
 
     local logoImg = create('ImageLabel', {
         Size = UDim2.new(1, -8, 1, -8),
@@ -707,23 +713,29 @@ function RadiantHub:createLogo()
         BackgroundTransparency = 1,
         Image = Config.Logo,
         ZIndex = 3,
-        Parent = logoFrame,
+        Parent = self.logoFrame,
     })
-    addCorner(logoImg, 28)
+    addCorner(logoImg, (Config.TabIconSize + 20) / 2 - 4)
 
     local logoBtn = create('TextButton', {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Text = '',
         ZIndex = 4,
-        Parent = logoFrame,
+        Parent = self.logoFrame,
     })
 
-    -- Logo click only, no hover effects
-
+    -- Logo click to minimize/maximize
     logoBtn.MouseButton1Click:Connect(function()
-        self.notifications:info('RadiantHub', 'Logo clicked!', 2)
+        self:toggleMinimize()
     end)
+    
+    -- Mobile touch support
+    if isMobile then
+        logoBtn.TouchTap:Connect(function()
+            self:toggleMinimize()
+        end)
+    end
 end
 
 function RadiantHub:createSettingsTab()
@@ -1701,31 +1713,178 @@ function RadiantHub:toggleVisibility()
     self.isVisible = not self.isVisible
 
     if self.isVisible then
-        self.main.Visible = true
-        self.main.Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 50)
-        self.main.Size = UDim2.new(0, Config.Size[1] * 0.8, 0, Config.Size[2] * 0.8)
+        if self.isMinimized then
+            self:maximize()
+        else
+            self.main.Visible = true
+            self.main.Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 50)
+            self.main.Size = UDim2.new(0, Config.Size[1] * 0.8, 0, Config.Size[2] * 0.8)
 
-        tween(self.main, 0.3, {
-            Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2),
-            Size = UDim2.new(0, Config.Size[1], 0, Config.Size[2]),
-        }):Play()
+            tween(self.main, 0.3, {
+                Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2),
+                Size = UDim2.new(0, Config.Size[1], 0, Config.Size[2]),
+            }):Play()
+        end
     else
-        local fadeOut = tween(self.main, 0.2, {
-            Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 30),
-            Size = UDim2.new(0, Config.Size[1] * 0.9, 0, Config.Size[2] * 0.9),
+        if self.isMinimized then
+            self.minimizedLogo.Visible = false
+        else
+            local fadeOut = tween(self.main, 0.2, {
+                Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 30),
+                Size = UDim2.new(0, Config.Size[1] * 0.9, 0, Config.Size[2] * 0.9),
+            })
+            fadeOut:Play()
+            fadeOut.Completed:Connect(function()
+                self.main.Visible = false
+            end)
+        end
+    end
+end
+
+-- New: Toggle minimize/maximize
+function RadiantHub:toggleMinimize()
+    if self.isMinimized then
+        self:maximize()
+    else
+        self:minimize()
+    end
+end
+
+-- New: Minimize to logo only
+function RadiantHub:minimize()
+    if self.isMinimized then return end
+    
+    self.isMinimized = true
+    
+    -- Create floating minimized logo
+    self:createMinimizedLogo()
+    
+    -- Hide main window with animation
+    local fadeOut = tween(self.main, 0.3, {
+        Position = UDim2.new(0.5, -Config.Size[1] / 2, 1.2, 0),
+        Size = UDim2.new(0, Config.Size[1] * 0.8, 0, Config.Size[2] * 0.8),
+    })
+    fadeOut:Play()
+    fadeOut.Completed:Connect(function()
+        self.main.Visible = false
+    end)
+    
+    self.notifications:info('RadiantHub', 'Menu minimized - Click logo to restore', 3)
+end
+
+-- New: Maximize from logo
+function RadiantHub:maximize()
+    if not self.isMinimized then return end
+    
+    self.isMinimized = false
+    
+    -- Hide minimized logo
+    if self.minimizedLogo then
+        local logoFadeOut = tween(self.minimizedLogo, 0.2, { 
+            Size = UDim2.new(0, 10, 0, 10),
+            BackgroundTransparency = 1 
         })
-        fadeOut:Play()
-        fadeOut.Completed:Connect(function()
-            self.main.Visible = false
+        logoFadeOut:Play()
+        logoFadeOut.Completed:Connect(function()
+            if self.minimizedLogo then
+                self.minimizedLogo:Destroy()
+                self.minimizedLogo = nil
+            end
         end)
     end
+    
+    -- Show main window with animation
+    self.main.Visible = true
+    self.main.Position = UDim2.new(0.5, -Config.Size[1] / 2, 1.2, 0)
+    self.main.Size = UDim2.new(0, Config.Size[1] * 0.8, 0, Config.Size[2] * 0.8)
+    
+    tween(self.main, 0.3, {
+        Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2),
+        Size = UDim2.new(0, Config.Size[1], 0, Config.Size[2]),
+    }):Play()
+    
+    self.notifications:success('RadiantHub', 'Menu restored!', 2)
+end
+
+-- New: Create draggable minimized logo
+function RadiantHub:createMinimizedLogo()
+    if self.minimizedLogo then
+        self.minimizedLogo:Destroy()
+    end
+    
+    local logoSize = isMobile and 80 or 70
+    
+    self.minimizedLogo = create('Frame', {
+        Size = UDim2.new(0, logoSize, 0, logoSize),
+        Position = UDim2.new(0, 50, 0, 50), -- Top-left corner
+        BackgroundColor3 = Config.Colors.Background,
+        Parent = self.screen,
+        Active = true,
+        Draggable = true, -- Make it draggable
+    })
+    addCorner(self.minimizedLogo, logoSize / 2)
+    addStroke(self.minimizedLogo, Config.Colors.Active, 3)
+    
+    -- Glow effect
+    local glow = create('Frame', {
+        Size = UDim2.new(1, 10, 1, 10),
+        Position = UDim2.new(0, -5, 0, -5),
+        BackgroundColor3 = Config.Colors.Active,
+        BackgroundTransparency = 0.8,
+        ZIndex = 1,
+        Parent = self.minimizedLogo,
+    })
+    addCorner(glow, logoSize / 2 + 5)
+    
+    -- Logo image
+    local logoImg = create('ImageLabel', {
+        Size = UDim2.new(1, -15, 1, -15),
+        Position = UDim2.new(0, 7.5, 0, 7.5),
+        BackgroundTransparency = 1,
+        Image = Config.Logo,
+        ZIndex = 3,
+        Parent = self.minimizedLogo,
+    })
+    addCorner(logoImg, logoSize / 2 - 7.5)
+    
+    -- Click to maximize button
+    local maximizeBtn = create('TextButton', {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = '',
+        ZIndex = 4,
+        Parent = self.minimizedLogo,
+    })
+    
+    -- Click handlers
+    maximizeBtn.MouseButton1Click:Connect(function()
+        self:maximize()
+    end)
+    
+    -- Mobile touch support
+    if isMobile then
+        maximizeBtn.TouchTap:Connect(function()
+            self:maximize()
+        end)
+    end
+    
+    -- Animate appearance
+    self.minimizedLogo.Size = UDim2.new(0, 10, 0, 10)
+    self.minimizedLogo.BackgroundTransparency = 1
+    
+    tween(self.minimizedLogo, 0.3, {
+        Size = UDim2.new(0, logoSize, 0, logoSize),
+        BackgroundTransparency = 0,
+    }):Play()
 end
 
 function RadiantHub:setupEvents()
     local dragStart, startPos
 
+    -- Mouse/Touch drag events for header
     self.header.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
             self.isDragging = true
             dragStart = input.Position
             startPos = self.main.Position
@@ -1733,7 +1892,9 @@ function RadiantHub:setupEvents()
     end)
 
     self.header.InputChanged:Connect(function(input)
-        if self.isDragging and input.UserInputType == Enum.UserInputType.MouseMovement and dragStart then
+        if self.isDragging and 
+           (input.UserInputType == Enum.UserInputType.MouseMovement or 
+            input.UserInputType == Enum.UserInputType.Touch) and dragStart then
             local delta = input.Position - dragStart
             self.main.Position = UDim2.new(
                 startPos.X.Scale,
@@ -1744,8 +1905,10 @@ function RadiantHub:setupEvents()
         end
     end)
 
+    -- End drag events for both mouse and touch
     Services.UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
             self.isDragging = false
         end
     end)
@@ -1775,6 +1938,12 @@ function RadiantHub:destroy()
     if self.notifications then
         self.notifications:destroy()
         self.notifications = nil
+    end
+
+    -- Clean up minimized logo
+    if self.minimizedLogo then
+        self.minimizedLogo:Destroy()
+        self.minimizedLogo = nil
     end
 
     if self.screen then
