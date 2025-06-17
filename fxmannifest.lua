@@ -1816,15 +1816,18 @@ function RadiantHub:minimize()
     self.notifications:info('RadiantHub', 'Menu minimized - Click logo to restore', 3)
 end
 
--- New: Maximize from logo
+-- ✅ UPDATE: Auch die maximize Funktion leicht vereinfachen:
 function RadiantHub:maximize()
     if not self.isMinimized and not self.minimizedLogo then return end
     
     self.isMinimized = false
-    self.isVisible = true -- Setze Visible flag
+    self.isVisible = true
     
     -- Hide minimized logo
     if self.minimizedLogo then
+        -- ✅ EINFACHES Cleanup - keine komplexen Connections
+        self.minimizedLogoDragConnection = nil
+        
         local logoFadeOut = tween(self.minimizedLogo, 0.2, { 
             Size = UDim2.new(0, 10, 0, 10),
             BackgroundTransparency = 1 
@@ -1892,8 +1895,8 @@ function RadiantHub:createMinimizedLogo()
     })
     addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
     
-    -- Simple Click to maximize button
-    local maximizeBtn = create('TextButton', {
+    -- ✅ VEREINFACHTES Click-to-maximize System
+    local clickButton = create('TextButton', {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Text = '',
@@ -1901,17 +1904,31 @@ function RadiantHub:createMinimizedLogo()
         Parent = self.minimizedLogo,
     })
     
-    -- Click handlers - einfach und robust
-    maximizeBtn.MouseButton1Click:Connect(function()
-        self:maximize()
+    -- ✅ EINFACHE Click-Detection ohne komplexes Drag-Tracking
+    local clickStartTime = 0
+    
+    clickButton.MouseButton1Down:Connect(function()
+        clickStartTime = tick()
     end)
     
-    -- Mobile touch support
+    clickButton.MouseButton1Up:Connect(function()
+        local clickDuration = tick() - clickStartTime
+        -- Wenn Click kürzer als 0.2 Sekunden = echter Click (nicht Drag)
+        if clickDuration < 0.2 then
+            self:maximize()
+        end
+    end)
+    
+    -- ✅ Mobile Touch Support
     if isMobile then
-        maximizeBtn.TouchTap:Connect(function()
+        clickButton.TouchTap:Connect(function()
             self:maximize()
         end)
     end
+    
+    -- ✅ KEINE manuellen Drag-Connections mehr nötig!
+    -- Roblox Draggable=true macht alles automatisch
+    self.minimizedLogoDragConnection = nil -- Setze auf nil da nicht benötigt
     
     -- Animate appearance
     self.minimizedLogo.Size = UDim2.new(0, 10, 0, 10)
