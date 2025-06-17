@@ -648,23 +648,23 @@ function RadiantHub:createMain()
         Parent = self.header,
     })
 
-    -- Player Name Label
+    -- Player Name Label (Links neben Avatar)
     local playerNameLabel = create('TextLabel', {
-        Size = UDim2.new(0, 100, 0, 16),
-        Position = UDim2.new(1, -175, 0.5, -18), -- Avatar ist bei -165, also -175 für 10px Abstand
+        Size = UDim2.new(0, 120, 0, 16),
+        Position = UDim2.new(1, -290, 0.5, -18), -- Avatar bei -165, also weiter LINKS zu -290
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
         TextSize = 14,
         Font = Enum.Font.GothamBold,
-        TextXAlignment = Enum.TextXAlignment.Right,
+        TextXAlignment = Enum.TextXAlignment.Right, -- Rechtsbündig damit es zur Avatar-Kante zeigt
         Parent = self.header,
     })
 
-    -- License Label (Free)
+    -- License Label (Free) - direkt unter dem Namen
     local licenseLabel = create('TextLabel', {
-        Size = UDim2.new(0, 100, 0, 12),
-        Position = UDim2.new(1, -175, 0.5, -2), -- Gleiche X-Position wie der Name
+        Size = UDim2.new(0, 120, 0, 12),
+        Position = UDim2.new(1, -290, 0.5, -2), -- Gleiche X-Position wie der Name
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
@@ -1825,6 +1825,12 @@ function RadiantHub:maximize()
     
     -- Hide minimized logo
     if self.minimizedLogo then
+        -- Clean up drag connection
+        if self.minimizedLogoDragConnection then
+            self.minimizedLogoDragConnection:Disconnect()
+            self.minimizedLogoDragConnection = nil
+        end
+        
         local logoFadeOut = tween(self.minimizedLogo, 0.2, { 
             Size = UDim2.new(0, 10, 0, 10),
             BackgroundTransparency = 1 
@@ -1865,7 +1871,7 @@ function RadiantHub:createMinimizedLogo()
         BackgroundColor3 = Config.Colors.Background,
         Parent = self.screen,
         Active = true,
-        Draggable = true, -- Make it draggable
+        -- Draggable wird manuell implementiert
     })
     addCorner(self.minimizedLogo, logoSize / 2)
     addStroke(self.minimizedLogo, Config.Colors.Active, isMobile and 4 or 3) -- Dickerer Stroke für Mobile
@@ -1892,7 +1898,51 @@ function RadiantHub:createMinimizedLogo()
     })
     addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
     
-    -- Click to maximize button
+    -- Manual Dragging Implementation
+    local isDragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    -- Input handler for dragging
+    self.minimizedLogo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStart = input.Position
+            startPos = self.minimizedLogo.Position
+        end
+    end)
+    
+    self.minimizedLogo.InputChanged:Connect(function(input)
+        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
+                          input.UserInputType == Enum.UserInputType.Touch) and dragStart then
+            local delta = input.Position - dragStart
+            self.minimizedLogo.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    -- Global input handler for ending drag
+    local dragEndConnection
+    dragEndConnection = Services.UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            if isDragging then
+                isDragging = false
+                dragStart = nil
+                startPos = nil
+            end
+        end
+    end)
+    
+    -- Store connection for cleanup
+    self.minimizedLogoDragConnection = dragEndConnection
+    
+    -- Click to maximize button (with drag detection)
     local maximizeBtn = create('TextButton', {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
@@ -1901,15 +1951,37 @@ function RadiantHub:createMinimizedLogo()
         Parent = self.minimizedLogo,
     })
     
-    -- Click handlers
-    maximizeBtn.MouseButton1Click:Connect(function()
-        self:maximize()
+    local clickStartPos = nil
+    local isClick = false
+    
+    -- Click detection (only maximize if not dragged)
+    maximizeBtn.MouseButton1Down:Connect(function()
+        clickStartPos = Services.UserInputService:GetMouseLocation()
+        isClick = true
+    end)
+    
+    maximizeBtn.MouseButton1Up:Connect(function()
+        if isClick and clickStartPos then
+            local currentPos = Services.UserInputService:GetMouseLocation()
+            local distance = (currentPos - clickStartPos).Magnitude
+            
+            -- If moved less than 5 pixels, consider it a click
+            if distance < 5 then
+                self:maximize()
+            end
+        end
+        isClick = false
+        clickStartPos = nil
     end)
     
     -- Mobile touch support
     if isMobile then
-        maximizeBtn.TouchTap:Connect(function()
-            self:maximize()
+        local touchStartPos = nil
+        
+        maximizeBtn.TouchTap:Connect(function(touch, processed)
+            if not processed then
+                self:maximize()
+            end
         end)
     end
     
@@ -2003,6 +2075,10 @@ function RadiantHub:destroy()
 
     -- Clean up minimized logo
     if self.minimizedLogo then
+        if self.minimizedLogoDragConnection then
+            self.minimizedLogoDragConnection:Disconnect()
+            self.minimizedLogoDragConnection = nil
+        end
         self.minimizedLogo:Destroy()
         self.minimizedLogo = nil
     end
