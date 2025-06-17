@@ -1161,24 +1161,24 @@ function RadiantHub:createSection(tabName, sectionName, column, priority)
 
     local section = create('Frame', {
         Name = sectionName .. 'Section',
-        Size = UDim2.new(1, 0, 0, 60), -- Start with minimal height
+        Size = UDim2.new(1, 0, 0, isMobile and 50 or 60), -- Mobile responsive start height
         BackgroundColor3 = Color3.fromRGB(28, 28, 30),
         LayoutOrder = priority, -- Set LayoutOrder based on priority
         Parent = targetColumn,
     })
-    addCorner(section, 8)
-    addPadding(section, 15)
+    addCorner(section, isMobile and 6 or 8)
+    addPadding(section, isMobile and 12 or 15)
     addStroke(section)
 
     -- Fixed title at the top (not affected by UIListLayout)
     local sectionTitle = create('TextLabel', {
         Name = 'SectionTitle',
-        Size = UDim2.new(1, 0, 0, 25),
+        Size = UDim2.new(1, 0, 0, isMobile and 20 or 25), -- Mobile responsive title height
         Position = UDim2.new(0, 0, 0, 0), -- Fixed position at top
         BackgroundTransparency = 1,
         Text = sectionName,
         TextColor3 = Config.Colors.Text,
-        TextSize = 16,
+        TextSize = isMobile and 14 or 16,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         ZIndex = 10, -- Ensure title is above other elements
@@ -1188,8 +1188,8 @@ function RadiantHub:createSection(tabName, sectionName, column, priority)
     -- Container for elements (positioned below title)
     local elementsContainer = create('Frame', {
         Name = 'ElementsContainer',
-        Size = UDim2.new(1, 0, 1, -35), -- Full size minus title height and padding
-        Position = UDim2.new(0, 0, 0, 35), -- Start below title
+        Size = UDim2.new(1, 0, 1, isMobile and -30 or -35), -- Mobile responsive container
+        Position = UDim2.new(0, 0, 0, isMobile and 30 or 35), -- Start below title
         BackgroundTransparency = 1,
         Parent = section,
     })
@@ -1200,32 +1200,33 @@ function RadiantHub:createSection(tabName, sectionName, column, priority)
         FillDirection = Enum.FillDirection.Vertical,
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
         VerticalAlignment = Enum.VerticalAlignment.Top,
-        Padding = UDim.new(0, 10),
+        Padding = UDim.new(0, isMobile and 8 or 10), -- Mobile responsive padding
         Parent = elementsContainer,
     })
 
     -- Auto-resize functionality
     local function updateSectionSize()
-        local totalHeight = 35 -- Title height + padding
+        local titleHeight = isMobile and 30 or 35 -- Mobile responsive title height
+        local totalHeight = titleHeight -- Title height + padding
         for _, child in ipairs(elementsContainer:GetChildren()) do
             if child:IsA('Frame') then
-                totalHeight = totalHeight + child.Size.Y.Offset + 10 -- Element height + padding
+                totalHeight = totalHeight + child.Size.Y.Offset + (isMobile and 8 or 10) -- Mobile responsive element padding
             end
         end
         section.Size = UDim2.new(1, 0, 0, totalHeight + 15) -- Extra padding at bottom
         
         -- Update elements container size
-        elementsContainer.Size = UDim2.new(1, 0, 0, totalHeight - 35)
+        elementsContainer.Size = UDim2.new(1, 0, 0, totalHeight - titleHeight)
         
         -- Update scroll canvas with extra space for colorpicker
         local canvasHeight = 0
         for _, child in ipairs(targetColumn:GetChildren()) do
             if child:IsA('Frame') then
-                canvasHeight = canvasHeight + child.Size.Y.Offset + 15
+                canvasHeight = canvasHeight + child.Size.Y.Offset + (isMobile and 12 or 15)
             end
         end
-        -- Add extra space for dropdown/colorpicker expansion
-        canvasHeight = canvasHeight + 300
+        -- Add extra space for dropdown/colorpicker expansion (less on mobile)
+        canvasHeight = canvasHeight + (isMobile and 200 or 300)
         targetColumn.CanvasSize = UDim2.new(0, 0, 0, canvasHeight)
     end
 
@@ -1258,50 +1259,50 @@ function RadiantHub:addToggle(tabName, sectionName, title, desc, defaultState, c
     callback = callback or function() end
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 32), -- Weniger rechter Abstand (von -5 zu -2)
+        Size = UDim2.new(1, -2, 0, isMobile and 28 or 32), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -50, 0, 16), -- Mehr Platz für Text (von -55 zu -50)
+        Size = UDim2.new(1, isMobile and -40 or -50, 0, isMobile and 14 or 16), -- Mobile responsive sizing
         Position = UDim2.new(0, 0, 0, 4),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -50, 0, 12), -- Mehr Platz für Text (von -55 zu -50)
-        Position = UDim2.new(0, 0, 0, 18),
+        Size = UDim2.new(1, isMobile and -40 or -50, 0, isMobile and 10 or 12), -- Mobile responsive sizing
+        Position = UDim2.new(0, 0, 0, isMobile and 16 or 18),
         BackgroundTransparency = 1,
         Text = desc,
         TextColor3 = Config.Colors.SubText,
-        TextSize = 11,
+        TextSize = isMobile and 9 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     local switch = create('Frame', {
-        Size = UDim2.new(0, 45, 0, 20),
-        Position = UDim2.new(1, -47, 0.5, -10), -- Näher zum Rand (von -50 zu -47)
+        Size = UDim2.new(0, isMobile and 38 or 45, 0, isMobile and 16 or 20), -- Mobile responsive switch
+        Position = UDim2.new(1, isMobile and -40 or -47, 0.5, isMobile and -8 or -10),
         BackgroundColor3 = defaultState and Config.Colors.Active or Color3.fromRGB(50, 50, 55),
         Parent = frame,
     })
-    addCorner(switch, 10)
+    addCorner(switch, isMobile and 8 or 10)
 
     local knob = create('Frame', {
-        Size = UDim2.new(0, 16, 0, 16),
-        Position = defaultState and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+        Size = UDim2.new(0, isMobile and 12 or 16, 0, isMobile and 12 or 16), -- Mobile responsive knob
+        Position = defaultState and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8),
         BackgroundColor3 = Config.Colors.Text,
         Parent = switch,
     })
-    addCorner(knob, 8)
+    addCorner(knob, isMobile and 6 or 8)
 
     local btn = create('TextButton', {
         Size = UDim2.new(1, 0, 1, 0),
@@ -1319,7 +1320,7 @@ function RadiantHub:addToggle(tabName, sectionName, title, desc, defaultState, c
         }):Play()
 
         tween(knob, 0.2, {
-            Position = isToggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+            Position = isToggled and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8),
         }):Play()
 
         callback(isToggled)
@@ -1344,7 +1345,7 @@ function RadiantHub:addToggle(tabName, sectionName, title, desc, defaultState, c
         setValue = function(value) 
             isToggled = value
             switch.BackgroundColor3 = isToggled and Config.Colors.Active or Color3.fromRGB(50, 50, 55)
-            knob.Position = isToggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            knob.Position = isToggled and UDim2.new(1, isMobile and -14 or -18, 0.5, isMobile and -6 or -8) or UDim2.new(0, 2, 0.5, isMobile and -6 or -8)
         end,
     }
 
@@ -1366,42 +1367,42 @@ function RadiantHub:addSlider(tabName, sectionName, title, desc, min, max, defau
     callback = callback or function() end
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 50), -- Weniger rechter Abstand
+        Size = UDim2.new(1, -2, 0, isMobile and 42 or 50), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -65, 0, 16), -- Mehr Platz für Text (von -75 zu -65)
+        Size = UDim2.new(1, isMobile and -55 or -65, 0, isMobile and 14 or 16), -- Mobile responsive sizing
         Position = UDim2.new(0, 0, 0, 4),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -65, 0, 12), -- Mehr Platz für Text (von -75 zu -65)
-        Position = UDim2.new(0, 0, 0, 18),
+        Size = UDim2.new(1, isMobile and -55 or -65, 0, isMobile and 10 or 12), -- Mobile responsive sizing
+        Position = UDim2.new(0, 0, 0, isMobile and 16 or 18),
         BackgroundTransparency = 1,
         Text = desc,
         TextColor3 = Config.Colors.SubText,
-        TextSize = 11,
+        TextSize = isMobile and 9 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     local valueBox = create('TextBox', {
-        Size = UDim2.new(0, 60, 0, 20), -- Kleinere ValueBox (von 70 zu 60)
-        Position = UDim2.new(1, -62, 0, 2), -- Näher zum Rand (von -75 zu -62)
+        Size = UDim2.new(0, isMobile and 50 or 60, 0, isMobile and 18 or 20), -- Mobile responsive value box
+        Position = UDim2.new(1, isMobile and -52 or -62, 0, 2),
         BackgroundColor3 = Color3.fromRGB(35, 35, 40),
         Text = tostring(defaultValue),
         TextColor3 = Config.Colors.Text,
-        TextSize = 12,
+        TextSize = isMobile and 10 or 12,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         ClearTextOnFocus = false,
@@ -1411,8 +1412,8 @@ function RadiantHub:addSlider(tabName, sectionName, title, desc, min, max, defau
     addStroke(valueBox)
 
     local sliderTrack = create('Frame', {
-        Size = UDim2.new(1, -72, 0, 6), -- Angepasst für kleinere ValueBox (von -85 zu -72)
-        Position = UDim2.new(0, 0, 0, 37),
+        Size = UDim2.new(1, isMobile and -62 or -72, 0, isMobile and 4 or 6), -- Mobile responsive track
+        Position = UDim2.new(0, 0, 0, isMobile and 32 or 37),
         BackgroundColor3 = Color3.fromRGB(45, 45, 55),
         BorderSizePixel = 0,
         Parent = frame,
@@ -1903,6 +1904,8 @@ function RadiantHub:createMinimizedLogo()
         Size = UDim2.new(0, logoSize, 0, logoSize),
         Position = self.minimizedLogoPosition, -- ✅ Verwende gespeicherte Position
         BackgroundColor3 = Config.Colors.Background,
+        ZIndex = 10, -- High ZIndex to stay on top
+        Visible = true, -- Explicitly visible
         Parent = self.screen,
         Active = true,
         Draggable = true, -- Einfaches, robustes Dragging
@@ -1921,13 +1924,16 @@ function RadiantHub:createMinimizedLogo()
     })
     addCorner(glow, logoSize / 2 + (isMobile and 7.5 or 5))
     
-    -- Logo image
+    -- Logo image with proper visibility settings
     local logoImg = create('ImageLabel', {
         Size = UDim2.new(1, isMobile and -20 or -15, 1, isMobile and -20 or -15),
         Position = UDim2.new(0, isMobile and 10 or 7.5, 0, isMobile and 10 or 7.5),
         BackgroundTransparency = 1,
         Image = Config.Logo,
-        ZIndex = 3,
+        ImageTransparency = 0, -- Ensure image is fully visible
+        ImageColor3 = Color3.fromRGB(255, 255, 255), -- Ensure proper coloring
+        ZIndex = 5, -- Higher ZIndex to ensure visibility
+        Visible = true, -- Explicitly set to visible
         Parent = self.minimizedLogo,
     })
     addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
@@ -2093,30 +2099,30 @@ function RadiantHub:addKeybind(tabName, sectionName, title, defaultKey, callback
     callback = callback or function() end
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 32), -- Weniger rechter Abstand
+        Size = UDim2.new(1, -2, 0, isMobile and 28 or 32), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -65, 0, 16), -- Mehr Platz für Text (von -75 zu -65)
+        Size = UDim2.new(1, isMobile and -55 or -65, 0, isMobile and 14 or 16), -- Mobile responsive sizing
         Position = UDim2.new(0, 0, 0, 4),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     local keyBtn = create('TextButton', {
-        Size = UDim2.new(0, 62, 0, 24), -- Kleinerer Button (von 70 zu 62)
-        Position = UDim2.new(1, -64, 0.5, -12), -- Näher zum Rand (von -75 zu -64)
+        Size = UDim2.new(0, isMobile and 52 or 62, 0, isMobile and 20 or 24), -- Mobile responsive button
+        Position = UDim2.new(1, isMobile and -54 or -64, 0.5, isMobile and -10 or -12),
         BackgroundColor3 = Color3.fromRGB(35, 35, 40),
         Text = defaultKey,
         TextColor3 = Config.Colors.Text,
-        TextSize = 13,
+        TextSize = isMobile and 11 or 13,
         Font = Enum.Font.GothamBold,
         Parent = frame,
     })
@@ -2232,51 +2238,51 @@ function RadiantHub:addDropdown(tabName, sectionName, title, options, callback)
     callback = callback or function() end
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 32), -- Weniger rechter Abstand
+        Size = UDim2.new(1, -2, 0, isMobile and 28 or 32), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -95, 0, 16), -- Mehr Platz für Text (von -115 zu -95)
+        Size = UDim2.new(1, isMobile and -85 or -95, 0, isMobile and 14 or 16), -- Mobile responsive sizing
         Position = UDim2.new(0, 0, 0, 4),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = frame,
     })
 
     local dropdown = create('Frame', {
-        Size = UDim2.new(0, 92, 0, 26), -- Kleineres Dropdown (von 110 zu 92)
-        Position = UDim2.new(1, -94, 0.5, -13), -- Näher zum Rand (von -115 zu -94)
+        Size = UDim2.new(0, isMobile and 82 or 92, 0, isMobile and 22 or 26), -- Mobile responsive dropdown
+        Position = UDim2.new(1, isMobile and -84 or -94, 0.5, isMobile and -11 or -13),
         BackgroundColor3 = Color3.fromRGB(35, 35, 40),
         Parent = frame,
     })
-    addCorner(dropdown, 8)
+    addCorner(dropdown, isMobile and 6 or 8)
     addStroke(dropdown)
 
     local selected = create('TextLabel', {
-        Size = UDim2.new(1, -35, 1, 0),
-        Position = UDim2.new(0, 12, 0, 0),
+        Size = UDim2.new(1, isMobile and -30 or -35, 1, 0),
+        Position = UDim2.new(0, isMobile and 8 or 12, 0, 0),
         BackgroundTransparency = 1,
         Text = options[1] or 'Select...',
         TextColor3 = Config.Colors.Text,
-        TextSize = 12,
+        TextSize = isMobile and 10 or 12,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = dropdown,
     })
 
     local arrow = create('TextLabel', {
-        Size = UDim2.new(0, 20, 0, 20),
-        Position = UDim2.new(1, -25, 0.5, -10),
+        Size = UDim2.new(0, isMobile and 16 or 20, 0, isMobile and 16 or 20),
+        Position = UDim2.new(1, isMobile and -20 or -25, 0.5, isMobile and -8 or -10),
         BackgroundTransparency = 1,
         Text = '▼',
         TextColor3 = Config.Colors.SubText,
-        TextSize = 10,
+        TextSize = isMobile and 8 or 10,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Center,
         Parent = dropdown,
@@ -3179,7 +3185,7 @@ function RadiantHub:addButton(tabName, sectionName, title, desc, callback)
     callback = callback or function() end
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 36), -- Weniger rechter Abstand
+        Size = UDim2.new(1, -2, 0, isMobile and 32 or 36), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
@@ -3190,28 +3196,28 @@ function RadiantHub:addButton(tabName, sectionName, title, desc, callback)
         Text = '',
         Parent = frame,
     })
-    addCorner(button, 8)
+    addCorner(button, isMobile and 6 or 8)
     addStroke(button)
 
     create('TextLabel', {
-        Size = UDim2.new(1, -20, 0, 18),
-        Position = UDim2.new(0, 10, 0, 4),
+        Size = UDim2.new(1, isMobile and -15 or -20, 0, isMobile and 16 or 18), -- Mobile responsive
+        Position = UDim2.new(0, isMobile and 8 or 10, 0, 4),
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Config.Colors.Text,
-        TextSize = 14,
+        TextSize = isMobile and 12 or 14,
         Font = Enum.Font.GothamMedium,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = button,
     })
 
     create('TextLabel', {
-        Size = UDim2.new(1, -20, 0, 14),
-        Position = UDim2.new(0, 10, 0, 20),
+        Size = UDim2.new(1, isMobile and -15 or -20, 0, isMobile and 12 or 14), -- Mobile responsive
+        Position = UDim2.new(0, isMobile and 8 or 10, 0, isMobile and 18 or 20),
         BackgroundTransparency = 1,
         Text = desc,
         TextColor3 = Config.Colors.SubText,
-        TextSize = 11,
+        TextSize = isMobile and 9 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = button,
@@ -3267,7 +3273,7 @@ function RadiantHub:addLabel(tabName, sectionName, text)
     local elementsContainer = sectionData.elementsContainer or sectionData.frame
 
     local frame = create('Frame', {
-        Size = UDim2.new(1, -2, 0, 20), -- Weniger rechter Abstand
+        Size = UDim2.new(1, -2, 0, isMobile and 18 or 20), -- Mobile responsive height
         BackgroundTransparency = 1,
         Parent = elementsContainer,
     })
@@ -3277,7 +3283,7 @@ function RadiantHub:addLabel(tabName, sectionName, text)
         BackgroundTransparency = 1,
         Text = text,
         TextColor3 = Config.Colors.SubText,
-        TextSize = 12,
+        TextSize = isMobile and 10 or 12,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextWrapped = true,
