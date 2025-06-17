@@ -651,7 +651,7 @@ function RadiantHub:createMain()
     -- Player Name Label (Links neben Avatar)
     local playerNameLabel = create('TextLabel', {
         Size = UDim2.new(0, 120, 0, 16),
-        Position = UDim2.new(1, -290, 0.5, -18), -- Avatar bei -165, also weiter LINKS zu -290
+        Position = UDim2.new(1, -290, 0.5, -15), -- 3px nach unten (von -18 zu -15)
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
@@ -664,7 +664,7 @@ function RadiantHub:createMain()
     -- License Label (Free) - direkt unter dem Namen
     local licenseLabel = create('TextLabel', {
         Size = UDim2.new(0, 120, 0, 12),
-        Position = UDim2.new(1, -290, 0.5, -2), -- Gleiche X-Position wie der Name
+        Position = UDim2.new(1, -290, 0.5, 1), -- 3px nach unten (von -2 zu 1)
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
