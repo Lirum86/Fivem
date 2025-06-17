@@ -15,8 +15,8 @@ local isMobile = Services.UserInputService.TouchEnabled and not Services.UserInp
 
 -- Library Configuration
 local Config = {
-    Size = isMobile and { 520, 390 } or { 750, 550 }, -- Smaller size for mobile
-    TabIconSize = isMobile and 32 or 45, -- Smaller icons for mobile
+    Size = isMobile and { 420, 320 } or { 750, 550 }, -- Much smaller size for mobile
+    TabIconSize = isMobile and 28 or 45, -- Smaller icons for mobile
     DefaultTab = 'Player',
     Logo = 'rbxassetid://72668739203416',
     MaxTabs = 6,
@@ -97,8 +97,8 @@ function WatermarkManager:createWatermark()
 
     self.container = create('Frame', {
         Name = 'WatermarkContainer',
-        Size = isMobile and UDim2.new(0, 250, 0, 55) or UDim2.new(0, 320, 0, 70),
-        Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20),
+        Size = isMobile and UDim2.new(0, 220, 0, 50) or UDim2.new(0, 320, 0, 70),
+        Position = isMobile and UDim2.new(1, -240, 0, 20) or UDim2.new(1, -360, 0, 20),
         BackgroundColor3 = Color3.fromRGB(25, 25, 30),
         BorderSizePixel = 0,
         Parent = watermarkGui,
@@ -112,7 +112,7 @@ function WatermarkManager:createWatermark()
         BackgroundTransparency = 1,
         Text = 'RadiantHub',
         TextColor3 = Config.Colors.Active,
-        TextSize = isMobile and 16 or 18,
+        TextSize = isMobile and 14 or 18,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -125,7 +125,7 @@ function WatermarkManager:createWatermark()
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
-        TextSize = isMobile and 10 or 11,
+        TextSize = isMobile and 9 or 11,
         Font = Enum.Font.Gotham,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -133,12 +133,12 @@ function WatermarkManager:createWatermark()
     })
 
     self.fpsLabel = create('TextLabel', {
-        Size = isMobile and UDim2.new(0, 60, 0, 18) or UDim2.new(0, 70, 0, 22),
-        Position = isMobile and UDim2.new(1, -155, 0, 16) or UDim2.new(1, -190, 0, 20),
+        Size = isMobile and UDim2.new(0, 55, 0, 16) or UDim2.new(0, 70, 0, 22),
+        Position = isMobile and UDim2.new(1, -140, 0, 14) or UDim2.new(1, -190, 0, 20),
         BackgroundTransparency = 1,
         Text = 'FPS: 60',
         TextColor3 = Color3.fromRGB(0, 255, 0),
-        TextSize = isMobile and 11 or 13,
+        TextSize = isMobile and 10 or 13,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -146,12 +146,12 @@ function WatermarkManager:createWatermark()
     })
 
     self.pingLabel = create('TextLabel', {
-        Size = isMobile and UDim2.new(0, 60, 0, 18) or UDim2.new(0, 70, 0, 22),
-        Position = isMobile and UDim2.new(1, -90, 0, 16) or UDim2.new(1, -115, 0, 20),
+        Size = isMobile and UDim2.new(0, 55, 0, 16) or UDim2.new(0, 70, 0, 22),
+        Position = isMobile and UDim2.new(1, -80, 0, 14) or UDim2.new(1, -115, 0, 20),
         BackgroundTransparency = 1,
         Text = 'Ping: 0ms',
         TextColor3 = Config.Colors.Active,
-        TextSize = isMobile and 11 or 13,
+        TextSize = isMobile and 10 or 13,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -159,8 +159,8 @@ function WatermarkManager:createWatermark()
     })
 
     self.fpsBar = create('Frame', {
-        Size = isMobile and UDim2.new(0, 55, 0, 3) or UDim2.new(0, 65, 0, 4),
-        Position = isMobile and UDim2.new(1, -152, 0, 36) or UDim2.new(1, -187, 0, 44),
+        Size = isMobile and UDim2.new(0, 50, 0, 2) or UDim2.new(0, 65, 0, 4),
+        Position = isMobile and UDim2.new(1, -137, 0, 32) or UDim2.new(1, -187, 0, 44),
         BackgroundColor3 = Color3.fromRGB(0, 255, 0),
         BorderSizePixel = 0,
         Parent = self.container,
@@ -168,8 +168,8 @@ function WatermarkManager:createWatermark()
     addCorner(self.fpsBar, 2)
 
     self.pingBar = create('Frame', {
-        Size = isMobile and UDim2.new(0, 55, 0, 3) or UDim2.new(0, 65, 0, 4),
-        Position = isMobile and UDim2.new(1, -87, 0, 36) or UDim2.new(1, -112, 0, 44),
+        Size = isMobile and UDim2.new(0, 50, 0, 2) or UDim2.new(0, 65, 0, 4),
+        Position = isMobile and UDim2.new(1, -77, 0, 32) or UDim2.new(1, -112, 0, 44),
         BackgroundColor3 = Config.Colors.Active,
         BorderSizePixel = 0,
         Parent = self.container,
@@ -180,7 +180,7 @@ function WatermarkManager:createWatermark()
     self.container.Draggable = true
 
     self.container.Position = UDim2.new(1, 20, 0, 20)
-    tween(self.container, 0.5, { Position = isMobile and UDim2.new(1, -270, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
+    tween(self.container, 0.5, { Position = isMobile and UDim2.new(1, -240, 0, 20) or UDim2.new(1, -360, 0, 20) }):Play()
 end
 
 function WatermarkManager:startUpdating()
@@ -396,7 +396,7 @@ function NotificationManager:createNotification(title, message, duration, notifT
         BackgroundColor3 = scheme.bg,
         Text = icons[notifType] or icons.info,
         TextColor3 = scheme.icon,
-        TextSize = isMobile and 14 or 16,
+        TextSize = isMobile and 12 or 16,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Center,
         TextYAlignment = Enum.TextYAlignment.Center,
@@ -411,7 +411,7 @@ function NotificationManager:createNotification(title, message, duration, notifT
         BackgroundTransparency = 1,
         Text = title,
         TextColor3 = Color3.fromRGB(245, 245, 250),
-        TextSize = isMobile and 12 or 14,
+        TextSize = isMobile and 11 or 14,
         Font = Enum.Font.GothamBold,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
