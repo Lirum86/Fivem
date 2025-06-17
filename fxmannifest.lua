@@ -651,7 +651,7 @@ function RadiantHub:createMain()
     -- Player Name Label
     local playerNameLabel = create('TextLabel', {
         Size = UDim2.new(0, 100, 0, 16),
-        Position = UDim2.new(1, -210, 0.5, -18),
+        Position = UDim2.new(1, -175, 0.5, -18), -- Avatar ist bei -165, also -175 für 10px Abstand
         BackgroundTransparency = 1,
         Text = Player.Name,
         TextColor3 = Config.Colors.Text,
@@ -664,7 +664,7 @@ function RadiantHub:createMain()
     -- License Label (Free)
     local licenseLabel = create('TextLabel', {
         Size = UDim2.new(0, 100, 0, 12),
-        Position = UDim2.new(1, -210, 0.5, -2),
+        Position = UDim2.new(1, -175, 0.5, -2), -- Gleiche X-Position wie der Name
         BackgroundTransparency = 1,
         Text = 'Free',
         TextColor3 = Config.Colors.SubText,
@@ -1759,6 +1759,9 @@ function RadiantHub:toggleVisibility()
     if self.isVisible then
         if self.isMinimized then
             self:maximize()
+        elseif self.minimizedLogo then
+            -- Wenn ein minimized Logo existiert, maximiere es
+            self:maximize()
         else
             self.main.Visible = true
             self.main.Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 50)
@@ -1771,16 +1774,12 @@ function RadiantHub:toggleVisibility()
         end
     else
         if self.isMinimized then
-            self.minimizedLogo.Visible = false
+            if self.minimizedLogo then
+                self.minimizedLogo.Visible = false
+            end
         else
-            local fadeOut = tween(self.main, 0.2, {
-                Position = UDim2.new(0.5, -Config.Size[1] / 2, 0.5, -Config.Size[2] / 2 - 30),
-                Size = UDim2.new(0, Config.Size[1] * 0.9, 0, Config.Size[2] * 0.9),
-            })
-            fadeOut:Play()
-            fadeOut.Completed:Connect(function()
-                self.main.Visible = false
-            end)
+            -- Minimiere zu Logo statt komplett zu schließen
+            self:minimize()
         end
     end
 end
@@ -1799,6 +1798,7 @@ function RadiantHub:minimize()
     if self.isMinimized then return end
     
     self.isMinimized = true
+    self.isVisible = false -- Menu ist "unsichtbar" aber Logo ist da
     
     -- Create floating minimized logo
     self:createMinimizedLogo()
@@ -1818,9 +1818,10 @@ end
 
 -- New: Maximize from logo
 function RadiantHub:maximize()
-    if not self.isMinimized then return end
+    if not self.isMinimized and not self.minimizedLogo then return end
     
     self.isMinimized = false
+    self.isVisible = true -- Setze Visible flag
     
     -- Hide minimized logo
     if self.minimizedLogo then
