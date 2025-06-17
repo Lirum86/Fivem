@@ -248,21 +248,42 @@ end
 
 function WatermarkManager:getPing()
     local ping = 0
+    
+    -- Try multiple methods to get ping
     pcall(function()
-        local stats = Services.Stats
-        if stats and stats.Network and stats.Network.ServerStatsItem then
-            local pingItem = stats.Network.ServerStatsItem["Data Ping"]
+        local stats = game:GetService("Stats")
+        
+        -- Method 1: Direct Network Stats
+        if stats.Network and stats.Network.ServerStatsItem then
+            local pingItem = stats.Network.ServerStatsItem:FindFirstChild("Data Ping")
             if pingItem then
                 local pingValue = pingItem:GetValue()
-                -- Convert from seconds to milliseconds and round properly
-                ping = math.floor(pingValue * 1000)
-                -- Cap unrealistic ping values
-                if ping > 2000 or ping < 0 then
-                    ping = 0
-                end
+                ping = math.floor(pingValue * 1000) -- Convert to milliseconds
             end
         end
+        
+        -- Method 2: Alternative ping detection
+        if ping == 0 and stats:FindFirstChild("PerformanceStats") then
+            local perfStats = stats.PerformanceStats
+            if perfStats:FindFirstChild("Ping") then
+                ping = math.floor(perfStats.Ping:GetValue())
+            end
+        end
+        
+        -- Method 3: Heartbeat-based estimation
+        if ping == 0 then
+            local heartbeat = game:GetService("RunService").Heartbeat
+            local start = tick()
+            heartbeat:Wait()
+            local elapsed = tick() - start
+            ping = math.floor(elapsed * 1000 / 2) -- Rough estimation
+        end
+        
+        -- Reasonable bounds
+        if ping > 999 then ping = 999 end
+        if ping < 0 then ping = 0 end
     end)
+    
     return ping
 end
 
@@ -1904,40 +1925,47 @@ function RadiantHub:createMinimizedLogo()
     })
     addCorner(logoImg, logoSize / 2 - (isMobile and 10 or 7.5))
     
-    -- ✅ VEREINFACHTES Click-to-maximize System
-    local clickButton = create('TextButton', {
-        Size = UDim2.new(1, 0, 1, 0),
-        BackgroundTransparency = 1,
-        Text = '',
-        ZIndex = 4,
-        Active = false, -- ✅ KRITISCHE ÄNDERUNG: Deaktiviere Active damit Dragging funktioniert
-        Parent = self.minimizedLogo,
-    })
-    
-    -- ✅ EINFACHE Click-Detection ohne komplexes Drag-Tracking
+    -- ✅ BESSERE LÖSUNG: Logo selbst clickbar machen ohne Button der Dragging blockiert
     local clickStartTime = 0
+    local isDragging = false
     
-    clickButton.MouseButton1Down:Connect(function()
-        clickStartTime = tick()
+    -- Events direkt auf dem Logo-Frame
+    self.minimizedLogo.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            clickStartTime = tick()
+            isDragging = false
+        end
     end)
     
-    clickButton.MouseButton1Up:Connect(function()
-        local clickDuration = tick() - clickStartTime
-        -- Wenn Click kürzer als 0.2 Sekunden = echter Click (nicht Drag)
-        if clickDuration < 0.2 then
-            self:maximize()
+    self.minimizedLogo.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            if tick() - clickStartTime > 0.1 then
+                isDragging = true
+            end
+        end
+    end)
+    
+    self.minimizedLogo.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if not isDragging and tick() - clickStartTime < 0.3 then
+                -- Kurzer Click = Maximize
+                self:maximize()
+            end
         end
     end)
     
     -- ✅ Mobile Touch Support
     if isMobile then
-        clickButton.TouchTap:Connect(function()
-            self:maximize()
+        -- Zusätzlicher TouchTap für mobile Geräte
+        local touchConnection
+        touchConnection = self.minimizedLogo.TouchTap:Connect(function()
+            if not isDragging then
+                self:maximize()
+            end
         end)
     end
     
-    -- ✅ KEINE manuellen Drag-Connections mehr nötig!
-    -- Roblox Draggable=true macht alles automatisch
+    -- ✅ Logo ist nun vollständig draggable UND clickable
     self.minimizedLogoDragConnection = nil -- Setze auf nil da nicht benötigt
     
     -- Animate appearance
