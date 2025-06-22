@@ -363,6 +363,9 @@ function RadiantUI:CreateWatermark()
     watermarkCorner.CornerRadius = UDim.new(0, 8)
     watermarkCorner.Parent = self.WatermarkFrame
     
+    -- Make watermark draggable when menu is open
+    self:MakeWatermarkDraggable()
+    
     local watermarkTitle = Instance.new('TextLabel')
     watermarkTitle.Size = UDim2.new(0, 200, 0, 30)
     watermarkTitle.Position = UDim2.new(0, 15, 0, 17)
@@ -460,6 +463,44 @@ function RadiantUI:StartWatermarkUpdates()
     end)
     
     table.insert(self.Connections, connection)
+end
+
+function RadiantUI:MakeWatermarkDraggable()
+    if not self.WatermarkFrame then return end
+    
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    self.WatermarkFrame.InputBegan:Connect(function(input)
+        -- Nur verschiebbar wenn Menu offen ist
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and self.GuiVisible then
+            dragging = true
+            dragStart = input.Position
+            startPos = self.WatermarkFrame.Position
+        end
+    end)
+    
+    local connection1 = UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement and self.GuiVisible then
+            local delta = input.Position - dragStart
+            self.WatermarkFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    local connection2 = UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    table.insert(self.Connections, connection1)
+    table.insert(self.Connections, connection2)
 end
 
 function RadiantUI:AddTab(config)
@@ -892,7 +933,7 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         self:CreateSlider(element, itemFrame)
     elseif element.Type == 'Button' then
         self:CreateButton(element, itemFrame)
-        label.Text = ''  -- Hide label for buttons since button shows the name
+        -- Button behält den Text links wie andere Elemente
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
     elseif element.Type == 'Input' then
@@ -1059,7 +1100,7 @@ function RadiantUI:CreateButton(element, parent)
     button.Position = UDim2.new(1, -80, 0.5, -16)
     button.BackgroundColor3 = Color3.fromRGB(180, 15, 15)
     button.BorderSizePixel = 0
-    button.Text = element.Name
+    button.Text = element.Config and element.Config.ButtonText or "Execute"
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
     button.TextSize = 13
     button.Font = Enum.Font.GothamBold
@@ -1210,6 +1251,43 @@ function RadiantUI:CreateColorPicker(element, parent)
 end
 
 function RadiantUI:CreateKeybind(element, parent)
+    -- Key name mapping für bessere Anzeige
+    local keyNames = {
+        [Enum.KeyCode.LeftControl] = 'LCtrl',
+        [Enum.KeyCode.RightControl] = 'RCtrl',
+        [Enum.KeyCode.LeftShift] = 'LShift',
+        [Enum.KeyCode.RightShift] = 'RShift',
+        [Enum.KeyCode.LeftAlt] = 'LAlt',
+        [Enum.KeyCode.RightAlt] = 'RAlt',
+        [Enum.KeyCode.Space] = 'Space',
+        [Enum.KeyCode.Return] = 'Enter',
+        [Enum.KeyCode.Backspace] = 'Backspace',
+        [Enum.KeyCode.Tab] = 'Tab',
+        [Enum.KeyCode.CapsLock] = 'Caps',
+        [Enum.KeyCode.Escape] = 'Esc',
+        [Enum.KeyCode.F1] = 'F1',
+        [Enum.KeyCode.F2] = 'F2',
+        [Enum.KeyCode.F3] = 'F3',
+        [Enum.KeyCode.F4] = 'F4',
+        [Enum.KeyCode.F5] = 'F5',
+        [Enum.KeyCode.F6] = 'F6',
+        [Enum.KeyCode.F7] = 'F7',
+        [Enum.KeyCode.F8] = 'F8',
+        [Enum.KeyCode.F9] = 'F9',
+        [Enum.KeyCode.F10] = 'F10',
+        [Enum.KeyCode.F11] = 'F11',
+        [Enum.KeyCode.F12] = 'F12',
+    }
+    
+    local function getKeyDisplayName(keyCode)
+        if keyNames[keyCode] then
+            return keyNames[keyCode]
+        else
+            local keyString = tostring(keyCode)
+            return keyString:match('%.(%w+)$') or keyString
+        end
+    end
+    
     local keybindFrame = Instance.new('Frame')
     keybindFrame.Size = UDim2.new(0, 120, 0, 32)
     keybindFrame.Position = UDim2.new(1, -120, 0.5, -16)
@@ -1242,7 +1320,7 @@ function RadiantUI:CreateKeybind(element, parent)
         local connection
         connection = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
-                local keyName = tostring(input.KeyCode):match('%.(%w+)') or tostring(input.KeyCode)
+                local keyName = getKeyDisplayName(input.KeyCode)
                 element.Value = keyName
                 keybindButton.Text = keyName
                 keybindButton.TextColor3 = self.Config.Theme.Text
@@ -1462,12 +1540,13 @@ function RadiantUI:ToggleGUI()
     self.GuiVisible = not self.GuiVisible
     self.MainFrame.Visible = self.GuiVisible
     
+    -- Watermark bleibt immer sichtbar (User-Request)
     if self.WatermarkFrame then
-        self.WatermarkFrame.Visible = self.GuiVisible and self.Config.ShowWatermark
+        self.WatermarkFrame.Visible = self.Config.ShowWatermark
     end
     
     if self.Config.EnableNotifications then
-        self:ShowNotification("GUI " .. (self.GuiVisible and "Opened" or "Closed"), 2)
+        -- Notification entfernt (User-Request)
     end
 end
 
