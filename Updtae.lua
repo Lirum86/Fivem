@@ -214,7 +214,7 @@ function RadiantUI:CreateSidebar()
     sidebarBottomLeftCover.Name = 'SidebarBottomLeftCover'
     sidebarBottomLeftCover.Size = UDim2.new(0, 15, 0, 15)
     sidebarBottomLeftCover.Position = UDim2.new(0, 0, 1, -15)
-    sidebarBottomLeftCover.BackgroundColor3 = self.Config.Theme.Sidebar
+    sidebarBottomLeftCover.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Exakte Sidebar-Farbe
     sidebarBottomLeftCover.BorderSizePixel = 0
     sidebarBottomLeftCover.Parent = self.SidebarFrame
     
@@ -223,7 +223,7 @@ function RadiantUI:CreateSidebar()
     sidebarBottomRightCover.Name = 'SidebarBottomRightCover'
     sidebarBottomRightCover.Size = UDim2.new(0, 15, 0, 15)
     sidebarBottomRightCover.Position = UDim2.new(1, -15, 1, -15)
-    sidebarBottomRightCover.BackgroundColor3 = self.Config.Theme.Sidebar
+    sidebarBottomRightCover.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Exakte Sidebar-Farbe
     sidebarBottomRightCover.BorderSizePixel = 0
     sidebarBottomRightCover.Parent = self.SidebarFrame
     
@@ -236,7 +236,8 @@ function RadiantUI:CreateAvatarSection()
 	avatarSection.Name = "AvatarSection"
 	avatarSection.Size = UDim2.new(1, 0, 0, 90)
 	avatarSection.Position = UDim2.new(0, 0, 1, -150) -- Unten mit 60px Abstand vom Rand
-	avatarSection.BackgroundTransparency = 1 -- Transparent
+	avatarSection.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- ROTER DEBUG-HINTERGRUND
+	avatarSection.BackgroundTransparency = 0.7 -- Durchsichtig aber sichtbar
 	avatarSection.BorderSizePixel = 0
 	avatarSection.Parent = self.SidebarFrame
 
