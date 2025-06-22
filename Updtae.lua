@@ -15,8 +15,8 @@ local UserInputService = game:GetService('UserInputService')
 local RunService = game:GetService('RunService')
 
 -- Constants
-local MAX_USER_TABS = 5
-local SETTINGS_TAB_INDEX = 6
+local MAX_USER_TABS = 10
+local SETTINGS_TAB_INDEX = 11
 
 -- Default Configuration
 local DEFAULT_CONFIG = {
@@ -794,6 +794,9 @@ function RadiantUI:AddSection(tabIndex, config)
         end,
         AddLabel = function(elementConfig)
             return self:AddElement(section, 'Label', elementConfig)
+        end,
+        AddElement = function(elementConfig)
+            return self:AddElement(section, elementConfig.Type, elementConfig)
         end
     }
 end
