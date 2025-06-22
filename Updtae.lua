@@ -55,6 +55,7 @@ function RadiantUI.new(config)
     self.Connections = {}
     self.Tweens = {}
     self.Notifications = {}
+    self.KeybindCooldown = false -- Cooldown für Keybind-Änderungen
     
     self:Initialize()
     return self
@@ -128,6 +129,23 @@ function RadiantUI:CreateHeader()
     local headerCorner = Instance.new('UICorner')
     headerCorner.CornerRadius = UDim.new(0, 20)
     headerCorner.Parent = self.HeaderFrame
+    
+    -- Header corner covers to make bottom corners square
+    local headerBottomLeftCover = Instance.new('Frame')
+    headerBottomLeftCover.Name = 'HeaderBottomLeftCover'
+    headerBottomLeftCover.Size = UDim2.new(0, 20, 0, 20)
+    headerBottomLeftCover.Position = UDim2.new(0, 0, 1, -20)
+    headerBottomLeftCover.BackgroundColor3 = Color3.fromRGB(26, 26, 26) -- Exakte Header-Farbe
+    headerBottomLeftCover.BorderSizePixel = 0
+    headerBottomLeftCover.Parent = self.HeaderFrame
+    
+    local headerBottomRightCover = Instance.new('Frame')
+    headerBottomRightCover.Name = 'HeaderBottomRightCover'
+    headerBottomRightCover.Size = UDim2.new(0, 20, 0, 20)
+    headerBottomRightCover.Position = UDim2.new(1, -20, 1, -20)
+    headerBottomRightCover.BackgroundColor3 = Color3.fromRGB(26, 26, 26) -- Exakte Header-Farbe
+    headerBottomRightCover.BorderSizePixel = 0
+    headerBottomRightCover.Parent = self.HeaderFrame
     
     self.TitleLabel = Instance.new('TextLabel')
     self.TitleLabel.Size = UDim2.new(0, 250, 1, 0)
@@ -1327,6 +1345,13 @@ function RadiantUI:CreateKeybind(element, parent)
                 element.Callback(input.KeyCode)
                 isBinding = false
                 connection:Disconnect()
+                
+                -- Cooldown hinzufügen damit Menü nicht sofort schließt
+                self.KeybindCooldown = true
+                spawn(function()
+                    wait(0.5) -- 500ms Cooldown
+                    self.KeybindCooldown = false
+                end)
             end
         end)
         
@@ -1351,7 +1376,7 @@ end
 function RadiantUI:CreateSettingsTab()
     self.SettingsTab = {
         Name = "Settings",
-        Icon = "rbxassetid:/108115865520282",
+        Icon = "rbxassetid://108115865520282",
         IconActive = "rbxassetid://105710018760458",
         Sections = {},
         Content = nil,
@@ -1527,6 +1552,9 @@ end
 function RadiantUI:SetupKeybinds()
     local connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
+        
+        -- Keybind Cooldown prüfen um versehentliches Schließen zu verhindern
+        if self.KeybindCooldown then return end
         
         if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == self.ToggleKeybind then
             self:ToggleGUI()
