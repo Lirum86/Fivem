@@ -201,7 +201,7 @@ function RadiantUI:CreateSidebar()
     self.SidebarFrame.ScrollBarThickness = 2
     self.SidebarFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
     self.SidebarFrame.ScrollBarImageTransparency = 0.3
-    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, 800)  -- Größere Canvas für mehr Tabs + Avatar
+    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)  -- NOCH GRÖSSERE Canvas für Avatar Debug
     self.SidebarFrame.Parent = self.MainFrame
     
     local sidebarCorner = Instance.new('UICorner')
@@ -212,12 +212,13 @@ function RadiantUI:CreateSidebar()
 end
 
 function RadiantUI:CreateAvatarSection()
-	-- Avatar section at bottom of sidebar (ganz nach unten)
+	-- Debug: Temporärer Hintergrund für die Avatar-Sektion
 	local avatarSection = Instance.new("Frame")
 	avatarSection.Name = "AvatarSection"
 	avatarSection.Size = UDim2.new(1, 0, 0, 90)
-	avatarSection.Position = UDim2.new(0, 0, 1, -150) -- Ein bisschen nach oben vom unteren Rand
-	avatarSection.BackgroundTransparency = 1 -- Transparent background
+	avatarSection.Position = UDim2.new(0, 0, 0, 400) -- FESTE POSITION für Debug - weit oben in der Sidebar
+	avatarSection.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- GRÜNER HINTERGRUND für Debug
+	avatarSection.BackgroundTransparency = 0.5 -- Sichtbar aber durchsichtig
 	avatarSection.BorderSizePixel = 0
 	avatarSection.Parent = self.SidebarFrame
 
