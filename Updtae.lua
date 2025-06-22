@@ -105,6 +105,14 @@ function RadiantUI:Initialize()
         if not self.SettingsTab then
             self:CreateSettingsTab()
         end
+        
+        -- WICHTIG: Initialisiere den ersten Tab automatisch
+        if #self.Tabs > 0 and not self.Tabs[1].Content then
+            self:CreateTabContent(1)
+            if self.Tabs[1].Content then
+                self.Tabs[1].Content.Visible = true
+            end
+        end
     end)
 end
 
@@ -472,6 +480,14 @@ function RadiantUI:AddTab(config)
     
     self.Tabs[tabIndex] = tab
     self:CreateTabButton(tab, tabIndex)
+    
+    -- Automatisch den ersten Tab aktivieren
+    if tabIndex == 1 then
+        spawn(function()
+            wait(0.1) -- Kurze Verzögerung für GUI-Initialisierung
+            self:SwitchTab(1)
+        end)
+    end
     
     -- Erstelle Settings Tab wenn dies der letzte User-Tab ist
     if #self.Tabs == MAX_USER_TABS then
