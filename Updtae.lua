@@ -179,7 +179,9 @@ function RadiantUI:CreateControlButtons()
             end)
         elseif buttonData.name == "Minimize" then
             button.MouseButton1Click:Connect(function()
-                self:ToggleMinimize()
+                local isMinimized = self.MainFrame.Size.Y.Offset <= 60
+                local targetSize = isMinimized and self.Config.Size or UDim2.new(0, 1000, 0, 60)
+                TweenService:Create(self.MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart), {Size = targetSize}):Play()
             end)
         end
         
@@ -223,7 +225,8 @@ function RadiantUI:CreateAvatarSection()
     local avatarCircle = Instance.new("Frame")
     avatarCircle.Size = UDim2.new(0, 50, 0, 50)
     avatarCircle.Position = UDim2.new(0, 15, 0.5, -25)
-    avatarCircle.BackgroundTransparency = 1
+    avatarCircle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    avatarCircle.BorderSizePixel = 0
     avatarCircle.Parent = avatarSection
     
     local avatarCorner = Instance.new("UICorner")
@@ -245,6 +248,7 @@ function RadiantUI:CreateAvatarSection()
     statusCircle.Size = UDim2.new(0, 8, 0, 8)
     statusCircle.Position = UDim2.new(1, -10, 1, -10)
     statusCircle.BackgroundColor3 = self.Config.Theme.Primary
+    statusCircle.BorderSizePixel = 0
     statusCircle.Parent = avatarCircle
     
     local statusCorner = Instance.new("UICorner")
@@ -557,6 +561,7 @@ function RadiantUI:CreateTabContent(tabIndex)
     if not tab then return end
     
     local contentFrame = Instance.new('Frame')
+    contentFrame.Name = 'TabContent' .. (tab.Name or 'Unknown')
     contentFrame.Size = UDim2.new(1, -60, 1, -30)
     contentFrame.Position = UDim2.new(0, 30, 0, 15)
     contentFrame.BackgroundTransparency = 1
@@ -564,39 +569,65 @@ function RadiantUI:CreateTabContent(tabIndex)
     contentFrame.Visible = tabIndex == self.CurrentTab
     
     local leftColumn = Instance.new('ScrollingFrame')
+    leftColumn.Name = 'LeftColumn'
     leftColumn.Size = UDim2.new(0.48, -5, 1, 0)
     leftColumn.Position = UDim2.new(0, 0, 0, 0)
     leftColumn.BackgroundTransparency = 1
     leftColumn.BorderSizePixel = 0
     leftColumn.ScrollBarThickness = 2
-    leftColumn.CanvasSize = UDim2.new(0, 0, 2, 0)
+    leftColumn.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+    leftColumn.ScrollBarImageTransparency = 0.4
+    leftColumn.CanvasSize = UDim2.new(0, 0, 3, 0)  -- Größere Canvas
     leftColumn.Parent = contentFrame
     
     local rightColumn = Instance.new('ScrollingFrame')
+    rightColumn.Name = 'RightColumn'
     rightColumn.Size = UDim2.new(0.48, -5, 1, 0)
     rightColumn.Position = UDim2.new(0.52, 5, 0, 0)
     rightColumn.BackgroundTransparency = 1
     rightColumn.BorderSizePixel = 0
     rightColumn.ScrollBarThickness = 2
-    rightColumn.CanvasSize = UDim2.new(0, 0, 2, 0)
+    rightColumn.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+    rightColumn.ScrollBarImageTransparency = 0.4
+    rightColumn.CanvasSize = UDim2.new(0, 0, 3, 0)  -- Größere Canvas
     rightColumn.Parent = contentFrame
     
     local leftLayout = Instance.new('UIListLayout')
     leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
     leftLayout.Padding = UDim.new(0, 15)
+    leftLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     leftLayout.Parent = leftColumn
     
     local rightLayout = Instance.new('UIListLayout')
     rightLayout.SortOrder = Enum.SortOrder.LayoutOrder
     rightLayout.Padding = UDim.new(0, 15)
+    rightLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     rightLayout.Parent = rightColumn
     
     local leftPadding = Instance.new('UIPadding')
     leftPadding.PaddingTop = UDim.new(0, 15)
     leftPadding.PaddingBottom = UDim.new(0, 15)
+    leftPadding.PaddingLeft = UDim.new(0, 5)
+    leftPadding.PaddingRight = UDim.new(0, 5)
     leftPadding.Parent = leftColumn
     
     local rightPadding = Instance.new('UIPadding')
+    rightPadding.PaddingTop = UDim.new(0, 15)
+    rightPadding.PaddingBottom = UDim.new(0, 15)
+    rightPadding.PaddingLeft = UDim.new(0, 5)
+    rightPadding.PaddingRight = UDim.new(0, 5)
+    rightPadding.Parent = rightColumn
+    
+    -- Store references for sections
+    tab.Content = contentFrame
+    tab.LeftColumn = leftColumn
+    tab.RightColumn = rightColumn
+    
+    -- Create existing sections
+    for i, section in ipairs(tab.Sections) do
+        local parentColumn = (i % 2 == 1) and leftColumn or rightColumn
+        self:CreateSection(section, parentColumn, math.ceil(i / 2))
+    end
     rightPadding.PaddingTop = UDim.new(0, 15)
     rightPadding.PaddingBottom = UDim.new(0, 15)
     rightPadding.Parent = rightColumn
@@ -721,12 +752,7 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
     itemLayout.Padding = UDim.new(0, itemSpacing)
     itemLayout.Parent = itemsFrame
     
-    -- Create elements if they exist
-    for i, element in ipairs(section.Elements) do
-        self:CreateElement(element, itemsFrame, i)
-    end
-    section.ItemsFrame = itemsFrame
-    
+    -- Create elements if they exist (only once!)
     for i, element in ipairs(section.Elements) do
         self:CreateElement(element, itemsFrame, i)
     end
@@ -811,7 +837,7 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         self:CreateSlider(element, itemFrame)
     elseif element.Type == 'Button' then
         self:CreateButton(element, itemFrame)
-        label.Text = ''
+        label.Text = ''  -- Hide label for buttons since button shows the name
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
     elseif element.Type == 'Input' then
@@ -1506,11 +1532,19 @@ function RadiantUI:ShowNotification(text, duration)
     progressBg.BorderSizePixel = 0
     progressBg.Parent = notification
     
+    local progressBgCorner = Instance.new('UICorner')
+    progressBgCorner.CornerRadius = UDim.new(0, 2)
+    progressBgCorner.Parent = progressBg
+    
     local progressBar = Instance.new('Frame')
     progressBar.Size = UDim2.new(1, 0, 1, 0)
     progressBar.BackgroundColor3 = self.Config.Theme.Primary
     progressBar.BorderSizePixel = 0
     progressBar.Parent = progressBg
+    
+    local progressBarCorner = Instance.new('UICorner')
+    progressBarCorner.CornerRadius = UDim.new(0, 2)
+    progressBarCorner.Parent = progressBar
     
     table.insert(self.Notifications, notification)
     
