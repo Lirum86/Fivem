@@ -235,7 +235,7 @@ function RadiantUI:CreateAvatarSection()
 	local avatarSection = Instance.new("Frame")
 	avatarSection.Name = "AvatarSection"
 	avatarSection.Size = UDim2.new(0, 200, 0, 90) -- Fixed width like sidebar
-	avatarSection.Position = UDim2.new(0, 0, 1, -110) -- 20px from bottom of MainFrame
+	avatarSection.Position = UDim2.new(0, 0, 1, -80) -- Etwas näher zum unteren Rand
 	avatarSection.BackgroundTransparency = 1 -- Transparent
 	avatarSection.BorderSizePixel = 0
 	avatarSection.Parent = self.MainFrame -- Parent ist MainFrame, NICHT SidebarFrame!
