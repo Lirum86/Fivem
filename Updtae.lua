@@ -34,8 +34,7 @@ local DEFAULT_CONFIG = {
     },
     DefaultKeybind = Enum.KeyCode.RightControl,
     ShowWatermark = true,
-    EnableNotifications = true,
-    FadeAnimations = true
+    EnableNotifications = true
 }
 
 function RadiantUI.new(config)
@@ -97,9 +96,7 @@ function RadiantUI:Initialize()
     self:SetupKeybinds()
     -- Settings tab wird später erstellt nach User-Tabs
     
-    if self.Config.FadeAnimations then
-        self:FadeIn()
-    end
+    -- Fade animations entfernt für bessere Performance
     
     spawn(function()
         wait(1)
@@ -151,6 +148,7 @@ function RadiantUI:CreateControlButtons()
     controlsFrame.Position = UDim2.new(1, -90, 0.5, -10)
     controlsFrame.BackgroundTransparency = 1
     controlsFrame.BorderSizePixel = 0
+    controlsFrame.Visible = true  -- Explizit sichtbar
     controlsFrame.Parent = self.HeaderFrame
     
     local buttons = {
@@ -217,9 +215,10 @@ function RadiantUI:CreateAvatarSection()
     local avatarSection = Instance.new("Frame")
     avatarSection.Name = "AvatarSection"
     avatarSection.Size = UDim2.new(1, 0, 0, 90)
-    avatarSection.Position = UDim2.new(0, 0, 1, -110)  -- Höher positioniert
+    avatarSection.Position = UDim2.new(0, 0, 0, 350)  -- Feste Position nach den Tabs
     avatarSection.BackgroundTransparency = 1
     avatarSection.ZIndex = 10  -- Über andere Elemente
+    avatarSection.Visible = true  -- Explizit sichtbar
     avatarSection.Parent = self.SidebarFrame
     
     local avatarCircle = Instance.new("Frame")
@@ -1405,25 +1404,10 @@ end
 
 function RadiantUI:ToggleGUI()
     self.GuiVisible = not self.GuiVisible
+    self.MainFrame.Visible = self.GuiVisible
     
-    if self.Config.FadeAnimations then
-        if self.GuiVisible then
-            self.MainFrame.Visible = true
-            self:FadeIn()
-        else
-            self:FadeOut()
-            spawn(function()
-                wait(0.5)
-                if not self.GuiVisible then
-                    self.MainFrame.Visible = false
-                end
-            end)
-        end
-    else
-        self.MainFrame.Visible = self.GuiVisible
-        if self.WatermarkFrame then
-            self.WatermarkFrame.Visible = self.GuiVisible and self.Config.ShowWatermark
-        end
+    if self.WatermarkFrame then
+        self.WatermarkFrame.Visible = self.GuiVisible and self.Config.ShowWatermark
     end
     
     if self.Config.EnableNotifications then
@@ -1440,60 +1424,7 @@ function RadiantUI:ToggleMinimize()
     }):Play()
 end
 
-function RadiantUI:FadeIn()
-    local elements = self:GetAllFadeableElements()
-    
-    for _, element in pairs(elements) do
-        if element.Type == 'Frame' then
-            element.Element.BackgroundTransparency = 1
-            TweenService:Create(element.Element, TweenInfo.new(0.5), {BackgroundTransparency = 0}):Play()
-        elseif element.Type == 'Text' then
-            element.Element.TextTransparency = 1
-            TweenService:Create(element.Element, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
-        elseif element.Type == 'Image' then
-            element.Element.ImageTransparency = 1
-            TweenService:Create(element.Element, TweenInfo.new(0.5), {ImageTransparency = 0}):Play()
-        end
-    end
-end
-
-function RadiantUI:FadeOut()
-    local elements = self:GetAllFadeableElements()
-    
-    for _, element in pairs(elements) do
-        if element.Type == 'Frame' then
-            TweenService:Create(element.Element, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-        elseif element.Type == 'Text' then
-            TweenService:Create(element.Element, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
-        elseif element.Type == 'Image' then
-            TweenService:Create(element.Element, TweenInfo.new(0.4), {ImageTransparency = 1}):Play()
-        end
-    end
-end
-
-function RadiantUI:GetAllFadeableElements()
-    local elements = {}
-    
-    table.insert(elements, {Type = 'Frame', Element = self.MainFrame})
-    table.insert(elements, {Type = 'Frame', Element = self.HeaderFrame})
-    table.insert(elements, {Type = 'Text', Element = self.TitleLabel})
-    
-    local function addChildElements(parent)
-        for _, child in pairs(parent:GetChildren()) do
-            if child:IsA('Frame') then
-                table.insert(elements, {Type = 'Frame', Element = child})
-            elseif child:IsA('TextLabel') or child:IsA('TextButton') then
-                table.insert(elements, {Type = 'Text', Element = child})
-            elseif child:IsA('ImageLabel') then
-                table.insert(elements, {Type = 'Image', Element = child})
-            end
-            addChildElements(child)
-        end
-    end
-    
-    addChildElements(self.MainFrame)
-    return elements
-end
+-- Fade functions removed for better performance
 
 function RadiantUI:ShowNotification(text, duration)
     if not self.Config.EnableNotifications then return end
@@ -1600,7 +1531,6 @@ function RadiantUI:SaveConfig()
         Theme = self.Config.Theme,
         ShowWatermark = self.Config.ShowWatermark,
         EnableNotifications = self.Config.EnableNotifications,
-        FadeAnimations = self.Config.FadeAnimations,
         Position = {
             X = {Scale = self.MainFrame.Position.X.Scale, Offset = self.MainFrame.Position.X.Offset},
             Y = {Scale = self.MainFrame.Position.Y.Scale, Offset = self.MainFrame.Position.Y.Offset}
@@ -1618,7 +1548,6 @@ function RadiantUI:LoadConfig()
     if config.Theme then self.Config.Theme = config.Theme end
     if config.ShowWatermark ~= nil then self.Config.ShowWatermark = config.ShowWatermark end
     if config.EnableNotifications ~= nil then self.Config.EnableNotifications = config.EnableNotifications end
-    if config.FadeAnimations ~= nil then self.Config.FadeAnimations = config.FadeAnimations end
     
     if config.Position then
         self.MainFrame.Position = UDim2.new(
@@ -1656,15 +1585,7 @@ function RadiantUI:Destroy()
     end
     
     if self.ScreenGui and self.ScreenGui.Parent then
-        if self.Config.FadeAnimations then
-            self:FadeOut()
-            spawn(function()
-                wait(0.5)
-                self.ScreenGui:Destroy()
-            end)
-        else
-            self.ScreenGui:Destroy()
-        end
+        self.ScreenGui:Destroy()
     end
     
     if _G.RadiantUI_Instance == self then
@@ -1696,24 +1617,9 @@ end
 
 function RadiantUI:SetVisible(visible)
     self.GuiVisible = visible
-    if self.Config.FadeAnimations then
-        if visible then
-            self.MainFrame.Visible = true
-            self:FadeIn()
-        else
-            self:FadeOut()
-            spawn(function()
-                wait(0.5)
-                if not self.GuiVisible then
-                    self.MainFrame.Visible = false
-                end
-            end)
-        end
-    else
-        self.MainFrame.Visible = visible
-        if self.WatermarkFrame then
-            self.WatermarkFrame.Visible = visible and self.Config.ShowWatermark
-        end
+    self.MainFrame.Visible = visible
+    if self.WatermarkFrame then
+        self.WatermarkFrame.Visible = visible and self.Config.ShowWatermark
     end
 end
 
