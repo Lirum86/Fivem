@@ -15,8 +15,8 @@ local UserInputService = game:GetService('UserInputService')
 local RunService = game:GetService('RunService')
 
 -- Constants
-local MAX_USER_TABS = 10
-local SETTINGS_TAB_INDEX = 11
+local MAX_USER_TABS = 4
+local SETTINGS_TAB_INDEX = 5
 
 -- Default Configuration
 local DEFAULT_CONFIG = {
@@ -1160,6 +1160,11 @@ function RadiantUI:CreateDropdown(element, parent)
     local options = element.Config.Options or {}
     local placeholder = element.Config.Placeholder or 'Select...'
     
+    -- Debug: Check if options are provided
+    if #options == 0 then
+        warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
+    end
+    
     local dropdownFrame = Instance.new('Frame')
     dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
     dropdownFrame.Position = UDim2.new(1, -140, 0.5, -16)
@@ -1411,6 +1416,9 @@ function RadiantUI:CreateDropdown(element, parent)
             end)
         end
     end)
+    
+    -- Initialize options to prevent empty dropdown
+    createOptions()
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
@@ -1656,6 +1664,9 @@ function RadiantUI:CreateMultiDropdown(element, parent)
             end)
         end
     end)
+    
+    -- Initialize options to prevent empty multi-dropdown
+    createOptions()
 end
 
 function RadiantUI:CreateInput(element, parent)
