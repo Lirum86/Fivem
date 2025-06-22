@@ -212,95 +212,89 @@ function RadiantUI:CreateSidebar()
 end
 
 function RadiantUI:CreateAvatarSection()
-    local avatarSection = Instance.new("Frame")
-    avatarSection.Name = "AvatarSection"
-    avatarSection.Size = UDim2.new(1, 0, 0, 90)
-    avatarSection.Position = UDim2.new(0, 0, 1, -110)  -- Ganz unten mit 20px Abstand
-    avatarSection.BackgroundTransparency = 1
-    avatarSection.ZIndex = 15  -- Noch höher über andere Elemente
-    avatarSection.Visible = true  -- Explizit sichtbar
-    avatarSection.BorderSizePixel = 0
-    avatarSection.Parent = self.SidebarFrame
-    
-    -- Debug: Sichtbarer Hintergrund für Testing (kann später entfernt werden)
-    --avatarSection.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    --avatarSection.BackgroundTransparency = 0.5
-    
-    local avatarCircle = Instance.new("Frame")
-    avatarCircle.Name = "AvatarCircle"
-    avatarCircle.Size = UDim2.new(0, 50, 0, 50)
-    avatarCircle.Position = UDim2.new(0, 15, 0.5, -25)
-    avatarCircle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    avatarCircle.BackgroundTransparency = 0  -- Explizit sichtbar
-    avatarCircle.BorderSizePixel = 0
-    avatarCircle.ZIndex = 16
-    avatarCircle.Parent = avatarSection
-    
-    local avatarCorner = Instance.new("UICorner")
-    avatarCorner.CornerRadius = UDim.new(0.5, 0)
-    avatarCorner.Parent = avatarCircle
-    
-    local avatarImage = Instance.new("ImageLabel")
-    avatarImage.Name = "AvatarImage"
-    avatarImage.Size = UDim2.new(1, -4, 1, -4)
-    avatarImage.Position = UDim2.new(0, 2, 0, 2)
-    avatarImage.BackgroundTransparency = 1
-    avatarImage.ImageTransparency = 0  -- Explizit sichtbar
-    avatarImage.ZIndex = 17
-    avatarImage.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. Players.LocalPlayer.UserId .. "&width=420&height=420&format=png"
-    avatarImage.Parent = avatarCircle
-    
-    local avatarImgCorner = Instance.new("UICorner")
-    avatarImgCorner.CornerRadius = UDim.new(0.5, 0)
-    avatarImgCorner.Parent = avatarImage
-    
-    local statusCircle = Instance.new("Frame")
-    statusCircle.Name = "StatusCircle"
-    statusCircle.Size = UDim2.new(0, 8, 0, 8)
-    statusCircle.Position = UDim2.new(1, -10, 1, -10)
-    statusCircle.BackgroundColor3 = self.Config.Theme.Primary
-    statusCircle.BackgroundTransparency = 0  -- Explizit sichtbar
-    statusCircle.BorderSizePixel = 0
-    statusCircle.ZIndex = 18
-    statusCircle.Parent = avatarCircle
-    
-    local statusCorner = Instance.new("UICorner")
-    statusCorner.CornerRadius = UDim.new(0.5, 0)
-    statusCorner.Parent = statusCircle
-    
-    local usernameLabel = Instance.new("TextLabel")
-    usernameLabel.Name = "UsernameLabel"
-    usernameLabel.Size = UDim2.new(1, -75, 0, 25)
-    usernameLabel.Position = UDim2.new(0, 70, 0, 23)
-    usernameLabel.BackgroundTransparency = 1
-    usernameLabel.Text = Players.LocalPlayer.Name
-    usernameLabel.TextColor3 = self.Config.Theme.Text
-    usernameLabel.TextTransparency = 0  -- Explizit sichtbar
-    usernameLabel.TextSize = 18
-    usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    usernameLabel.TextYAlignment = Enum.TextYAlignment.Center
-    usernameLabel.Font = Enum.Font.SourceSansBold
-    usernameLabel.ZIndex = 16
-    usernameLabel.Parent = avatarSection
-    
-    local subscriptionLabel = Instance.new("TextLabel")
-    subscriptionLabel.Name = "SubscriptionLabel"
-    subscriptionLabel.Size = UDim2.new(1, -75, 0, 20)
-    subscriptionLabel.Position = UDim2.new(0, 70, 0, 48)
-    subscriptionLabel.BackgroundTransparency = 1
-    subscriptionLabel.Text = "Premium User"
-    subscriptionLabel.TextColor3 = self.Config.Theme.Primary
-    subscriptionLabel.TextTransparency = 0  -- Explizit sichtbar
-    subscriptionLabel.TextSize = 14
-    subscriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
-    subscriptionLabel.TextYAlignment = Enum.TextYAlignment.Center
-    subscriptionLabel.Font = Enum.Font.SourceSans
-    subscriptionLabel.ZIndex = 16
-    subscriptionLabel.Parent = avatarSection
-    
-    -- Store references to avatar elements für spätere Verwendung
-    self.AvatarSection = avatarSection
-    self.AvatarCircle = avatarCircle
+	-- Avatar section at bottom of sidebar (ganz nach unten)
+	local avatarSection = Instance.new("Frame")
+	avatarSection.Name = "AvatarSection"
+	avatarSection.Size = UDim2.new(1, 0, 0, 90)
+	avatarSection.Position = UDim2.new(0, 0, 1, -150) -- Ein bisschen nach oben vom unteren Rand
+	avatarSection.BackgroundTransparency = 1 -- Transparent background
+	avatarSection.BorderSizePixel = 0
+	avatarSection.Parent = self.SidebarFrame
+
+	-- Avatar circle
+	local avatarCircle = Instance.new("Frame")
+	avatarCircle.Name = "AvatarCircle"
+	avatarCircle.Size = UDim2.new(0, 50, 0, 50)
+	avatarCircle.Position = UDim2.new(0, 15, 0.5, -25)
+	avatarCircle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	avatarCircle.BorderSizePixel = 0
+	avatarCircle.Parent = avatarSection
+
+	-- Avatar corner radius
+	local avatarCorner = Instance.new("UICorner")
+	avatarCorner.CornerRadius = UDim.new(0.5, 0)
+	avatarCorner.Parent = avatarCircle
+
+	-- Avatar image (Roblox avatar)
+	local avatarImage = Instance.new("ImageLabel")
+	avatarImage.Name = "AvatarImage"
+	avatarImage.Size = UDim2.new(1, -4, 1, -4)
+	avatarImage.Position = UDim2.new(0, 2, 0, 2)
+	avatarImage.BackgroundTransparency = 1
+	avatarImage.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. Players.LocalPlayer.UserId .. "&width=420&height=420&format=png"
+	avatarImage.Parent = avatarCircle
+
+	-- Avatar image corner radius
+	local avatarImgCorner = Instance.new("UICorner")
+	avatarImgCorner.CornerRadius = UDim.new(0.5, 0)
+	avatarImgCorner.Parent = avatarImage
+
+	-- Red status circle
+	local statusCircle = Instance.new("Frame")
+	statusCircle.Name = "StatusCircle"
+	statusCircle.Size = UDim2.new(0, 8, 0, 8)
+	statusCircle.Position = UDim2.new(1, -10, 1, -10)
+	statusCircle.BackgroundColor3 = Color3.fromRGB(255, 51, 51) -- Red color
+	statusCircle.BorderSizePixel = 0
+	statusCircle.Parent = avatarCircle
+
+	-- Status circle corner radius (makes it round)
+	local statusCorner = Instance.new("UICorner")
+	statusCorner.CornerRadius = UDim.new(0.5, 0)
+	statusCorner.Parent = statusCircle
+
+	-- Username label
+	local usernameLabel = Instance.new("TextLabel")
+	usernameLabel.Name = "UsernameLabel"
+	usernameLabel.Size = UDim2.new(1, -75, 0, 25)
+	usernameLabel.Position = UDim2.new(0, 70, 0, 23) -- Ein wenig nach unten verschoben
+	usernameLabel.BackgroundTransparency = 1
+	usernameLabel.Text = Players.LocalPlayer.Name
+	usernameLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- White text
+	usernameLabel.TextSize = 18
+	usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	usernameLabel.TextYAlignment = Enum.TextYAlignment.Center
+	usernameLabel.Font = Enum.Font.SourceSansBold
+	usernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+	usernameLabel.Parent = avatarSection
+
+	-- Subscription label
+	local subscriptionLabel = Instance.new("TextLabel")
+	subscriptionLabel.Name = "SubscriptionLabel"
+	subscriptionLabel.Size = UDim2.new(1, -75, 0, 20)
+	subscriptionLabel.Position = UDim2.new(0, 70, 0, 48) -- Ein wenig nach unten verschoben
+	subscriptionLabel.BackgroundTransparency = 1
+	subscriptionLabel.Text = "Lifetime"
+	subscriptionLabel.TextColor3 = Color3.fromRGB(255, 51, 51) -- Red color
+	subscriptionLabel.TextSize = 16
+	subscriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+	subscriptionLabel.TextYAlignment = Enum.TextYAlignment.Center
+	subscriptionLabel.Font = Enum.Font.SourceSans
+	subscriptionLabel.Parent = avatarSection
+
+	-- Store references to avatar elements für spätere Verwendung
+	self.AvatarSection = avatarSection
+	self.AvatarCircle = avatarCircle
     self.AvatarImage = avatarImage
     self.StatusCircle = statusCircle
     self.UsernameLabel = usernameLabel
@@ -1244,7 +1238,7 @@ end
 function RadiantUI:CreateSettingsTab()
     self.SettingsTab = {
         Name = "Settings",
-        Icon = "rbxassetid://105710018760458",
+        Icon = "rbxassetid:/108115865520282",
         IconActive = "rbxassetid://105710018760458",
         Sections = {},
         Content = nil,
