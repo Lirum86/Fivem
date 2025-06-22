@@ -201,7 +201,7 @@ function RadiantUI:CreateSidebar()
     self.SidebarFrame.ScrollBarThickness = 2
     self.SidebarFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
     self.SidebarFrame.ScrollBarImageTransparency = 0.3
-    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)  -- NOCH GRÖSSERE Canvas für Avatar Debug
+    -- Canvas size will be updated dynamically after creating avatar section
     self.SidebarFrame.Parent = self.MainFrame
     
     local sidebarCorner = Instance.new('UICorner')
@@ -231,13 +231,20 @@ function RadiantUI:CreateSidebar()
 end
 
 function RadiantUI:CreateAvatarSection()
-	-- Avatar section at bottom of sidebar
+	-- Calculate position after all tabs
+	local tabCount = #self.Tabs or 0
+	local tabHeight = 50 -- Each tab is 50px high
+	local topPadding = 20 -- Initial padding from top
+	local spaceBetweenTabsAndAvatar = 30 -- Space between last tab and avatar
+	
+	local avatarYPosition = topPadding + (tabCount * tabHeight) + spaceBetweenTabsAndAvatar
+	
+	-- Avatar section positioned after tabs in the canvas
 	local avatarSection = Instance.new("Frame")
 	avatarSection.Name = "AvatarSection"
 	avatarSection.Size = UDim2.new(1, 0, 0, 90)
-	avatarSection.Position = UDim2.new(0, 0, 1, -150) -- Unten mit 60px Abstand vom Rand
-	avatarSection.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- ROTER DEBUG-HINTERGRUND
-	avatarSection.BackgroundTransparency = 0.7 -- Durchsichtig aber sichtbar
+	avatarSection.Position = UDim2.new(0, 0, 0, avatarYPosition) -- Dynamic position after tabs
+	avatarSection.BackgroundTransparency = 1 -- Transparent
 	avatarSection.BorderSizePixel = 0
 	avatarSection.Parent = self.SidebarFrame
 
@@ -319,6 +326,10 @@ function RadiantUI:CreateAvatarSection()
     self.StatusCircle = statusCircle
     self.UsernameLabel = usernameLabel
     self.SubscriptionLabel = subscriptionLabel
+    
+    -- Update canvas size to include avatar section
+    local totalCanvasHeight = avatarYPosition + 90 + 30 -- Avatar position + avatar height + bottom padding
+    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, totalCanvasHeight)
 end
 
 function RadiantUI:CreateContent()
