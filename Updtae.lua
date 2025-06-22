@@ -215,7 +215,7 @@ function RadiantUI:CreateAvatarSection()
     local avatarSection = Instance.new("Frame")
     avatarSection.Name = "AvatarSection"
     avatarSection.Size = UDim2.new(1, 0, 0, 90)
-    avatarSection.Position = UDim2.new(0, 0, 0, 350)  -- Feste Position nach den Tabs
+    avatarSection.Position = UDim2.new(0, 0, 1, -110)  -- Ganz unten mit 20px Abstand
     avatarSection.BackgroundTransparency = 1
     avatarSection.ZIndex = 10  -- Über andere Elemente
     avatarSection.Visible = true  -- Explizit sichtbar
@@ -622,22 +622,12 @@ function RadiantUI:CreateTabContent(tabIndex)
     tab.LeftColumn = leftColumn
     tab.RightColumn = rightColumn
     
-    -- Create existing sections
+    -- Create existing sections (only once!)
     for i, section in ipairs(tab.Sections) do
-        local parentColumn = (i % 2 == 1) and leftColumn or rightColumn
-        self:CreateSection(section, parentColumn, math.ceil(i / 2))
-    end
-    rightPadding.PaddingTop = UDim.new(0, 15)
-    rightPadding.PaddingBottom = UDim.new(0, 15)
-    rightPadding.Parent = rightColumn
-    
-    tab.Content = contentFrame
-    tab.LeftColumn = leftColumn
-    tab.RightColumn = rightColumn
-    
-    for i, section in ipairs(tab.Sections) do
-        local parentColumn = (i % 2 == 1) and leftColumn or rightColumn
-        self:CreateSection(section, parentColumn, math.ceil(i / 2))
+        if not section.Frame then  -- Only create if not already created
+            local parentColumn = (i % 2 == 1) and leftColumn or rightColumn
+            self:CreateSection(section, parentColumn, math.ceil(i / 2))
+        end
     end
 end
 
@@ -690,6 +680,12 @@ function RadiantUI:AddSection(tabIndex, config)
 end
 
 function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
+    -- Prevent double creation
+    if section.Frame then
+        warn("RadiantUI: Section '" .. section.Title .. "' already exists, skipping creation")
+        return
+    end
+    
     local headerHeight = 55
     local itemHeight = 35
     local itemSpacing = 15
