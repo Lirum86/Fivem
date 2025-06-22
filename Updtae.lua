@@ -796,6 +796,11 @@ function RadiantUI:AddSection(tabIndex, config)
             return self:AddElement(section, 'Label', elementConfig)
         end,
         AddElement = function(elementConfig)
+            -- Ensure elementConfig has a Type field
+            if not elementConfig or not elementConfig.Type then
+                warn("RadiantUI: AddElement called without Type in elementConfig")
+                return
+            end
             return self:AddElement(section, elementConfig.Type, elementConfig)
         end
     }
@@ -890,6 +895,24 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
 end
 
 function RadiantUI:AddElement(section, elementType, config)
+    -- Handle both direct calls and section AddElement calls
+    if type(elementType) == "table" and elementType.Type then
+        -- This is a call from section:AddElement({Type = 'MultiDropdown', ...})
+        config = elementType
+        elementType = config.Type
+    end
+    
+    -- Ensure we have valid elementType and config
+    if not elementType then
+        warn("RadiantUI: elementType is nil in AddElement call")
+        return
+    end
+    
+    if not config then
+        warn("RadiantUI: config is nil in AddElement call")
+        return
+    end
+    
     -- Debug output to track element creation
     local elementName = config.Name or "Element"
     print("RadiantUI: Adding element '" .. elementName .. "' of type '" .. elementType .. "'")
@@ -932,6 +955,9 @@ function RadiantUI:AddElement(section, elementType, config)
 end
 
 function RadiantUI:CreateElement(element, parent, layoutOrder)
+    -- Debug output to verify element name
+    print("RadiantUI: Creating element '" .. (element.Name or "UNNAMED") .. "' of type '" .. (element.Type or "UNKNOWN") .. "'")
+    
     local itemFrame = Instance.new('Frame')
     itemFrame.Size = UDim2.new(1, 0, 0, 30)
     itemFrame.BackgroundTransparency = 1
@@ -951,6 +977,9 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
     label.TextYAlignment = Enum.TextYAlignment.Center
     label.Parent = itemFrame
     
+    -- Debug output to verify label text
+    print("RadiantUI: Label text set to: '" .. label.Text .. "'")
+    
     element.Frame = itemFrame
     
     if element.Type == 'Toggle' then
@@ -961,6 +990,7 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         self:CreateButton(element, itemFrame)
         -- For buttons, hide the label since button shows its own text
         label.Text = ""
+        print("RadiantUI: Button label hidden")
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
     elseif element.Type == 'MultiDropdown' then
