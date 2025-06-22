@@ -954,6 +954,8 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         -- Button behält den Text links wie andere Elemente
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
+    elseif element.Type == 'MultiDropdown' then
+        self:CreateMultiDropdown(element, itemFrame)
     elseif element.Type == 'Input' then
         self:CreateInput(element, itemFrame)
     elseif element.Type == 'ColorPicker' then
@@ -1151,6 +1153,10 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
+    local isMultiSelect = element.Config.MultiSelect or false
+    local options = element.Config.Options or {}
+    local placeholder = element.Config.Placeholder or 'Select...'
+    
     local dropdownFrame = Instance.new('Frame')
     dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
     dropdownFrame.Position = UDim2.new(1, -140, 0.5, -16)
@@ -1162,10 +1168,17 @@ function RadiantUI:CreateDropdown(element, parent)
     dropdownCorner.CornerRadius = UDim.new(0, 8)
     dropdownCorner.Parent = dropdownFrame
     
+    local dropdownOutline = Instance.new('UIStroke')
+    dropdownOutline.Thickness = 1
+    dropdownOutline.Color = Color3.fromRGB(85, 85, 85)
+    dropdownOutline.Transparency = 0.3
+    dropdownOutline.Parent = dropdownFrame
+    
+    -- Main button
     local dropdownButton = Instance.new('TextButton')
     dropdownButton.Size = UDim2.new(1, 0, 1, 0)
     dropdownButton.BackgroundTransparency = 1
-    dropdownButton.Text = element.Config.Placeholder or 'Select...'
+    dropdownButton.Text = placeholder
     dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
     dropdownButton.TextSize = 12
     dropdownButton.Font = Enum.Font.Gotham
@@ -1177,6 +1190,7 @@ function RadiantUI:CreateDropdown(element, parent)
     buttonPadding.PaddingRight = UDim.new(0, 30)
     buttonPadding.Parent = dropdownButton
     
+    -- Arrow icon
     local arrowIcon = Instance.new('TextLabel')
     arrowIcon.Size = UDim2.new(0, 20, 1, 0)
     arrowIcon.Position = UDim2.new(1, -25, 0, 0)
@@ -1187,14 +1201,456 @@ function RadiantUI:CreateDropdown(element, parent)
     arrowIcon.Font = Enum.Font.Gotham
     arrowIcon.Parent = dropdownFrame
     
-    local options = element.Config.Options or {}
+    -- Dropdown menu
+    local dropdownMenu = Instance.new('Frame')
+    dropdownMenu.Size = UDim2.new(1, 0, 0, 0)
+    dropdownMenu.Position = UDim2.new(0, 0, 1, 2)
+    dropdownMenu.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    dropdownMenu.BorderSizePixel = 0
+    dropdownMenu.Visible = false
+    dropdownMenu.ClipsDescendants = true
+    dropdownMenu.ZIndex = 10
+    dropdownMenu.Parent = dropdownFrame
     
+    local menuCorner = Instance.new('UICorner')
+    menuCorner.CornerRadius = UDim.new(0, 8)
+    menuCorner.Parent = dropdownMenu
+    
+    local menuOutline = Instance.new('UIStroke')
+    menuOutline.Thickness = 1
+    menuOutline.Color = Color3.fromRGB(70, 70, 70)
+    menuOutline.Transparency = 0.4
+    menuOutline.Parent = dropdownMenu
+    
+    -- Search box
+    local searchFrame = Instance.new('Frame')
+    searchFrame.Size = UDim2.new(1, -16, 0, 28)
+    searchFrame.Position = UDim2.new(0, 8, 0, 8)
+    searchFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    searchFrame.BorderSizePixel = 0
+    searchFrame.ZIndex = 11
+    searchFrame.Parent = dropdownMenu
+    
+    local searchCorner = Instance.new('UICorner')
+    searchCorner.CornerRadius = UDim.new(0, 6)
+    searchCorner.Parent = searchFrame
+    
+    local searchBox = Instance.new('TextBox')
+    searchBox.Size = UDim2.new(1, -20, 1, 0)
+    searchBox.Position = UDim2.new(0, 10, 0, 0)
+    searchBox.BackgroundTransparency = 1
+    searchBox.Text = ''
+    searchBox.PlaceholderText = 'Search...'
+    searchBox.PlaceholderColor3 = self.Config.Theme.TextSecondary
+    searchBox.TextColor3 = self.Config.Theme.Text
+    searchBox.TextSize = 11
+    searchBox.Font = Enum.Font.Gotham
+    searchBox.TextXAlignment = Enum.TextXAlignment.Left
+    searchBox.ZIndex = 12
+    searchBox.Parent = searchFrame
+    
+    -- Options container
+    local optionsFrame = Instance.new('ScrollingFrame')
+    optionsFrame.Size = UDim2.new(1, 0, 0, 120)
+    optionsFrame.Position = UDim2.new(0, 0, 0, 44)
+    optionsFrame.BackgroundTransparency = 1
+    optionsFrame.BorderSizePixel = 0
+    optionsFrame.ScrollBarThickness = 6
+    optionsFrame.ScrollBarImageColor3 = self.Config.Theme.Primary
+    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    optionsFrame.ZIndex = 11
+    optionsFrame.Parent = dropdownMenu
+    
+    local optionsLayout = Instance.new('UIListLayout')
+    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionsLayout.Padding = UDim.new(0, 2)
+    optionsLayout.Parent = optionsFrame
+    
+    local selectedValues = {}
+    local isOpen = false
+    
+    -- Create option buttons
+    local function createOptions(filteredOptions)
+        for _, child in pairs(optionsFrame:GetChildren()) do
+            if child:IsA('TextButton') then
+                child:Destroy()
+            end
+        end
+        
+        for i, option in ipairs(filteredOptions or options) do
+            local optionButton = Instance.new('TextButton')
+            optionButton.Size = UDim2.new(1, -8, 0, 24)
+            optionButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            optionButton.BackgroundTransparency = 1
+            optionButton.BorderSizePixel = 0
+            optionButton.Text = option
+            optionButton.TextColor3 = self.Config.Theme.Text
+            optionButton.TextSize = 11
+            optionButton.Font = Enum.Font.Gotham
+            optionButton.TextXAlignment = Enum.TextXAlignment.Left
+            optionButton.LayoutOrder = i
+            optionButton.ZIndex = 12
+            optionButton.Parent = optionsFrame
+            
+            local optionPadding = Instance.new('UIPadding')
+            optionPadding.PaddingLeft = UDim.new(0, 12)
+            optionPadding.Parent = optionButton
+            
+            -- Multi-select indicator
+            if isMultiSelect then
+                local checkBox = Instance.new('Frame')
+                checkBox.Size = UDim2.new(0, 12, 0, 12)
+                checkBox.Position = UDim2.new(1, -20, 0.5, -6)
+                checkBox.BackgroundColor3 = selectedValues[option] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+                checkBox.BorderSizePixel = 0
+                checkBox.ZIndex = 13
+                checkBox.Parent = optionButton
+                
+                local checkCorner = Instance.new('UICorner')
+                checkCorner.CornerRadius = UDim.new(0, 2)
+                checkCorner.Parent = checkBox
+                
+                if selectedValues[option] then
+                    local checkMark = Instance.new('TextLabel')
+                    checkMark.Size = UDim2.new(1, 0, 1, 0)
+                    checkMark.BackgroundTransparency = 1
+                    checkMark.Text = '✓'
+                    checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    checkMark.TextSize = 8
+                    checkMark.Font = Enum.Font.GothamBold
+                    checkMark.ZIndex = 14
+                    checkMark.Parent = checkBox
+                end
+            end
+            
+            optionButton.MouseEnter:Connect(function()
+                optionButton.BackgroundTransparency = 0.9
+            end)
+            
+            optionButton.MouseLeave:Connect(function()
+                optionButton.BackgroundTransparency = 1
+            end)
+            
+            optionButton.MouseButton1Click:Connect(function()
+                if isMultiSelect then
+                    selectedValues[option] = not selectedValues[option]
+                    createOptions(filteredOptions)
+                    
+                    local selectedText = {}
+                    for value, selected in pairs(selectedValues) do
+                        if selected then
+                            table.insert(selectedText, value)
+                        end
+                    end
+                    
+                    if #selectedText > 0 then
+                        if #selectedText == 1 then
+                            dropdownButton.Text = selectedText[1]
+                        else
+                            dropdownButton.Text = #selectedText .. ' selected'
+                        end
+                        dropdownButton.TextColor3 = self.Config.Theme.Text
+                    else
+                        dropdownButton.Text = placeholder
+                        dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
+                    end
+                    element.Callback(selectedText)
+                else
+                    dropdownButton.Text = option
+                    dropdownButton.TextColor3 = self.Config.Theme.Text
+                    element.Value = option
+                    element.Callback(option)
+                    isOpen = false
+                    
+                    TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+                    TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
+                    spawn(function()
+                        wait(0.3)
+                        dropdownMenu.Visible = false
+                    end)
+                end
+            end)
+        end
+        
+        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #(filteredOptions or options) * 26)
+    end
+    
+    -- Search functionality
+    searchBox:GetPropertyChangedSignal('Text'):Connect(function()
+        local searchText = searchBox.Text:lower()
+        local filteredOptions = {}
+        
+        for _, option in ipairs(options) do
+            if option:lower():find(searchText) then
+                table.insert(filteredOptions, option)
+            end
+        end
+        
+        createOptions(filteredOptions)
+    end)
+    
+    -- Toggle dropdown
     dropdownButton.MouseButton1Click:Connect(function()
-        if #options > 0 then
-            element.Value = options[1]
-            dropdownButton.Text = options[1]
-            dropdownButton.TextColor3 = self.Config.Theme.Text
-            element.Callback(options[1])
+        isOpen = not isOpen
+        
+        if isOpen then
+            dropdownMenu.Visible = true
+            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 172)}):Play()
+            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 180}):Play()
+            createOptions()
+            searchBox:CaptureFocus()
+        else
+            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
+            spawn(function()
+                wait(0.3)
+                dropdownMenu.Visible = false
+            end)
+        end
+    end)
+end
+
+function RadiantUI:CreateMultiDropdown(element, parent)
+    local options = element.Config.Options or {}
+    local placeholder = element.Config.Placeholder or 'Select...'
+    
+    local dropdownFrame = Instance.new('Frame')
+    dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
+    dropdownFrame.Position = UDim2.new(1, -140, 0.5, -16)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    dropdownFrame.BorderSizePixel = 0
+    dropdownFrame.Parent = parent
+    
+    local dropdownCorner = Instance.new('UICorner')
+    dropdownCorner.CornerRadius = UDim.new(0, 8)
+    dropdownCorner.Parent = dropdownFrame
+    
+    local dropdownOutline = Instance.new('UIStroke')
+    dropdownOutline.Thickness = 1
+    dropdownOutline.Color = Color3.fromRGB(85, 85, 85)
+    dropdownOutline.Transparency = 0.3
+    dropdownOutline.Parent = dropdownFrame
+    
+    -- Main button
+    local dropdownButton = Instance.new('TextButton')
+    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+    dropdownButton.BackgroundTransparency = 1
+    dropdownButton.Text = placeholder
+    dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
+    dropdownButton.TextSize = 12
+    dropdownButton.Font = Enum.Font.Gotham
+    dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+    dropdownButton.Parent = dropdownFrame
+    
+    local buttonPadding = Instance.new('UIPadding')
+    buttonPadding.PaddingLeft = UDim.new(0, 12)
+    buttonPadding.PaddingRight = UDim.new(0, 30)
+    buttonPadding.Parent = dropdownButton
+    
+    -- Arrow icon
+    local arrowIcon = Instance.new('TextLabel')
+    arrowIcon.Size = UDim2.new(0, 20, 1, 0)
+    arrowIcon.Position = UDim2.new(1, -25, 0, 0)
+    arrowIcon.BackgroundTransparency = 1
+    arrowIcon.Text = '▼'
+    arrowIcon.TextColor3 = self.Config.Theme.TextSecondary
+    arrowIcon.TextSize = 10
+    arrowIcon.Font = Enum.Font.Gotham
+    arrowIcon.Parent = dropdownFrame
+    
+    -- Dropdown menu
+    local dropdownMenu = Instance.new('Frame')
+    dropdownMenu.Size = UDim2.new(1, 0, 0, 0)
+    dropdownMenu.Position = UDim2.new(0, 0, 1, 2)
+    dropdownMenu.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    dropdownMenu.BorderSizePixel = 0
+    dropdownMenu.Visible = false
+    dropdownMenu.ClipsDescendants = true
+    dropdownMenu.ZIndex = 10
+    dropdownMenu.Parent = dropdownFrame
+    
+    local menuCorner = Instance.new('UICorner')
+    menuCorner.CornerRadius = UDim.new(0, 8)
+    menuCorner.Parent = dropdownMenu
+    
+    local menuOutline = Instance.new('UIStroke')
+    menuOutline.Thickness = 1
+    menuOutline.Color = Color3.fromRGB(70, 70, 70)
+    menuOutline.Transparency = 0.4
+    menuOutline.Parent = dropdownMenu
+    
+    -- Search box
+    local searchFrame = Instance.new('Frame')
+    searchFrame.Size = UDim2.new(1, -16, 0, 28)
+    searchFrame.Position = UDim2.new(0, 8, 0, 8)
+    searchFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    searchFrame.BorderSizePixel = 0
+    searchFrame.ZIndex = 11
+    searchFrame.Parent = dropdownMenu
+    
+    local searchCorner = Instance.new('UICorner')
+    searchCorner.CornerRadius = UDim.new(0, 6)
+    searchCorner.Parent = searchFrame
+    
+    local searchBox = Instance.new('TextBox')
+    searchBox.Size = UDim2.new(1, -20, 1, 0)
+    searchBox.Position = UDim2.new(0, 10, 0, 0)
+    searchBox.BackgroundTransparency = 1
+    searchBox.Text = ''
+    searchBox.PlaceholderText = 'Search...'
+    searchBox.PlaceholderColor3 = self.Config.Theme.TextSecondary
+    searchBox.TextColor3 = self.Config.Theme.Text
+    searchBox.TextSize = 11
+    searchBox.Font = Enum.Font.Gotham
+    searchBox.TextXAlignment = Enum.TextXAlignment.Left
+    searchBox.ZIndex = 12
+    searchBox.Parent = searchFrame
+    
+    -- Options container
+    local optionsFrame = Instance.new('ScrollingFrame')
+    optionsFrame.Size = UDim2.new(1, 0, 0, 120)
+    optionsFrame.Position = UDim2.new(0, 0, 0, 44)
+    optionsFrame.BackgroundTransparency = 1
+    optionsFrame.BorderSizePixel = 0
+    optionsFrame.ScrollBarThickness = 6
+    optionsFrame.ScrollBarImageColor3 = self.Config.Theme.Primary
+    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    optionsFrame.ZIndex = 11
+    optionsFrame.Parent = dropdownMenu
+    
+    local optionsLayout = Instance.new('UIListLayout')
+    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    optionsLayout.Padding = UDim.new(0, 2)
+    optionsLayout.Parent = optionsFrame
+    
+    local selectedValues = {}
+    local isOpen = false
+    
+    -- Initialize element value
+    element.Value = {}
+    
+    -- Create option buttons
+    local function createOptions(filteredOptions)
+        for _, child in pairs(optionsFrame:GetChildren()) do
+            if child:IsA('TextButton') then
+                child:Destroy()
+            end
+        end
+        
+        for i, option in ipairs(filteredOptions or options) do
+            local optionButton = Instance.new('TextButton')
+            optionButton.Size = UDim2.new(1, -8, 0, 24)
+            optionButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            optionButton.BackgroundTransparency = 1
+            optionButton.BorderSizePixel = 0
+            optionButton.Text = option
+            optionButton.TextColor3 = self.Config.Theme.Text
+            optionButton.TextSize = 11
+            optionButton.Font = Enum.Font.Gotham
+            optionButton.TextXAlignment = Enum.TextXAlignment.Left
+            optionButton.LayoutOrder = i
+            optionButton.ZIndex = 12
+            optionButton.Parent = optionsFrame
+            
+            local optionPadding = Instance.new('UIPadding')
+            optionPadding.PaddingLeft = UDim.new(0, 12)
+            optionPadding.Parent = optionButton
+            
+            -- Multi-select checkbox
+            local checkBox = Instance.new('Frame')
+            checkBox.Size = UDim2.new(0, 12, 0, 12)
+            checkBox.Position = UDim2.new(1, -20, 0.5, -6)
+            checkBox.BackgroundColor3 = selectedValues[option] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+            checkBox.BorderSizePixel = 0
+            checkBox.ZIndex = 13
+            checkBox.Parent = optionButton
+            
+            local checkCorner = Instance.new('UICorner')
+            checkCorner.CornerRadius = UDim.new(0, 2)
+            checkCorner.Parent = checkBox
+            
+            if selectedValues[option] then
+                local checkMark = Instance.new('TextLabel')
+                checkMark.Size = UDim2.new(1, 0, 1, 0)
+                checkMark.BackgroundTransparency = 1
+                checkMark.Text = '✓'
+                checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
+                checkMark.TextSize = 8
+                checkMark.Font = Enum.Font.GothamBold
+                checkMark.ZIndex = 14
+                checkMark.Parent = checkBox
+            end
+            
+            optionButton.MouseEnter:Connect(function()
+                optionButton.BackgroundTransparency = 0.9
+            end)
+            
+            optionButton.MouseLeave:Connect(function()
+                optionButton.BackgroundTransparency = 1
+            end)
+            
+            optionButton.MouseButton1Click:Connect(function()
+                selectedValues[option] = not selectedValues[option]
+                createOptions(filteredOptions)
+                
+                local selectedText = {}
+                for value, selected in pairs(selectedValues) do
+                    if selected then
+                        table.insert(selectedText, value)
+                    end
+                end
+                
+                if #selectedText > 0 then
+                    if #selectedText == 1 then
+                        dropdownButton.Text = selectedText[1]
+                    else
+                        dropdownButton.Text = #selectedText .. ' selected'
+                    end
+                    dropdownButton.TextColor3 = self.Config.Theme.Text
+                else
+                    dropdownButton.Text = placeholder
+                    dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
+                end
+                
+                element.Value = selectedText
+                element.Callback(selectedText)
+            end)
+        end
+        
+        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #(filteredOptions or options) * 26)
+    end
+    
+    -- Search functionality
+    searchBox:GetPropertyChangedSignal('Text'):Connect(function()
+        local searchText = searchBox.Text:lower()
+        local filteredOptions = {}
+        
+        for _, option in ipairs(options) do
+            if option:lower():find(searchText) then
+                table.insert(filteredOptions, option)
+            end
+        end
+        
+        createOptions(filteredOptions)
+    end)
+    
+    -- Toggle dropdown
+    dropdownButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        
+        if isOpen then
+            dropdownMenu.Visible = true
+            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 172)}):Play()
+            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 180}):Play()
+            createOptions()
+            searchBox:CaptureFocus()
+        else
+            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
+            spawn(function()
+                wait(0.3)
+                dropdownMenu.Visible = false
+            end)
         end
     end)
 end
@@ -1233,39 +1689,404 @@ function RadiantUI:CreateInput(element, parent)
 end
 
 function RadiantUI:CreateColorPicker(element, parent)
-    local colorFrame = Instance.new('Frame')
-    colorFrame.Size = UDim2.new(0, 32, 0, 32)
-    colorFrame.Position = UDim2.new(1, -32, 0.5, -16)
-    colorFrame.BackgroundColor3 = element.Config.Default or self.Config.Theme.Primary
-    colorFrame.BorderSizePixel = 0
-    colorFrame.Parent = parent
+    local initialColor = element.Config.Default or self.Config.Theme.Primary
+    
+    local colorPickerFrame = Instance.new('Frame')
+    colorPickerFrame.Size = UDim2.new(0, 32, 0, 220)
+    colorPickerFrame.Position = UDim2.new(1, -32, 0.5, -16)
+    colorPickerFrame.BackgroundTransparency = 1
+    colorPickerFrame.Parent = parent
+    
+    -- Color preview button
+    local colorButton = Instance.new('TextButton')
+    colorButton.Size = UDim2.new(0, 32, 0, 32)
+    colorButton.Position = UDim2.new(0, 0, 0, 0)
+    colorButton.BackgroundColor3 = initialColor
+    colorButton.BorderSizePixel = 0
+    colorButton.Text = ''
+    colorButton.Parent = colorPickerFrame
     
     local colorCorner = Instance.new('UICorner')
     colorCorner.CornerRadius = UDim.new(0, 8)
-    colorCorner.Parent = colorFrame
+    colorCorner.Parent = colorButton
     
-    local colorButton = Instance.new('TextButton')
-    colorButton.Size = UDim2.new(1, 0, 1, 0)
-    colorButton.BackgroundTransparency = 1
-    colorButton.Text = ''
-    colorButton.Parent = colorFrame
+    local colorOutline = Instance.new('UIStroke')
+    colorOutline.Thickness = 1
+    colorOutline.Color = Color3.fromRGB(80, 80, 80)
+    colorOutline.Transparency = 0.3
+    colorOutline.Parent = colorButton
     
-    element.Value = colorFrame.BackgroundColor3
+    -- Color picker menu - positioned to the left and under the button
+    local colorMenu = Instance.new('Frame')
+    colorMenu.Size = UDim2.new(0, 260, 0, 220)
+    colorMenu.Position = UDim2.new(0, -200, 0, 40)
+    colorMenu.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    colorMenu.BorderSizePixel = 0
+    colorMenu.Visible = false
+    colorMenu.ZIndex = 15
+    colorMenu.Parent = colorPickerFrame
     
-    colorButton.MouseButton1Click:Connect(function()
-        local colors = {
-            Color3.fromRGB(255, 51, 51),
-            Color3.fromRGB(51, 255, 51),
-            Color3.fromRGB(51, 51, 255),
-            Color3.fromRGB(255, 255, 51),
-            Color3.fromRGB(255, 51, 255),
-            Color3.fromRGB(51, 255, 255)
-        }
-        local randomColor = colors[math.random(1, #colors)]
-        element.Value = randomColor
-        colorFrame.BackgroundColor3 = randomColor
-        element.Callback(randomColor)
+    local menuCorner = Instance.new('UICorner')
+    menuCorner.CornerRadius = UDim.new(0, 8)
+    menuCorner.Parent = colorMenu
+    
+    local menuOutline = Instance.new('UIStroke')
+    menuOutline.Thickness = 1
+    menuOutline.Color = Color3.fromRGB(60, 60, 60)
+    menuOutline.Transparency = 0.4
+    menuOutline.Parent = colorMenu
+    
+    -- Color square (HSV selector)
+    local colorSquare = Instance.new('Frame')
+    colorSquare.Size = UDim2.new(0, 175, 0, 140)
+    colorSquare.Position = UDim2.new(0, 15, 0, 15)
+    colorSquare.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    colorSquare.BorderSizePixel = 0
+    colorSquare.ZIndex = 16
+    colorSquare.Parent = colorMenu
+    
+    local squareCorner = Instance.new('UICorner')
+    squareCorner.CornerRadius = UDim.new(0, 6)
+    squareCorner.Parent = colorSquare
+    
+    -- White overlay for saturation
+    local whiteOverlay = Instance.new('Frame')
+    whiteOverlay.Size = UDim2.new(1, 0, 1, 0)
+    whiteOverlay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    whiteOverlay.BorderSizePixel = 0
+    whiteOverlay.ZIndex = 17
+    whiteOverlay.Parent = colorSquare
+    
+    local whiteCorner = Instance.new('UICorner')
+    whiteCorner.CornerRadius = UDim.new(0, 6)
+    whiteCorner.Parent = whiteOverlay
+    
+    local whiteGradient = Instance.new('UIGradient')
+    whiteGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+    whiteGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    whiteGradient.Parent = whiteOverlay
+    
+    -- Black overlay for brightness
+    local blackOverlay = Instance.new('Frame')
+    blackOverlay.Size = UDim2.new(1, 0, 1, 0)
+    blackOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    blackOverlay.BorderSizePixel = 0
+    blackOverlay.ZIndex = 18
+    blackOverlay.Parent = colorSquare
+    
+    local blackCorner = Instance.new('UICorner')
+    blackCorner.CornerRadius = UDim.new(0, 6)
+    blackCorner.Parent = blackOverlay
+    
+    local blackGradient = Instance.new('UIGradient')
+    blackGradient.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+    blackGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    blackGradient.Rotation = 90
+    blackGradient.Parent = blackOverlay
+    
+    -- Square selector
+    local squareSelector = Instance.new('Frame')
+    squareSelector.Size = UDim2.new(0, 8, 0, 8)
+    squareSelector.Position = UDim2.new(1, -4, 0, -4)
+    squareSelector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    squareSelector.BorderSizePixel = 1
+    squareSelector.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    squareSelector.ZIndex = 19
+    squareSelector.Parent = colorSquare
+    
+    local selectorCorner = Instance.new('UICorner')
+    selectorCorner.CornerRadius = UDim.new(0.5, 0)
+    selectorCorner.Parent = squareSelector
+    
+    -- Hue bar
+    local hueBar = Instance.new('Frame')
+    hueBar.Size = UDim2.new(0, 28, 0, 140)
+    hueBar.Position = UDim2.new(0, 200, 0, 15)
+    hueBar.BorderSizePixel = 0
+    hueBar.ZIndex = 16
+    hueBar.Parent = colorMenu
+    
+    local hueCorner = Instance.new('UICorner')
+    hueCorner.CornerRadius = UDim.new(0, 6)
+    hueCorner.Parent = hueBar
+    
+    -- Hue gradient
+    local hueGradient = Instance.new('UIGradient')
+    hueGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+    })
+    hueGradient.Rotation = 90
+    hueGradient.Parent = hueBar
+    
+    -- Hue selector
+    local hueSelector = Instance.new('Frame')
+    hueSelector.Size = UDim2.new(1, 0, 0, 3)
+    hueSelector.Position = UDim2.new(0, 0, 0, -1)
+    hueSelector.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    hueSelector.BorderSizePixel = 1
+    hueSelector.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    hueSelector.ZIndex = 17
+    hueSelector.Parent = hueBar
+    
+    -- RGB inputs
+    local rgbFrame = Instance.new('Frame')
+    rgbFrame.Size = UDim2.new(0, 210, 0, 35)
+    rgbFrame.Position = UDim2.new(0, 15, 0, 165)
+    rgbFrame.BackgroundTransparency = 1
+    rgbFrame.ZIndex = 16
+    rgbFrame.Parent = colorMenu
+    
+    local rgbLayout = Instance.new('UIListLayout')
+    rgbLayout.FillDirection = Enum.FillDirection.Horizontal
+    rgbLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    rgbLayout.Padding = UDim.new(0, 8)
+    rgbLayout.Parent = rgbFrame
+    
+    -- Create RGB inputs
+    local function createRGBInput(label, initialValue)
+        local container = Instance.new('Frame')
+        container.Size = UDim2.new(0, 65, 0, 35)
+        container.BackgroundTransparency = 1
+        container.ZIndex = 16
+        container.Parent = rgbFrame
+        
+        local labelText = Instance.new('TextLabel')
+        labelText.Size = UDim2.new(0, 20, 1, 0)
+        labelText.Position = UDim2.new(0, 0, 0, 0)
+        labelText.BackgroundTransparency = 1
+        labelText.Text = label
+        labelText.TextColor3 = Color3.fromRGB(200, 200, 200)
+        labelText.TextSize = 15
+        labelText.Font = Enum.Font.GothamBold
+        labelText.TextXAlignment = Enum.TextXAlignment.Center
+        labelText.ZIndex = 17
+        labelText.Parent = container
+        
+        local inputField = Instance.new('Frame')
+        inputField.Size = UDim2.new(1, -24, 1, 0)
+        inputField.Position = UDim2.new(0, 24, 0, 0)
+        inputField.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        inputField.BorderSizePixel = 0
+        inputField.ZIndex = 17
+        inputField.Parent = container
+        
+        local fieldCorner = Instance.new('UICorner')
+        fieldCorner.CornerRadius = UDim.new(0, 4)
+        fieldCorner.Parent = inputField
+        
+        local inputBox = Instance.new('TextBox')
+        inputBox.Size = UDim2.new(1, -8, 1, 0)
+        inputBox.Position = UDim2.new(0, 4, 0, 0)
+        inputBox.BackgroundTransparency = 1
+        inputBox.Text = tostring(initialValue)
+        inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        inputBox.TextSize = 14
+        inputBox.Font = Enum.Font.Gotham
+        inputBox.TextXAlignment = Enum.TextXAlignment.Center
+        inputBox.ZIndex = 18
+        inputBox.Parent = inputField
+        
+        return inputBox
+    end
+    
+    local rInput = createRGBInput('R', math.floor(initialColor.R * 255))
+    local gInput = createRGBInput('G', math.floor(initialColor.G * 255))
+    local bInput = createRGBInput('B', math.floor(initialColor.B * 255))
+    
+    -- Color state
+    local currentColor = initialColor
+    local currentHue = 0
+    local currentSaturation = 1
+    local currentValue = 1
+    local isMenuOpen = false
+    
+    -- HSV to RGB conversion
+    local function HSVtoRGB(h, s, v)
+        local r, g, b
+        local i = math.floor(h * 6)
+        local f = h * 6 - i
+        local p = v * (1 - s)
+        local q = v * (1 - f * s)
+        local t = v * (1 - (1 - f) * s)
+        
+        local imod = i % 6
+        if imod == 0 then
+            r, g, b = v, t, p
+        elseif imod == 1 then
+            r, g, b = q, v, p
+        elseif imod == 2 then
+            r, g, b = p, v, t
+        elseif imod == 3 then
+            r, g, b = p, q, v
+        elseif imod == 4 then
+            r, g, b = t, p, v
+        elseif imod == 5 then
+            r, g, b = v, p, q
+        end
+        
+        return Color3.fromRGB(
+            math.clamp(math.floor(r * 255 + 0.5), 0, 255),
+            math.clamp(math.floor(g * 255 + 0.5), 0, 255),
+            math.clamp(math.floor(b * 255 + 0.5), 0, 255)
+        )
+    end
+    
+    -- Update color display
+    local function updateColor()
+        currentColor = HSVtoRGB(currentHue, currentSaturation, currentValue)
+        colorButton.BackgroundColor3 = currentColor
+        
+        -- Update RGB inputs
+        rInput.Text = tostring(math.floor(currentColor.R * 255))
+        gInput.Text = tostring(math.floor(currentColor.G * 255))
+        bInput.Text = tostring(math.floor(currentColor.B * 255))
+        
+        -- Update hue bar background
+        local hueColor = HSVtoRGB(currentHue, 1, 1)
+        colorSquare.BackgroundColor3 = hueColor
+        
+        -- Update element value and callback
+        element.Value = currentColor
+        element.Callback(currentColor)
+    end
+    
+    -- Square interaction
+    local squareButton = Instance.new('TextButton')
+    squareButton.Size = UDim2.new(1, 0, 1, 0)
+    squareButton.BackgroundTransparency = 1
+    squareButton.Text = ''
+    squareButton.ZIndex = 20
+    squareButton.Parent = colorSquare
+    
+    local squareDragging = false
+    
+    local function updateSquare(inputPos)
+        local squarePos = colorSquare.AbsolutePosition
+        local squareSize = colorSquare.AbsoluteSize
+        
+        -- Correct for GUI inset
+        local guiInset = game:GetService("GuiService"):GetGuiInset()
+        local correctedX = inputPos.X - guiInset.X
+        local correctedY = inputPos.Y - guiInset.Y
+        
+        local relativeX = math.clamp((correctedX - squarePos.X) / squareSize.X, 0, 1)
+        local relativeY = math.clamp((correctedY - squarePos.Y) / squareSize.Y, 0, 1)
+        
+        currentSaturation = relativeX
+        currentValue = 1 - relativeY
+        
+        squareSelector.Position = UDim2.new(relativeX, -4, relativeY, -4)
+        updateColor()
+    end
+    
+    squareButton.MouseButton1Down:Connect(function()
+        squareDragging = true
+        updateSquare(UserInputService:GetMouseLocation())
     end)
+    
+    -- Hue bar interaction
+    local hueButton = Instance.new('TextButton')
+    hueButton.Size = UDim2.new(1, 0, 1, 0)
+    hueButton.BackgroundTransparency = 1
+    hueButton.Text = ''
+    hueButton.ZIndex = 18
+    hueButton.Parent = hueBar
+    
+    local hueDragging = false
+    
+    local function updateHue(inputPos)
+        local huePos = hueBar.AbsolutePosition
+        local hueSize = hueBar.AbsoluteSize
+        
+        -- Correct for GUI inset
+        local guiInset = game:GetService("GuiService"):GetGuiInset()
+        local correctedX = inputPos.X - guiInset.X
+        local correctedY = inputPos.Y - guiInset.Y
+        
+        local relativeY = math.clamp((correctedY - huePos.Y) / hueSize.Y, 0, 1)
+        currentHue = relativeY
+        
+        hueSelector.Position = UDim2.new(0, 0, relativeY, -1)
+        updateColor()
+    end
+    
+    hueButton.MouseButton1Down:Connect(function()
+        hueDragging = true
+        updateHue(UserInputService:GetMouseLocation())
+    end)
+    
+    -- Global mouse events
+    local connection1 = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            if squareDragging then
+                updateSquare(UserInputService:GetMouseLocation())
+            elseif hueDragging then
+                updateHue(UserInputService:GetMouseLocation())
+            end
+        end
+    end)
+    
+    local connection2 = UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            squareDragging = false
+            hueDragging = false
+        end
+    end)
+    
+    table.insert(self.Connections, connection1)
+    table.insert(self.Connections, connection2)
+    
+    -- Toggle menu by clicking the color button
+    colorButton.MouseButton1Click:Connect(function()
+        isMenuOpen = not isMenuOpen
+        colorMenu.Visible = isMenuOpen
+    end)
+    
+    -- Close menu when clicking outside
+    local clickConnection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and isMenuOpen then
+            local mousePos = UserInputService:GetMouseLocation()
+            local guiInset = game:GetService("GuiService"):GetGuiInset()
+            local correctedX = mousePos.X - guiInset.X
+            local correctedY = mousePos.Y - guiInset.Y
+            
+            local menuPos = colorMenu.AbsolutePosition
+            local menuSize = colorMenu.AbsoluteSize
+            local buttonPos = colorButton.AbsolutePosition
+            local buttonSize = colorButton.AbsoluteSize
+            
+            -- Check if click is outside menu and button
+            local outsideMenu = correctedX < menuPos.X or correctedX > menuPos.X + menuSize.X or
+                               correctedY < menuPos.Y or correctedY > menuPos.Y + menuSize.Y
+            local outsideButton = correctedX < buttonPos.X or correctedX > buttonPos.X + buttonSize.X or
+                                 correctedY < buttonPos.Y or correctedY > buttonPos.Y + buttonSize.Y
+            
+            if outsideMenu and outsideButton then
+                isMenuOpen = false
+                colorMenu.Visible = false
+            end
+        end
+    end)
+    
+    table.insert(self.Connections, clickConnection)
+    
+    -- Initialize element value
+    element.Value = currentColor
+    
+    -- Initialize color display
+    updateColor()
 end
 
 function RadiantUI:CreateKeybind(element, parent)
