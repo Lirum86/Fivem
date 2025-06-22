@@ -890,9 +890,13 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
 end
 
 function RadiantUI:AddElement(section, elementType, config)
+    -- Debug output to track element creation
+    local elementName = config.Name or "Element"
+    print("RadiantUI: Adding element '" .. elementName .. "' of type '" .. elementType .. "'")
+    
     local element = {
         Type = elementType,
-        Name = config.Name or "Element",
+        Name = elementName,
         Config = config,
         Frame = nil,
         Value = config.Default or false,
@@ -934,11 +938,12 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
     itemFrame.LayoutOrder = layoutOrder
     itemFrame.Parent = parent
     
+    -- Proper label creation with element name
     local label = Instance.new('TextLabel')
     label.Size = UDim2.new(0.55, 0, 1, 0)
     label.Position = UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = element.Name
+    label.Text = element.Name or "Element" -- Use the actual element name
     label.TextColor3 = self.Config.Theme.TextSecondary
     label.TextSize = 13
     label.Font = Enum.Font.Gotham
@@ -954,7 +959,8 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         self:CreateSlider(element, itemFrame)
     elseif element.Type == 'Button' then
         self:CreateButton(element, itemFrame)
-        -- Button behält den Text links wie andere Elemente
+        -- For buttons, hide the label since button shows its own text
+        label.Text = ""
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
     elseif element.Type == 'MultiDropdown' then
@@ -1433,9 +1439,13 @@ function RadiantUI:CreateDropdown(element, parent)
         end
     end)
     
-    -- Initialize options to prevent empty dropdown
+    -- CRITICAL: Initialize dropdown options immediately
     print("Initializing dropdown with", #options, "options")
-    createOptions()
+    spawn(function()
+        wait(0.1) -- Small delay to ensure GUI is ready
+        createOptions()
+        print("Dropdown options initialized successfully")
+    end)
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
@@ -1700,9 +1710,13 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         end
     end)
     
-    -- Initialize options to prevent empty multi-dropdown
+    -- CRITICAL: Initialize multi-dropdown options immediately
     print("Initializing multi-dropdown with", #options, "options")
-    createOptions()
+    spawn(function()
+        wait(0.1) -- Small delay to ensure GUI is ready
+        createOptions()
+        print("Multi-dropdown options initialized successfully")
+    end)
 end
 
 function RadiantUI:CreateInput(element, parent)
