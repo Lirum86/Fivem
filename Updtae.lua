@@ -199,7 +199,9 @@ function RadiantUI:CreateSidebar()
     self.SidebarFrame.BackgroundColor3 = self.Config.Theme.Sidebar
     self.SidebarFrame.BorderSizePixel = 0
     self.SidebarFrame.ScrollBarThickness = 2
-    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, 600)
+    self.SidebarFrame.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80)
+    self.SidebarFrame.ScrollBarImageTransparency = 0.3
+    self.SidebarFrame.CanvasSize = UDim2.new(0, 0, 0, 800)  -- Größere Canvas für mehr Tabs + Avatar
     self.SidebarFrame.Parent = self.MainFrame
     
     local sidebarCorner = Instance.new('UICorner')
@@ -211,9 +213,11 @@ end
 
 function RadiantUI:CreateAvatarSection()
     local avatarSection = Instance.new("Frame")
+    avatarSection.Name = "AvatarSection"
     avatarSection.Size = UDim2.new(1, 0, 0, 90)
-    avatarSection.Position = UDim2.new(0, 0, 1, -150)
+    avatarSection.Position = UDim2.new(0, 0, 1, -110)  -- Höher positioniert
     avatarSection.BackgroundTransparency = 1
+    avatarSection.ZIndex = 10  -- Über andere Elemente
     avatarSection.Parent = self.SidebarFrame
     
     local avatarCircle = Instance.new("Frame")
@@ -665,7 +669,7 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
     
     local sectionFrame = Instance.new('Frame')
     sectionFrame.Size = UDim2.new(1, -10, 0, calculatedHeight)
-    sectionFrame.BackgroundColor3 = self.Config.Theme.Secondary
+    sectionFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)  -- Dunklerer Hintergrund
     sectionFrame.BorderSizePixel = 0
     sectionFrame.LayoutOrder = layoutOrder
     sectionFrame.Parent = parentColumn
@@ -703,17 +707,24 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
     accentCorner.Parent = titleAccent
     
     local itemsFrame = Instance.new('Frame')
+    itemsFrame.Name = 'ItemsFrame'
     itemsFrame.Size = UDim2.new(1, -40, 0, (totalItems * itemHeight) + ((totalItems - 1) * itemSpacing))
     itemsFrame.Position = UDim2.new(0, 20, 0, 45)
     itemsFrame.BackgroundTransparency = 1
     itemsFrame.Parent = sectionFrame
+    
+    section.ItemsFrame = itemsFrame  -- Store reference
+    section.Frame = sectionFrame     -- Store section frame reference
     
     local itemLayout = Instance.new('UIListLayout')
     itemLayout.SortOrder = Enum.SortOrder.LayoutOrder
     itemLayout.Padding = UDim.new(0, itemSpacing)
     itemLayout.Parent = itemsFrame
     
-    section.Frame = sectionFrame
+    -- Create elements if they exist
+    for i, element in ipairs(section.Elements) do
+        self:CreateElement(element, itemsFrame, i)
+    end
     section.ItemsFrame = itemsFrame
     
     for i, element in ipairs(section.Elements) do
