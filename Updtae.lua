@@ -208,17 +208,35 @@ function RadiantUI:CreateSidebar()
     sidebarCorner.CornerRadius = UDim.new(0, 15)
     sidebarCorner.Parent = self.SidebarFrame
     
+    -- Corner covers to make sharp corners at the bottom
+    -- Bottom-left corner cover
+    local sidebarBottomLeftCover = Instance.new('Frame')
+    sidebarBottomLeftCover.Name = 'SidebarBottomLeftCover'
+    sidebarBottomLeftCover.Size = UDim2.new(0, 15, 0, 15)
+    sidebarBottomLeftCover.Position = UDim2.new(0, 0, 1, -15)
+    sidebarBottomLeftCover.BackgroundColor3 = self.Config.Theme.Sidebar
+    sidebarBottomLeftCover.BorderSizePixel = 0
+    sidebarBottomLeftCover.Parent = self.SidebarFrame
+    
+    -- Bottom-right corner cover
+    local sidebarBottomRightCover = Instance.new('Frame')
+    sidebarBottomRightCover.Name = 'SidebarBottomRightCover'
+    sidebarBottomRightCover.Size = UDim2.new(0, 15, 0, 15)
+    sidebarBottomRightCover.Position = UDim2.new(1, -15, 1, -15)
+    sidebarBottomRightCover.BackgroundColor3 = self.Config.Theme.Sidebar
+    sidebarBottomRightCover.BorderSizePixel = 0
+    sidebarBottomRightCover.Parent = self.SidebarFrame
+    
     self:CreateAvatarSection()
 end
 
 function RadiantUI:CreateAvatarSection()
-	-- Debug: Temporärer Hintergrund für die Avatar-Sektion
+	-- Avatar section at bottom of sidebar
 	local avatarSection = Instance.new("Frame")
 	avatarSection.Name = "AvatarSection"
 	avatarSection.Size = UDim2.new(1, 0, 0, 90)
-	avatarSection.Position = UDim2.new(0, 0, 0, 400) -- FESTE POSITION für Debug - weit oben in der Sidebar
-	avatarSection.BackgroundColor3 = Color3.fromRGB(0, 255, 0) -- GRÜNER HINTERGRUND für Debug
-	avatarSection.BackgroundTransparency = 0.5 -- Sichtbar aber durchsichtig
+	avatarSection.Position = UDim2.new(0, 0, 1, -150) -- Unten mit 60px Abstand vom Rand
+	avatarSection.BackgroundTransparency = 1 -- Transparent
 	avatarSection.BorderSizePixel = 0
 	avatarSection.Parent = self.SidebarFrame
 
