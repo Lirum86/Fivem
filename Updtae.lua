@@ -95,7 +95,7 @@ function RadiantUI:Initialize()
     self:CreateWatermark()
     self:MakeDraggable()
     self:SetupKeybinds()
-    self:CreateSettingsTab()
+    -- Settings tab wird später erstellt nach User-Tabs
     
     if self.Config.FadeAnimations then
         self:FadeIn()
@@ -104,6 +104,10 @@ function RadiantUI:Initialize()
     spawn(function()
         wait(1)
         self:ShowNotification("RadiantUI " .. self.Version .. " loaded successfully!", 4)
+        -- Erstelle Settings Tab falls noch nicht erstellt
+        if not self.SettingsTab then
+            self:CreateSettingsTab()
+        end
     end)
 end
 
@@ -146,6 +150,7 @@ function RadiantUI:CreateControlButtons()
     controlsFrame.Size = UDim2.new(0, 100, 0, 20)
     controlsFrame.Position = UDim2.new(1, -90, 0.5, -10)
     controlsFrame.BackgroundTransparency = 1
+    controlsFrame.BorderSizePixel = 0
     controlsFrame.Parent = self.HeaderFrame
     
     local buttons = {
@@ -214,7 +219,7 @@ function RadiantUI:CreateAvatarSection()
     local avatarCircle = Instance.new("Frame")
     avatarCircle.Size = UDim2.new(0, 50, 0, 50)
     avatarCircle.Position = UDim2.new(0, 15, 0.5, -25)
-    avatarCircle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    avatarCircle.BackgroundTransparency = 1
     avatarCircle.Parent = avatarSection
     
     local avatarCorner = Instance.new("UICorner")
@@ -417,6 +422,11 @@ function RadiantUI:AddTab(config)
     self.Tabs[tabIndex] = tab
     self:CreateTabButton(tab, tabIndex)
     
+    -- Erstelle Settings Tab wenn dies der letzte User-Tab ist
+    if #self.Tabs == MAX_USER_TABS then
+        self:CreateSettingsTab()
+    end
+    
     return {
         AddSection = function(sectionConfig)
             return self:AddSection(tabIndex, sectionConfig)
@@ -475,6 +485,14 @@ function RadiantUI:CreateTabButton(tab, tabIndex)
         Text = text
     }
     
+    -- Setze ersten Tab als aktiv
+    if tabIndex == 1 then
+        button.BackgroundTransparency = 0.85
+        text.TextColor3 = self.Config.Theme.Primary
+        indicator.Size = UDim2.new(0, 4, 0, 30)
+        icon.Image = tab.IconActive or tab.Icon
+    end
+    
     button.MouseButton1Click:Connect(function()
         self:SwitchTab(tabIndex)
     end)
@@ -502,6 +520,7 @@ function RadiantUI:SwitchTab(tabIndex)
         TweenService:Create(currentTab.Button.Frame, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
         TweenService:Create(currentTab.Button.Text, TweenInfo.new(0.3), {TextColor3 = self.Config.Theme.TextSecondary}):Play()
         TweenService:Create(currentTab.Button.Indicator, TweenInfo.new(0.3), {Size = UDim2.new(0, 4, 0, 0)}):Play()
+        -- Inaktiver Tab bekommt normales Icon (grau)
         currentTab.Button.Icon.Image = currentTab.Icon
         
         if currentTab.Content then
@@ -514,6 +533,7 @@ function RadiantUI:SwitchTab(tabIndex)
         TweenService:Create(newTab.Button.Frame, TweenInfo.new(0.3), {BackgroundTransparency = 0.85}):Play()
         TweenService:Create(newTab.Button.Text, TweenInfo.new(0.3), {TextColor3 = self.Config.Theme.Primary}):Play()
         TweenService:Create(newTab.Button.Indicator, TweenInfo.new(0.3), {Size = UDim2.new(0, 4, 0, 30)}):Play()
+        -- Aktiver Tab bekommt IconActive (rot) oder fallback auf normales Icon
         newTab.Button.Icon.Image = newTab.IconActive or newTab.Icon
         
         if not newTab.Content then
@@ -1268,6 +1288,31 @@ function RadiantUI:AddDefaultSettings()
         Config = {Default = 'RCtrl'},
         Callback = function(keyCode)
             self.ToggleKeybind = keyCode
+        end
+    })
+    
+    table.insert(self.SettingsTab.Sections, guiSection)
+    
+    local configSection = {
+        Title = "Configuration",
+        Elements = {}
+    }
+    
+    table.insert(configSection.Elements, {
+        Type = 'Button',
+        Name = 'Save Config',
+        Callback = function()
+            self:SaveConfig()
+            self:ShowNotification("Configuration saved!", 3)
+        end
+    })
+    
+    table.insert(configSection.Elements, {
+        Type = 'Button',
+        Name = 'Load Config',
+        Callback = function()
+            self:LoadConfig()
+            self:ShowNotification("Configuration loaded!", 3)
         end
     })
     
