@@ -217,15 +217,23 @@ function RadiantUI:CreateAvatarSection()
     avatarSection.Size = UDim2.new(1, 0, 0, 90)
     avatarSection.Position = UDim2.new(0, 0, 1, -110)  -- Ganz unten mit 20px Abstand
     avatarSection.BackgroundTransparency = 1
-    avatarSection.ZIndex = 10  -- Über andere Elemente
+    avatarSection.ZIndex = 15  -- Noch höher über andere Elemente
     avatarSection.Visible = true  -- Explizit sichtbar
+    avatarSection.BorderSizePixel = 0
     avatarSection.Parent = self.SidebarFrame
     
+    -- Debug: Sichtbarer Hintergrund für Testing (kann später entfernt werden)
+    --avatarSection.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    --avatarSection.BackgroundTransparency = 0.5
+    
     local avatarCircle = Instance.new("Frame")
+    avatarCircle.Name = "AvatarCircle"
     avatarCircle.Size = UDim2.new(0, 50, 0, 50)
     avatarCircle.Position = UDim2.new(0, 15, 0.5, -25)
     avatarCircle.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    avatarCircle.BackgroundTransparency = 0  -- Explizit sichtbar
     avatarCircle.BorderSizePixel = 0
+    avatarCircle.ZIndex = 16
     avatarCircle.Parent = avatarSection
     
     local avatarCorner = Instance.new("UICorner")
@@ -233,9 +241,12 @@ function RadiantUI:CreateAvatarSection()
     avatarCorner.Parent = avatarCircle
     
     local avatarImage = Instance.new("ImageLabel")
+    avatarImage.Name = "AvatarImage"
     avatarImage.Size = UDim2.new(1, -4, 1, -4)
     avatarImage.Position = UDim2.new(0, 2, 0, 2)
     avatarImage.BackgroundTransparency = 1
+    avatarImage.ImageTransparency = 0  -- Explizit sichtbar
+    avatarImage.ZIndex = 17
     avatarImage.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. Players.LocalPlayer.UserId .. "&width=420&height=420&format=png"
     avatarImage.Parent = avatarCircle
     
@@ -244,10 +255,13 @@ function RadiantUI:CreateAvatarSection()
     avatarImgCorner.Parent = avatarImage
     
     local statusCircle = Instance.new("Frame")
+    statusCircle.Name = "StatusCircle"
     statusCircle.Size = UDim2.new(0, 8, 0, 8)
     statusCircle.Position = UDim2.new(1, -10, 1, -10)
     statusCircle.BackgroundColor3 = self.Config.Theme.Primary
+    statusCircle.BackgroundTransparency = 0  -- Explizit sichtbar
     statusCircle.BorderSizePixel = 0
+    statusCircle.ZIndex = 18
     statusCircle.Parent = avatarCircle
     
     local statusCorner = Instance.new("UICorner")
@@ -255,25 +269,42 @@ function RadiantUI:CreateAvatarSection()
     statusCorner.Parent = statusCircle
     
     local usernameLabel = Instance.new("TextLabel")
+    usernameLabel.Name = "UsernameLabel"
     usernameLabel.Size = UDim2.new(1, -75, 0, 25)
     usernameLabel.Position = UDim2.new(0, 70, 0, 23)
     usernameLabel.BackgroundTransparency = 1
     usernameLabel.Text = Players.LocalPlayer.Name
     usernameLabel.TextColor3 = self.Config.Theme.Text
+    usernameLabel.TextTransparency = 0  -- Explizit sichtbar
     usernameLabel.TextSize = 18
     usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    usernameLabel.TextYAlignment = Enum.TextYAlignment.Center
     usernameLabel.Font = Enum.Font.SourceSansBold
+    usernameLabel.ZIndex = 16
     usernameLabel.Parent = avatarSection
     
     local subscriptionLabel = Instance.new("TextLabel")
+    subscriptionLabel.Name = "SubscriptionLabel"
     subscriptionLabel.Size = UDim2.new(1, -75, 0, 20)
     subscriptionLabel.Position = UDim2.new(0, 70, 0, 48)
     subscriptionLabel.BackgroundTransparency = 1
     subscriptionLabel.Text = "Premium User"
     subscriptionLabel.TextColor3 = self.Config.Theme.Primary
+    subscriptionLabel.TextTransparency = 0  -- Explizit sichtbar
     subscriptionLabel.TextSize = 14
+    subscriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+    subscriptionLabel.TextYAlignment = Enum.TextYAlignment.Center
     subscriptionLabel.Font = Enum.Font.SourceSans
+    subscriptionLabel.ZIndex = 16
     subscriptionLabel.Parent = avatarSection
+    
+    -- Store references to avatar elements für spätere Verwendung
+    self.AvatarSection = avatarSection
+    self.AvatarCircle = avatarCircle
+    self.AvatarImage = avatarImage
+    self.StatusCircle = statusCircle
+    self.UsernameLabel = usernameLabel
+    self.SubscriptionLabel = subscriptionLabel
 end
 
 function RadiantUI:CreateContent()
@@ -1427,76 +1458,167 @@ function RadiantUI:ShowNotification(text, duration)
     
     duration = duration or 5
     
+    -- Create notification container with modern styling
     local notification = Instance.new('Frame')
     notification.Size = UDim2.new(0, 400, 0, 85)
-    notification.Position = UDim2.new(1, 50, 1, -120 - (#self.Notifications * 95))
-    notification.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    notification.Position = UDim2.new(1, 50, 1, -120 - (#self.Notifications * 95)) -- Start off-screen right
+    notification.BackgroundColor3 = Color3.fromRGB(20, 20, 20) -- Changed background color
     notification.BorderSizePixel = 0
     notification.Parent = self.ScreenGui
     notification.ZIndex = 200
-    
+
+    -- Modern rounded corners
     local notifCorner = Instance.new('UICorner')
     notifCorner.CornerRadius = UDim.new(0, 16)
     notifCorner.Parent = notification
-    
+
+    -- Subtle shadow effect with inner glow
+    local shadowFrame = Instance.new('Frame')
+    shadowFrame.Size = UDim2.new(1, 8, 1, 8)
+    shadowFrame.Position = UDim2.new(0, -4, 0, -4)
+    shadowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    shadowFrame.BackgroundTransparency = 0.7
+    shadowFrame.BorderSizePixel = 0
+    shadowFrame.ZIndex = 199
+    shadowFrame.Parent = notification
+
+    local shadowCorner = Instance.new('UICorner')
+    shadowCorner.CornerRadius = UDim.new(0, 20)
+    shadowCorner.Parent = shadowFrame
+
+    -- Main text content - repositioned without icon
     local notifText = Instance.new('TextLabel')
     notifText.Size = UDim2.new(1, -40, 1, -20)
     notifText.Position = UDim2.new(0, 20, 0, 10)
     notifText.BackgroundTransparency = 1
     notifText.Text = text
-    notifText.TextColor3 = Color3.fromRGB(245, 245, 245)
+    notifText.TextColor3 = Color3.fromRGB(245, 245, 245) -- Slightly off-white for better readability
     notifText.TextSize = 16
     notifText.Font = Enum.Font.GothamMedium
     notifText.TextWrapped = true
     notifText.TextXAlignment = Enum.TextXAlignment.Center
     notifText.TextYAlignment = Enum.TextYAlignment.Center
+    notifText.ZIndex = 201
     notifText.Parent = notification
-    
+
+    -- Modern progress bar background
     local progressBg = Instance.new('Frame')
     progressBg.Size = UDim2.new(1, -40, 0, 4)
     progressBg.Position = UDim2.new(0, 20, 1, -12)
     progressBg.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     progressBg.BorderSizePixel = 0
+    progressBg.ZIndex = 201
     progressBg.Parent = notification
-    
+
     local progressBgCorner = Instance.new('UICorner')
     progressBgCorner.CornerRadius = UDim.new(0, 2)
     progressBgCorner.Parent = progressBg
-    
+
+    -- Modern red progress bar with glow effect
     local progressBar = Instance.new('Frame')
     progressBar.Size = UDim2.new(1, 0, 1, 0)
-    progressBar.BackgroundColor3 = self.Config.Theme.Primary
+    progressBar.Position = UDim2.new(0, 0, 0, 0)
+    progressBar.BackgroundColor3 = self.Config.Theme.Primary -- Use theme color
     progressBar.BorderSizePixel = 0
+    progressBar.ZIndex = 202
     progressBar.Parent = progressBg
-    
+
     local progressBarCorner = Instance.new('UICorner')
     progressBarCorner.CornerRadius = UDim.new(0, 2)
     progressBarCorner.Parent = progressBar
-    
+
+    -- Progress bar glow effect
+    local progressGlow = Instance.new('Frame')
+    progressGlow.Size = UDim2.new(1, 4, 1, 4)
+    progressGlow.Position = UDim2.new(0, -2, 0, -2)
+    progressGlow.BackgroundColor3 = self.Config.Theme.Primary
+    progressGlow.BackgroundTransparency = 0.8
+    progressGlow.BorderSizePixel = 0
+    progressGlow.ZIndex = 201
+    progressGlow.Parent = progressBg
+
+    local progressGlowCorner = Instance.new('UICorner')
+    progressGlowCorner.CornerRadius = UDim.new(0, 4)
+    progressGlowCorner.Parent = progressGlow
+
+    -- Add to active notifications
     table.insert(self.Notifications, notification)
-    
+
+    -- Slide in from right (nach links rein) with modern easing
     local targetPos = UDim2.new(1, -420, 1, -120 - ((#self.Notifications - 1) * 95))
-    TweenService:Create(notification, TweenInfo.new(0.6, Enum.EasingStyle.Quart), {Position = targetPos}):Play()
+    local slideInTween = TweenService:Create(notification, 
+        TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), 
+        { Position = targetPos }
+    )
+    slideInTween:Play()
+
+    -- Progress bar animations (countdown with glow)
+    local progressTween = TweenService:Create(progressBar, 
+        TweenInfo.new(duration, Enum.EasingStyle.Linear), 
+        { Size = UDim2.new(0, 0, 1, 0) }
+    )
     
-    TweenService:Create(progressBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 1, 0)}):Play()
+    local progressGlowTween = TweenService:Create(progressGlow, 
+        TweenInfo.new(duration, Enum.EasingStyle.Linear), 
+        { Size = UDim2.new(0, 4, 1, 4) }
+    )
     
+    -- Start progress animation after slide-in completes
+    slideInTween.Completed:Connect(function()
+        progressTween:Play()
+        progressGlowTween:Play()
+    end)
+
+    -- Auto dismiss after duration
     spawn(function()
         wait(duration)
-        self:DismissNotification(notification)
+        if notification and notification.Parent then
+            self:DismissNotification(notification, progressTween, progressGlowTween)
+        end
     end)
-    
+
+    -- Click to dismiss with modern interaction
     local clickDetector = Instance.new('TextButton')
     clickDetector.Size = UDim2.new(1, 0, 1, 0)
     clickDetector.BackgroundTransparency = 1
     clickDetector.Text = ''
+    clickDetector.ZIndex = 204
     clickDetector.Parent = notification
-    
+
     clickDetector.MouseButton1Click:Connect(function()
+        if progressTween then
+            progressTween:Cancel()
+        end
+        if progressGlowTween then
+            progressGlowTween:Cancel()
+        end
         self:DismissNotification(notification)
+    end)
+
+    -- Modern hover effects
+    clickDetector.MouseEnter:Connect(function()
+        TweenService:Create(notification, TweenInfo.new(0.3), {
+            BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        }):Play()
+    end)
+
+    clickDetector.MouseLeave:Connect(function()
+        TweenService:Create(notification, TweenInfo.new(0.3), {
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        }):Play()
     end)
 end
 
-function RadiantUI:DismissNotification(notification)
+function RadiantUI:DismissNotification(notification, progressTween, progressGlowTween)
+    -- Cancel any running tweens
+    if progressTween then
+        progressTween:Cancel()
+    end
+    if progressGlowTween then
+        progressGlowTween:Cancel()
+    end
+    
+    -- Remove from notifications list
     for i, notif in ipairs(self.Notifications) do
         if notif == notification then
             table.remove(self.Notifications, i)
@@ -1504,17 +1626,23 @@ function RadiantUI:DismissNotification(notification)
         end
     end
     
-    TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quart), {
-        Position = UDim2.new(1, 50, notification.Position.Y.Scale, notification.Position.Y.Offset)
-    }):Play()
-    
+    -- Slide out to right (nach rechts raus) with modern easing
+    local slideOutTween = TweenService:Create(notification, 
+        TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), 
+        { Position = UDim2.new(1, 50, notification.Position.Y.Scale, notification.Position.Y.Offset) }
+    )
+    slideOutTween:Play()
+
+    -- Reposition remaining notifications with smooth animation
     for i, notif in ipairs(self.Notifications) do
-        local newPos = UDim2.new(1, -420, 1, -120 - ((i - 1) * 95))
-        TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {Position = newPos}):Play()
+        if notif and notif.Parent then
+            local newPos = UDim2.new(1, -420, 1, -120 - ((i - 1) * 95))
+            TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad), { Position = newPos }):Play()
+        end
     end
-    
-    spawn(function()
-        wait(0.4)
+
+    -- Clean up after slide out
+    slideOutTween.Completed:Connect(function()
         if notification and notification.Parent then
             notification:Destroy()
         end
