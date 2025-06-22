@@ -1163,7 +1163,11 @@ function RadiantUI:CreateDropdown(element, parent)
     -- Debug: Check if options are provided
     if #options == 0 then
         warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
+        print("Element Config:", element.Config)
+        return
     end
+    
+    print("RadiantUI: Creating dropdown '" .. (element.Name or "Unknown") .. "' with " .. #options .. " options")
     
     local dropdownFrame = Instance.new('Frame')
     dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
@@ -1277,28 +1281,34 @@ function RadiantUI:CreateDropdown(element, parent)
     local selectedValues = {}
     local isOpen = false
     
-    -- Create option buttons
+    -- Create option buttons - FIXED VERSION
     local function createOptions(filteredOptions)
+        -- Clear existing options
         for _, child in pairs(optionsFrame:GetChildren()) do
             if child:IsA('TextButton') then
                 child:Destroy()
             end
         end
         
-        for i, option in ipairs(filteredOptions or options) do
+        local optionsToUse = filteredOptions or options
+        print("Creating " .. #optionsToUse .. " dropdown options")
+        
+        for i, option in ipairs(optionsToUse) do
             local optionButton = Instance.new('TextButton')
             optionButton.Size = UDim2.new(1, -8, 0, 24)
-            optionButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            optionButton.BackgroundTransparency = 1
+            optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            optionButton.BackgroundTransparency = 0.9
             optionButton.BorderSizePixel = 0
             optionButton.Text = option
-            optionButton.TextColor3 = self.Config.Theme.Text
+            optionButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Force white text
             optionButton.TextSize = 11
             optionButton.Font = Enum.Font.Gotham
             optionButton.TextXAlignment = Enum.TextXAlignment.Left
             optionButton.LayoutOrder = i
             optionButton.ZIndex = 12
             optionButton.Parent = optionsFrame
+            
+            print("Created option:", option, "with white text")
             
             local optionPadding = Instance.new('UIPadding')
             optionPadding.PaddingLeft = UDim.new(0, 12)
@@ -1331,14 +1341,18 @@ function RadiantUI:CreateDropdown(element, parent)
                 end
             end
             
+            -- Hover effects
             optionButton.MouseEnter:Connect(function()
-                optionButton.BackgroundTransparency = 0.9
+                optionButton.BackgroundTransparency = 0.7
+                optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
             end)
             
             optionButton.MouseLeave:Connect(function()
-                optionButton.BackgroundTransparency = 1
+                optionButton.BackgroundTransparency = 0.9
+                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             end)
             
+            -- Click handler
             optionButton.MouseButton1Click:Connect(function()
                 if isMultiSelect then
                     selectedValues[option] = not selectedValues[option]
@@ -1380,7 +1394,9 @@ function RadiantUI:CreateDropdown(element, parent)
             end)
         end
         
-        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #(filteredOptions or options) * 26)
+        -- Update canvas size
+        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #optionsToUse * 26)
+        print("Set canvas size for", #optionsToUse, "options")
     end
     
     -- Search functionality
@@ -1418,12 +1434,22 @@ function RadiantUI:CreateDropdown(element, parent)
     end)
     
     -- Initialize options to prevent empty dropdown
+    print("Initializing dropdown with", #options, "options")
     createOptions()
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
     local options = element.Config.Options or {}
     local placeholder = element.Config.Placeholder or 'Select...'
+    
+    -- Debug: Check if options are provided
+    if #options == 0 then
+        warn("RadiantUI: MultiDropdown '" .. (element.Name or "Unknown") .. "' has no options!")
+        print("Element Config:", element.Config)
+        return
+    end
+    
+    print("RadiantUI: Creating multi-dropdown '" .. (element.Name or "Unknown") .. "' with " .. #options .. " options")
     
     local dropdownFrame = Instance.new('Frame')
     dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
@@ -1540,22 +1566,26 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     -- Initialize element value
     element.Value = {}
     
-    -- Create option buttons
+    -- Create option buttons - FIXED VERSION FOR MULTIDROPDOWN
     local function createOptions(filteredOptions)
+        -- Clear existing options
         for _, child in pairs(optionsFrame:GetChildren()) do
             if child:IsA('TextButton') then
                 child:Destroy()
             end
         end
         
-        for i, option in ipairs(filteredOptions or options) do
+        local optionsToUse = filteredOptions or options
+        print("Creating " .. #optionsToUse .. " multi-dropdown options")
+        
+        for i, option in ipairs(optionsToUse) do
             local optionButton = Instance.new('TextButton')
             optionButton.Size = UDim2.new(1, -8, 0, 24)
-            optionButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            optionButton.BackgroundTransparency = 1
+            optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            optionButton.BackgroundTransparency = 0.9
             optionButton.BorderSizePixel = 0
             optionButton.Text = option
-            optionButton.TextColor3 = self.Config.Theme.Text
+            optionButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Force white text
             optionButton.TextSize = 11
             optionButton.Font = Enum.Font.Gotham
             optionButton.TextXAlignment = Enum.TextXAlignment.Left
@@ -1592,12 +1622,15 @@ function RadiantUI:CreateMultiDropdown(element, parent)
                 checkMark.Parent = checkBox
             end
             
+            -- Hover effects for multi-dropdown
             optionButton.MouseEnter:Connect(function()
-                optionButton.BackgroundTransparency = 0.9
+                optionButton.BackgroundTransparency = 0.7
+                optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
             end)
             
             optionButton.MouseLeave:Connect(function()
-                optionButton.BackgroundTransparency = 1
+                optionButton.BackgroundTransparency = 0.9
+                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
             end)
             
             optionButton.MouseButton1Click:Connect(function()
@@ -1628,7 +1661,9 @@ function RadiantUI:CreateMultiDropdown(element, parent)
             end)
         end
         
-        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #(filteredOptions or options) * 26)
+        -- Update canvas size for multi-dropdown
+        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #optionsToUse * 26)
+        print("Set multi-dropdown canvas size for", #optionsToUse, "options")
     end
     
     -- Search functionality
@@ -1666,6 +1701,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     end)
     
     -- Initialize options to prevent empty multi-dropdown
+    print("Initializing multi-dropdown with", #options, "options")
     createOptions()
 end
 
