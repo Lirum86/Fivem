@@ -1192,305 +1192,89 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
-    local isMultiSelect = element.Config.MultiSelect or false
-    local options = element.Config.Options or {}
-    local placeholder = element.Config.Placeholder or 'Select...'
-    
-    -- Debug: Check if options are provided
-    if #options == 0 then
-        warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
-        print("Element Config:", element.Config)
-        return
-    end
-    
-    print("RadiantUI: Creating dropdown '" .. (element.Name or "Unknown") .. "' with " .. #options .. " options")
-    
-    local dropdownFrame = Instance.new('Frame')
-    dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
-    dropdownFrame.Position = UDim2.new(1, -140, 0.5, -16)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    dropdownFrame.BorderSizePixel = 0
-    dropdownFrame.Parent = parent
-    
-    local dropdownCorner = Instance.new('UICorner')
-    dropdownCorner.CornerRadius = UDim.new(0, 8)
-    dropdownCorner.Parent = dropdownFrame
-    
-    local dropdownOutline = Instance.new('UIStroke')
-    dropdownOutline.Thickness = 1
-    dropdownOutline.Color = Color3.fromRGB(85, 85, 85)
-    dropdownOutline.Transparency = 0.3
-    dropdownOutline.Parent = dropdownFrame
-    
-    -- Main button
-    local dropdownButton = Instance.new('TextButton')
-    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
-    dropdownButton.BackgroundTransparency = 1
-    dropdownButton.Text = placeholder
-    dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
-    dropdownButton.TextSize = 12
-    dropdownButton.Font = Enum.Font.Gotham
-    dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
-    dropdownButton.Parent = dropdownFrame
-    
-    local buttonPadding = Instance.new('UIPadding')
-    buttonPadding.PaddingLeft = UDim.new(0, 12)
-    buttonPadding.PaddingRight = UDim.new(0, 30)
-    buttonPadding.Parent = dropdownButton
-    
-    -- Arrow icon
-    local arrowIcon = Instance.new('TextLabel')
-    arrowIcon.Size = UDim2.new(0, 20, 1, 0)
-    arrowIcon.Position = UDim2.new(1, -25, 0, 0)
-    arrowIcon.BackgroundTransparency = 1
-    arrowIcon.Text = '▼'
-    arrowIcon.TextColor3 = self.Config.Theme.TextSecondary
-    arrowIcon.TextSize = 10
-    arrowIcon.Font = Enum.Font.Gotham
-    arrowIcon.Parent = dropdownFrame
-    
-    -- Dropdown menu
-    local dropdownMenu = Instance.new('Frame')
-    dropdownMenu.Size = UDim2.new(1, 0, 0, 0)
-    dropdownMenu.Position = UDim2.new(0, 0, 1, 2)
-    dropdownMenu.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    dropdownMenu.BorderSizePixel = 0
-    dropdownMenu.Visible = false
-    dropdownMenu.ClipsDescendants = true
-    dropdownMenu.ZIndex = 10
-    dropdownMenu.Parent = dropdownFrame
-    
-    local menuCorner = Instance.new('UICorner')
-    menuCorner.CornerRadius = UDim.new(0, 8)
-    menuCorner.Parent = dropdownMenu
-    
-    local menuOutline = Instance.new('UIStroke')
-    menuOutline.Thickness = 1
-    menuOutline.Color = Color3.fromRGB(70, 70, 70)
-    menuOutline.Transparency = 0.4
-    menuOutline.Parent = dropdownMenu
-    
-    -- Search box
-    local searchFrame = Instance.new('Frame')
-    searchFrame.Size = UDim2.new(1, -16, 0, 28)
-    searchFrame.Position = UDim2.new(0, 8, 0, 8)
-    searchFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    searchFrame.BorderSizePixel = 0
-    searchFrame.ZIndex = 11
-    searchFrame.Parent = dropdownMenu
-    
-    local searchCorner = Instance.new('UICorner')
-    searchCorner.CornerRadius = UDim.new(0, 6)
-    searchCorner.Parent = searchFrame
-    
-    local searchBox = Instance.new('TextBox')
-    searchBox.Size = UDim2.new(1, -20, 1, 0)
-    searchBox.Position = UDim2.new(0, 10, 0, 0)
-    searchBox.BackgroundTransparency = 1
-    searchBox.Text = ''
-    searchBox.PlaceholderText = 'Search...'
-    searchBox.PlaceholderColor3 = self.Config.Theme.TextSecondary
-    searchBox.TextColor3 = self.Config.Theme.Text
-    searchBox.TextSize = 11
-    searchBox.Font = Enum.Font.Gotham
-    searchBox.TextXAlignment = Enum.TextXAlignment.Left
-    searchBox.ZIndex = 12
-    searchBox.Parent = searchFrame
-    
-    -- Options container
-    local optionsFrame = Instance.new('ScrollingFrame')
-    optionsFrame.Size = UDim2.new(1, 0, 0, 120)
-    optionsFrame.Position = UDim2.new(0, 0, 0, 44)
-    optionsFrame.BackgroundTransparency = 1
-    optionsFrame.BorderSizePixel = 0
-    optionsFrame.ScrollBarThickness = 6
-    optionsFrame.ScrollBarImageColor3 = self.Config.Theme.Primary
-    optionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsFrame.ZIndex = 11
-    optionsFrame.Parent = dropdownMenu
-    
-    local optionsLayout = Instance.new('UIListLayout')
-    optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    optionsLayout.Padding = UDim.new(0, 2)
-    optionsLayout.Parent = optionsFrame
-    
-    local selectedValues = {}
-    local isOpen = false
-    
-    -- Create option buttons - FIXED VERSION
-    local function createOptions(filteredOptions)
-        -- Clear existing options
-        for _, child in pairs(optionsFrame:GetChildren()) do
-            if child:IsA('TextButton') then
-                child:Destroy()
-            end
-        end
-        
-        local optionsToUse = filteredOptions or options
-        print("Creating " .. #optionsToUse .. " dropdown options")
-        
-        for i, option in ipairs(optionsToUse) do
-            local optionButton = Instance.new('TextButton')
-            optionButton.Size = UDim2.new(1, -8, 0, 24)
-            optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            optionButton.BackgroundTransparency = 0.9
-            optionButton.BorderSizePixel = 0
-            optionButton.Text = option
-            optionButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Force white text
-            optionButton.TextSize = 11
-            optionButton.Font = Enum.Font.Gotham
-            optionButton.TextXAlignment = Enum.TextXAlignment.Left
-            optionButton.LayoutOrder = i
-            optionButton.ZIndex = 12
-            optionButton.Parent = optionsFrame
-            
-            print("Created option:", option, "with white text")
-            
-            local optionPadding = Instance.new('UIPadding')
-            optionPadding.PaddingLeft = UDim.new(0, 12)
-            optionPadding.Parent = optionButton
-            
-            -- Multi-select indicator
-            if isMultiSelect then
-                local checkBox = Instance.new('Frame')
-                checkBox.Size = UDim2.new(0, 12, 0, 12)
-                checkBox.Position = UDim2.new(1, -20, 0.5, -6)
-                checkBox.BackgroundColor3 = selectedValues[option] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-                checkBox.BorderSizePixel = 0
-                checkBox.ZIndex = 13
-                checkBox.Parent = optionButton
-                
-                local checkCorner = Instance.new('UICorner')
-                checkCorner.CornerRadius = UDim.new(0, 2)
-                checkCorner.Parent = checkBox
-                
-                if selectedValues[option] then
-                    local checkMark = Instance.new('TextLabel')
-                    checkMark.Size = UDim2.new(1, 0, 1, 0)
-                    checkMark.BackgroundTransparency = 1
-                    checkMark.Text = '✓'
-                    checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    checkMark.TextSize = 8
-                    checkMark.Font = Enum.Font.GothamBold
-                    checkMark.ZIndex = 14
-                    checkMark.Parent = checkBox
-                end
-            end
-            
-            -- Hover effects
-            optionButton.MouseEnter:Connect(function()
-                optionButton.BackgroundTransparency = 0.7
-                optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-            end)
-            
-            optionButton.MouseLeave:Connect(function()
-                optionButton.BackgroundTransparency = 0.9
-                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            end)
-            
-            -- Click handler
-            optionButton.MouseButton1Click:Connect(function()
-                if isMultiSelect then
-                    selectedValues[option] = not selectedValues[option]
-                    createOptions(filteredOptions)
-                    
-                    local selectedText = {}
-                    for value, selected in pairs(selectedValues) do
-                        if selected then
-                            table.insert(selectedText, value)
-                        end
-                    end
-                    
-                    if #selectedText > 0 then
-                        if #selectedText == 1 then
-                            dropdownButton.Text = selectedText[1]
-                        else
-                            dropdownButton.Text = #selectedText .. ' selected'
-                        end
-                        dropdownButton.TextColor3 = self.Config.Theme.Text
-                    else
-                        dropdownButton.Text = placeholder
-                        dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
-                    end
-                    element.Callback(selectedText)
-                else
-                    dropdownButton.Text = option
-                    dropdownButton.TextColor3 = self.Config.Theme.Text
-                    element.Value = option
-                    element.Callback(option)
-                    isOpen = false
-                    
-                    TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-                    TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
-                    spawn(function()
-                        wait(0.3)
-                        dropdownMenu.Visible = false
-                    end)
-                end
-            end)
-        end
-        
-        -- Update canvas size
-        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #optionsToUse * 26)
-        print("Set canvas size for", #optionsToUse, "options")
-    end
-    
-    -- Search functionality
-    searchBox:GetPropertyChangedSignal('Text'):Connect(function()
-        local searchText = searchBox.Text:lower()
-        local filteredOptions = {}
-        
-        for _, option in ipairs(options) do
-            if option:lower():find(searchText) then
-                table.insert(filteredOptions, option)
-            end
-        end
-        
-        createOptions(filteredOptions)
-    end)
-    
-    -- Toggle dropdown
-    dropdownButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
-        
-        if isOpen then
-            dropdownMenu.Visible = true
-            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 172)}):Play()
-            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 180}):Play()
-            createOptions()
-            searchBox:CaptureFocus()
-        else
-            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
-            spawn(function()
-                wait(0.3)
-                dropdownMenu.Visible = false
-            end)
-        end
-    end)
-    
-    -- CRITICAL: Initialize dropdown options immediately
-    print("Initializing dropdown with", #options, "options")
-    spawn(function()
-        wait(0.1) -- Small delay to ensure GUI is ready
-        createOptions()
-        print("Dropdown options initialized successfully")
-    end)
+    return self:CreateDropdownBase(element, parent, false)
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
-    local options = element.Config.Options or {}
-    local placeholder = element.Config.Placeholder or 'Select...'
+    return self:CreateDropdownBase(element, parent, true)
+end
+
+-- Modulare Dropdown-Basis-Funktion für sowohl normale als auch Multi-Dropdowns
+function RadiantUI:CreateDropdownBase(element, parent, isMultiSelect)
+    local config = element.Config or {}
+    local options = config.Options or {}
+    local placeholder = config.Placeholder or 'Select...'
+    local maxHeight = config.MaxHeight or 120
     
-    -- Debug: Check if options are provided
+    -- Validierung
     if #options == 0 then
-        warn("RadiantUI: MultiDropdown '" .. (element.Name or "Unknown") .. "' has no options!")
-        print("Element Config:", element.Config)
+        warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
         return
     end
     
-    print("RadiantUI: Creating multi-dropdown '" .. (element.Name or "Unknown") .. "' with " .. #options .. " options")
+    -- State Management
+    local dropdownState = {
+        selectedValues = {},
+        isOpen = false,
+        searchText = "",
+        filteredOptions = options
+    }
     
+    -- Initialize element value based on type
+    if isMultiSelect then
+        element.Value = config.Default or {}
+        -- Initialize selectedValues state for multi-dropdown
+        if config.Default and type(config.Default) == "table" then
+            for _, value in ipairs(config.Default) do
+                dropdownState.selectedValues[value] = true
+            end
+        end
+    else
+        element.Value = config.Default or nil
+        -- Set button text if there's a default value
+        if config.Default then
+            dropdownState.hasDefaultValue = true
+            dropdownState.defaultValue = config.Default
+        end
+    end
+    
+    -- Create main dropdown structure
+    local components = self:CreateDropdownStructure(parent, placeholder)
+    
+    -- Setup dropdown functionality
+    self:SetupDropdownSearch(components, options, dropdownState, element, isMultiSelect, placeholder)
+    self:SetupDropdownToggle(components, dropdownState, options, element, isMultiSelect, placeholder)
+    self:SetupDropdownOptions(components, element, options, dropdownState, isMultiSelect, placeholder)
+    self:SetupDropdownCloseOnClickOutside(components, dropdownState, options, element, isMultiSelect, placeholder)
+    
+    -- Initialize with all options and set initial display
+    spawn(function()
+        wait(0.1)
+        self:RefreshDropdownOptions(components, options, dropdownState, element, isMultiSelect, placeholder)
+        
+        -- Set initial button text based on default value
+        if isMultiSelect then
+            if element.Value and #element.Value > 0 then
+                self:UpdateDropdownButtonText(components.button, element.Value, placeholder, true)
+            end
+        else
+            if element.Value then
+                self:UpdateDropdownButtonText(components.button, element.Value, placeholder, false)
+            end
+        end
+    end)
+    
+    -- Store UpdateFunction for external value setting
+    element.UpdateFunction = function(value)
+        self:UpdateDropdownValue(components, element, value, isMultiSelect, placeholder, dropdownState)
+    end
+    
+    return components
+end
+
+-- Erstellt die grundlegende Dropdown-Struktur
+function RadiantUI:CreateDropdownStructure(parent, placeholder)
+    -- Main container
     local dropdownFrame = Instance.new('Frame')
     dropdownFrame.Size = UDim2.new(0, 140, 0, 32)
     dropdownFrame.Position = UDim2.new(1, -140, 0.5, -16)
@@ -1498,6 +1282,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     dropdownFrame.BorderSizePixel = 0
     dropdownFrame.Parent = parent
     
+    -- Styling
     local dropdownCorner = Instance.new('UICorner')
     dropdownCorner.CornerRadius = UDim.new(0, 8)
     dropdownCorner.Parent = dropdownFrame
@@ -1536,6 +1321,23 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     arrowIcon.Parent = dropdownFrame
     
     -- Dropdown menu
+    local dropdownMenu = self:CreateDropdownMenu(dropdownFrame)
+    local searchBox = self:CreateDropdownSearch(dropdownMenu)
+    local optionsFrame = self:CreateDropdownOptionsContainer(dropdownMenu)
+    
+    return {
+        frame = dropdownFrame,
+        button = dropdownButton,
+        arrow = arrowIcon,
+        menu = dropdownMenu,
+        search = searchBox,
+        options = optionsFrame,
+        outline = dropdownOutline
+    }
+end
+
+-- Erstellt das Dropdown-Menü
+function RadiantUI:CreateDropdownMenu(parent)
     local dropdownMenu = Instance.new('Frame')
     dropdownMenu.Size = UDim2.new(1, 0, 0, 0)
     dropdownMenu.Position = UDim2.new(0, 0, 1, 2)
@@ -1544,7 +1346,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     dropdownMenu.Visible = false
     dropdownMenu.ClipsDescendants = true
     dropdownMenu.ZIndex = 10
-    dropdownMenu.Parent = dropdownFrame
+    dropdownMenu.Parent = parent
     
     local menuCorner = Instance.new('UICorner')
     menuCorner.CornerRadius = UDim.new(0, 8)
@@ -1556,14 +1358,18 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     menuOutline.Transparency = 0.4
     menuOutline.Parent = dropdownMenu
     
-    -- Search box
+    return dropdownMenu
+end
+
+-- Erstellt die Suchbox
+function RadiantUI:CreateDropdownSearch(parent)
     local searchFrame = Instance.new('Frame')
     searchFrame.Size = UDim2.new(1, -16, 0, 28)
     searchFrame.Position = UDim2.new(0, 8, 0, 8)
     searchFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     searchFrame.BorderSizePixel = 0
     searchFrame.ZIndex = 11
-    searchFrame.Parent = dropdownMenu
+    searchFrame.Parent = parent
     
     local searchCorner = Instance.new('UICorner')
     searchCorner.CornerRadius = UDim.new(0, 6)
@@ -1583,7 +1389,11 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     searchBox.ZIndex = 12
     searchBox.Parent = searchFrame
     
-    -- Options container
+    return searchBox
+end
+
+-- Erstellt den Options-Container
+function RadiantUI:CreateDropdownOptionsContainer(parent)
     local optionsFrame = Instance.new('ScrollingFrame')
     optionsFrame.Size = UDim2.new(1, 0, 0, 120)
     optionsFrame.Position = UDim2.new(0, 0, 0, 44)
@@ -1591,162 +1401,311 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     optionsFrame.BorderSizePixel = 0
     optionsFrame.ScrollBarThickness = 6
     optionsFrame.ScrollBarImageColor3 = self.Config.Theme.Primary
+    optionsFrame.ScrollBarImageTransparency = 0.3
     optionsFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     optionsFrame.ZIndex = 11
-    optionsFrame.Parent = dropdownMenu
+    optionsFrame.Parent = parent
     
     local optionsLayout = Instance.new('UIListLayout')
     optionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     optionsLayout.Padding = UDim.new(0, 2)
     optionsLayout.Parent = optionsFrame
     
-    local selectedValues = {}
-    local isOpen = false
-    
-    -- Initialize element value
-    element.Value = {}
-    
-    -- Create option buttons - FIXED VERSION FOR MULTIDROPDOWN
-    local function createOptions(filteredOptions)
-        -- Clear existing options
-        for _, child in pairs(optionsFrame:GetChildren()) do
-            if child:IsA('TextButton') then
-                child:Destroy()
-            end
-        end
+    return optionsFrame
+end
+
+-- Setup für Suchfunktionalität
+function RadiantUI:SetupDropdownSearch(components, options, dropdownState, element, isMultiSelect, placeholder)
+    components.search:GetPropertyChangedSignal('Text'):Connect(function()
+        local searchText = components.search.Text:lower()
+        dropdownState.searchText = searchText
         
-        local optionsToUse = filteredOptions or options
-        print("Creating " .. #optionsToUse .. " multi-dropdown options")
-        
-        for i, option in ipairs(optionsToUse) do
-            local optionButton = Instance.new('TextButton')
-            optionButton.Size = UDim2.new(1, -8, 0, 24)
-            optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            optionButton.BackgroundTransparency = 0.9
-            optionButton.BorderSizePixel = 0
-            optionButton.Text = option
-            optionButton.TextColor3 = Color3.fromRGB(255, 255, 255) -- Force white text
-            optionButton.TextSize = 11
-            optionButton.Font = Enum.Font.Gotham
-            optionButton.TextXAlignment = Enum.TextXAlignment.Left
-            optionButton.LayoutOrder = i
-            optionButton.ZIndex = 12
-            optionButton.Parent = optionsFrame
-            
-            local optionPadding = Instance.new('UIPadding')
-            optionPadding.PaddingLeft = UDim.new(0, 12)
-            optionPadding.Parent = optionButton
-            
-            -- Multi-select checkbox
-            local checkBox = Instance.new('Frame')
-            checkBox.Size = UDim2.new(0, 12, 0, 12)
-            checkBox.Position = UDim2.new(1, -20, 0.5, -6)
-            checkBox.BackgroundColor3 = selectedValues[option] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-            checkBox.BorderSizePixel = 0
-            checkBox.ZIndex = 13
-            checkBox.Parent = optionButton
-            
-            local checkCorner = Instance.new('UICorner')
-            checkCorner.CornerRadius = UDim.new(0, 2)
-            checkCorner.Parent = checkBox
-            
-            if selectedValues[option] then
-                local checkMark = Instance.new('TextLabel')
-                checkMark.Size = UDim2.new(1, 0, 1, 0)
-                checkMark.BackgroundTransparency = 1
-                checkMark.Text = '✓'
-                checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
-                checkMark.TextSize = 8
-                checkMark.Font = Enum.Font.GothamBold
-                checkMark.ZIndex = 14
-                checkMark.Parent = checkBox
-            end
-            
-            -- Hover effects for multi-dropdown
-            optionButton.MouseEnter:Connect(function()
-                optionButton.BackgroundTransparency = 0.7
-                optionButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-            end)
-            
-            optionButton.MouseLeave:Connect(function()
-                optionButton.BackgroundTransparency = 0.9
-                optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-            end)
-            
-            optionButton.MouseButton1Click:Connect(function()
-                selectedValues[option] = not selectedValues[option]
-                createOptions(filteredOptions)
-                
-                local selectedText = {}
-                for value, selected in pairs(selectedValues) do
-                    if selected then
-                        table.insert(selectedText, value)
-                    end
-                end
-                
-                if #selectedText > 0 then
-                    if #selectedText == 1 then
-                        dropdownButton.Text = selectedText[1]
-                    else
-                        dropdownButton.Text = #selectedText .. ' selected'
-                    end
-                    dropdownButton.TextColor3 = self.Config.Theme.Text
-                else
-                    dropdownButton.Text = placeholder
-                    dropdownButton.TextColor3 = self.Config.Theme.TextSecondary
-                end
-                
-                element.Value = selectedText
-                element.Callback(selectedText)
-            end)
-        end
-        
-        -- Update canvas size for multi-dropdown
-        optionsFrame.CanvasSize = UDim2.new(0, 0, 0, #optionsToUse * 26)
-        print("Set multi-dropdown canvas size for", #optionsToUse, "options")
-    end
-    
-    -- Search functionality
-    searchBox:GetPropertyChangedSignal('Text'):Connect(function()
-        local searchText = searchBox.Text:lower()
         local filteredOptions = {}
-        
         for _, option in ipairs(options) do
-            if option:lower():find(searchText) then
+            if option:lower():find(searchText, 1, true) then -- plain text search
                 table.insert(filteredOptions, option)
             end
         end
         
-        createOptions(filteredOptions)
+        dropdownState.filteredOptions = filteredOptions
+        self:RefreshDropdownOptions(components, filteredOptions, dropdownState, element, isMultiSelect, placeholder)
     end)
-    
-    -- Toggle dropdown
-    dropdownButton.MouseButton1Click:Connect(function()
-        isOpen = not isOpen
+end
+
+-- Setup für Toggle-Funktionalität
+function RadiantUI:SetupDropdownToggle(components, dropdownState, originalOptions, element, isMultiSelect, placeholder)
+    components.button.MouseButton1Click:Connect(function()
+        dropdownState.isOpen = not dropdownState.isOpen
         
-        if isOpen then
-            dropdownMenu.Visible = true
-            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 172)}):Play()
-            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 180}):Play()
-            createOptions()
-            searchBox:CaptureFocus()
+        if dropdownState.isOpen then
+            self:OpenDropdown(components)
         else
-            TweenService:Create(dropdownMenu, TweenInfo.new(0.3), {Size = UDim2.new(1, 0, 0, 0)}):Play()
-            TweenService:Create(arrowIcon, TweenInfo.new(0.3), {Rotation = 0}):Play()
-            spawn(function()
-                wait(0.3)
-                dropdownMenu.Visible = false
-            end)
+            self:CloseDropdown(components, dropdownState, originalOptions, element, isMultiSelect, placeholder)
+        end
+    end)
+end
+
+-- Öffnet das Dropdown
+function RadiantUI:OpenDropdown(components)
+    components.menu.Visible = true
+    TweenService:Create(components.menu, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+        Size = UDim2.new(1, 0, 0, 172)
+    }):Play()
+    TweenService:Create(components.arrow, TweenInfo.new(0.3), {
+        Rotation = 180
+    }):Play()
+    TweenService:Create(components.outline, TweenInfo.new(0.3), {
+        Color = self.Config.Theme.Primary,
+        Transparency = 0.1
+    }):Play()
+    
+    -- Focus search box
+    spawn(function()
+        wait(0.1)
+        components.search:CaptureFocus()
+    end)
+end
+
+-- Schließt das Dropdown
+function RadiantUI:CloseDropdown(components, dropdownState, originalOptions, element, isMultiSelect, placeholder)
+    TweenService:Create(components.menu, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {
+        Size = UDim2.new(1, 0, 0, 0)
+    }):Play()
+    TweenService:Create(components.arrow, TweenInfo.new(0.3), {
+        Rotation = 0
+    }):Play()
+    TweenService:Create(components.outline, TweenInfo.new(0.3), {
+        Color = Color3.fromRGB(85, 85, 85),
+        Transparency = 0.3
+    }):Play()
+    
+    spawn(function()
+        wait(0.3)
+        if not dropdownState.isOpen then
+            components.menu.Visible = false
         end
     end)
     
-    -- CRITICAL: Initialize multi-dropdown options immediately
-    print("Initializing multi-dropdown with", #options, "options")
-    spawn(function()
-        wait(0.1) -- Small delay to ensure GUI is ready
-        createOptions()
-        print("Multi-dropdown options initialized successfully")
+    -- Clear search and reset to all options
+    components.search.Text = ""
+    dropdownState.searchText = ""
+    if originalOptions then
+        dropdownState.filteredOptions = originalOptions
+        -- Refresh options to show all again
+        if element and isMultiSelect ~= nil and placeholder then
+            self:RefreshDropdownOptions(components, originalOptions, dropdownState, element, isMultiSelect, placeholder)
+        end
+    end
+end
+
+-- Setup für Click-Outside-To-Close
+function RadiantUI:SetupDropdownCloseOnClickOutside(components, dropdownState, originalOptions, element, isMultiSelect, placeholder)
+    local connection
+    connection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownState.isOpen then
+            local mousePos = UserInputService:GetMouseLocation()
+            local guiInset = game:GetService("GuiService"):GetGuiInset()
+            
+            local framePos = components.frame.AbsolutePosition
+            local frameSize = components.frame.AbsoluteSize
+            local menuPos = components.menu.AbsolutePosition
+            local menuSize = components.menu.AbsoluteSize
+            
+            -- Check if click is outside both frame and menu
+            local outsideFrame = mousePos.X < framePos.X - guiInset.X or 
+                               mousePos.X > framePos.X + frameSize.X - guiInset.X or
+                               mousePos.Y < framePos.Y - guiInset.Y or 
+                               mousePos.Y > framePos.Y + frameSize.Y - guiInset.Y
+                               
+            local outsideMenu = mousePos.X < menuPos.X - guiInset.X or 
+                               mousePos.X > menuPos.X + menuSize.X - guiInset.X or
+                               mousePos.Y < menuPos.Y - guiInset.Y or 
+                               mousePos.Y > menuPos.Y + menuSize.Y - guiInset.Y
+            
+            if outsideFrame and outsideMenu then
+                dropdownState.isOpen = false
+                self:CloseDropdown(components, dropdownState, originalOptions, element, isMultiSelect, placeholder)
+            end
+        end
     end)
+    
+    table.insert(self.Connections, connection)
+end
+
+-- Setup für Options-Erstellung und -Handling
+function RadiantUI:SetupDropdownOptions(components, element, options, dropdownState, isMultiSelect, placeholder)
+    -- Initial setup wird später durch RefreshDropdownOptions gemacht
+end
+
+-- Aktualisiert die Dropdown-Optionen
+function RadiantUI:RefreshDropdownOptions(components, options, dropdownState, element, isMultiSelect, placeholder)
+    -- Clear existing options
+    for _, child in pairs(components.options:GetChildren()) do
+        if child:IsA('TextButton') then
+            child:Destroy()
+        end
+    end
+    
+    local optionsToUse = options or dropdownState.filteredOptions
+    
+    for i, option in ipairs(optionsToUse) do
+        local optionButton = self:CreateDropdownOption(components, option, i, dropdownState, element, isMultiSelect, placeholder)
+    end
+    
+    -- Update canvas size
+    components.options.CanvasSize = UDim2.new(0, 0, 0, #optionsToUse * 26)
+end
+
+-- Erstellt eine einzelne Dropdown-Option
+function RadiantUI:CreateDropdownOption(components, option, index, dropdownState, element, isMultiSelect, placeholder)
+    local optionButton = Instance.new('TextButton')
+    optionButton.Size = UDim2.new(1, -8, 0, 24)
+    optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    optionButton.BackgroundTransparency = 0.9
+    optionButton.BorderSizePixel = 0
+    optionButton.Text = option
+    optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    optionButton.TextSize = 11
+    optionButton.Font = Enum.Font.Gotham
+    optionButton.TextXAlignment = Enum.TextXAlignment.Left
+    optionButton.LayoutOrder = index
+    optionButton.ZIndex = 12
+    optionButton.Parent = components.options
+    
+    local optionPadding = Instance.new('UIPadding')
+    optionPadding.PaddingLeft = UDim.new(0, 12)
+    optionPadding.Parent = optionButton
+    
+    -- Add checkbox for multi-select
+    if isMultiSelect then
+        self:CreateDropdownCheckbox(optionButton, option, dropdownState)
+    end
+    
+    -- Hover effects
+    optionButton.MouseEnter:Connect(function()
+        TweenService:Create(optionButton, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.7,
+            BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        }):Play()
+    end)
+    
+    optionButton.MouseLeave:Connect(function()
+        TweenService:Create(optionButton, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.9,
+            BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        }):Play()
+    end)
+    
+    -- Click handler
+    optionButton.MouseButton1Click:Connect(function()
+        self:HandleDropdownOptionClick(components, option, dropdownState, element, isMultiSelect, placeholder)
+    end)
+    
+    return optionButton
+end
+
+-- Erstellt Checkbox für Multi-Select
+function RadiantUI:CreateDropdownCheckbox(parent, option, dropdownState)
+    local checkBox = Instance.new('Frame')
+    checkBox.Size = UDim2.new(0, 12, 0, 12)
+    checkBox.Position = UDim2.new(1, -20, 0.5, -6)
+    checkBox.BackgroundColor3 = dropdownState.selectedValues[option] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+    checkBox.BorderSizePixel = 0
+    checkBox.ZIndex = 13
+    checkBox.Parent = parent
+    
+    local checkCorner = Instance.new('UICorner')
+    checkCorner.CornerRadius = UDim.new(0, 2)
+    checkCorner.Parent = checkBox
+    
+    if dropdownState.selectedValues[option] then
+        local checkMark = Instance.new('TextLabel')
+        checkMark.Size = UDim2.new(1, 0, 1, 0)
+        checkMark.BackgroundTransparency = 1
+        checkMark.Text = '✓'
+        checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
+        checkMark.TextSize = 8
+        checkMark.Font = Enum.Font.GothamBold
+        checkMark.ZIndex = 14
+        checkMark.Parent = checkBox
+    end
+    
+    return checkBox
+end
+
+-- Behandelt Option-Klicks
+function RadiantUI:HandleDropdownOptionClick(components, option, dropdownState, element, isMultiSelect, placeholder)
+    if isMultiSelect then
+        -- Multi-select logic
+        dropdownState.selectedValues[option] = not dropdownState.selectedValues[option]
+        
+        local selectedText = {}
+        for value, selected in pairs(dropdownState.selectedValues) do
+            if selected then
+                table.insert(selectedText, value)
+            end
+        end
+        
+        self:UpdateDropdownButtonText(components.button, selectedText, placeholder, true)
+        element.Value = selectedText
+        element.Callback(selectedText)
+        
+        -- Refresh to update checkboxes
+        self:RefreshDropdownOptions(components, dropdownState.filteredOptions, dropdownState, element, isMultiSelect, placeholder)
+    else
+        -- Single select logic
+        components.button.Text = option
+        components.button.TextColor3 = self.Config.Theme.Text
+        element.Value = option
+        element.Callback(option)
+        
+        -- Close dropdown
+        dropdownState.isOpen = false
+        self:CloseDropdown(components, dropdownState, nil, element, isMultiSelect, placeholder)
+    end
+end
+
+-- Aktualisiert den Button-Text
+function RadiantUI:UpdateDropdownButtonText(button, selectedValues, placeholder, isMultiSelect)
+    if isMultiSelect then
+        if #selectedValues > 0 then
+            if #selectedValues == 1 then
+                button.Text = selectedValues[1]
+            else
+                button.Text = #selectedValues .. ' selected'
+            end
+            button.TextColor3 = self.Config.Theme.Text
+        else
+            button.Text = placeholder
+            button.TextColor3 = self.Config.Theme.TextSecondary
+        end
+    else
+        if selectedValues then
+            button.Text = selectedValues
+            button.TextColor3 = self.Config.Theme.Text
+        else
+            button.Text = placeholder
+            button.TextColor3 = self.Config.Theme.TextSecondary
+        end
+    end
+end
+
+-- Externe Value-Update Funktion
+function RadiantUI:UpdateDropdownValue(components, element, value, isMultiSelect, placeholder, dropdownState)
+    if isMultiSelect then
+        if type(value) == "table" then
+            dropdownState.selectedValues = {}
+            for _, v in ipairs(value) do
+                dropdownState.selectedValues[v] = true
+            end
+            element.Value = value
+            self:UpdateDropdownButtonText(components.button, value, placeholder, true)
+            self:RefreshDropdownOptions(components, dropdownState.filteredOptions, dropdownState, element, isMultiSelect, placeholder)
+        end
+    else
+        element.Value = value
+        self:UpdateDropdownButtonText(components.button, value, placeholder, false)
+    end
 end
 
 function RadiantUI:CreateInput(element, parent)
