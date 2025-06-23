@@ -99,21 +99,12 @@ function RadiantUI:Initialize()
     
     -- Fade animations entfernt für bessere Performance
     
+    -- Erstelle Settings Tab direkt
+    self:CreateSettingsTab()
+    
     spawn(function()
-        wait(1)
+        wait(0.1) -- Reduzierte Wartezeit
         self:ShowNotification("RadiantUI " .. self.Version .. " loaded successfully!", 4)
-        -- Erstelle Settings Tab falls noch nicht erstellt
-        if not self.SettingsTab then
-            self:CreateSettingsTab()
-        end
-        
-        -- WICHTIG: Initialisiere den ersten Tab automatisch
-        if #self.Tabs > 0 and not self.Tabs[1].Content then
-            self:CreateTabContent(1)
-            if self.Tabs[1].Content then
-                self.Tabs[1].Content.Visible = true
-            end
-        end
     end)
 end
 
@@ -540,17 +531,12 @@ function RadiantUI:AddTab(config)
     self.Tabs[tabIndex] = tab
     self:CreateTabButton(tab, tabIndex)
     
+    -- TabContent SOFORT erstellen um Race Conditions zu vermeiden
+    self:CreateTabContent(tabIndex)
+    
     -- Automatisch den ersten Tab aktivieren
     if tabIndex == 1 then
-        spawn(function()
-            wait(0.1) -- Kurze Verzögerung für GUI-Initialisierung
-            self:SwitchTab(1)
-        end)
-    end
-    
-    -- Erstelle Settings Tab wenn dies der letzte User-Tab ist
-    if #self.Tabs == MAX_USER_TABS then
-        self:CreateSettingsTab()
+        self:SwitchTab(1)
     end
     
     return {
@@ -676,7 +662,15 @@ end
 
 function RadiantUI:CreateTabContent(tabIndex)
     local tab = self.Tabs[tabIndex] or (tabIndex == SETTINGS_TAB_INDEX and self.SettingsTab)
-    if not tab then return end
+    if not tab then 
+        warn("RadiantUI: Tab " .. tabIndex .. " not found for content creation")
+        return 
+    end
+    
+    -- Prüfen ob Content bereits existiert
+    if tab.Content then
+        return -- Content bereits erstellt
+    end
     
     local contentFrame = Instance.new('Frame')
     contentFrame.Name = 'TabContent' .. (tab.Name or 'Unknown')
@@ -741,13 +735,15 @@ function RadiantUI:CreateTabContent(tabIndex)
     tab.LeftColumn = leftColumn
     tab.RightColumn = rightColumn
     
-    -- Create existing sections (only once!)
+    -- Create existing sections and their elements
     for i, section in ipairs(tab.Sections) do
         if not section.Frame then  -- Only create if not already created
             local parentColumn = (i % 2 == 1) and leftColumn or rightColumn
             self:CreateSection(section, parentColumn, math.ceil(i / 2))
         end
     end
+    
+    print("RadiantUI: TabContent created for tab '" .. tab.Name .. "' with " .. #tab.Sections .. " sections")
 end
 
 function RadiantUI:AddSection(tabIndex, config)
@@ -765,9 +761,16 @@ function RadiantUI:AddSection(tabIndex, config)
     
     table.insert(tab.Sections, section)
     
-    if tab.Content then
+    -- Sicherstellen dass TabContent existiert, bevor Section erstellt wird
+    if not tab.Content then
+        self:CreateTabContent(tabIndex)
+    end
+    
+    if tab.Content and tab.LeftColumn and tab.RightColumn then
         local parentColumn = (#tab.Sections % 2 == 1) and tab.LeftColumn or tab.RightColumn
         self:CreateSection(section, parentColumn, math.ceil(#tab.Sections / 2))
+    else
+        warn("RadiantUI: Tab content not ready for section creation")
     end
     
     return {
@@ -876,7 +879,10 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
     
     -- Create elements if they exist (only once!)
     for i, element in ipairs(section.Elements) do
-        self:CreateElement(element, itemsFrame, i)
+        if not element.Frame then  -- Only create if not already created
+            print("RadiantUI: Creating element '" .. (element.Name or "Element") .. "' of type '" .. (element.Type or "Unknown") .. "'")
+            self:CreateElement(element, itemsFrame, i)
+        end
     end
     
     sectionFrame.MouseEnter:Connect(function()
@@ -992,9 +998,23 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         label.Text = ""
         print("RadiantUI: Button label hidden")
     elseif element.Type == 'Dropdown' then
-        self:CreateDropdown(element, itemFrame)
+        local dropdownSuccess = pcall(function()
+            self:CreateDropdown(element, itemFrame)
+        end)
+        if not dropdownSuccess then
+            warn("RadiantUI: Failed to create dropdown '" .. (element.Name or "Unknown") .. "'")
+            label.Text = element.Name .. " (Error)"
+            label.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
     elseif element.Type == 'MultiDropdown' then
-        self:CreateMultiDropdown(element, itemFrame)
+        local multiDropdownSuccess = pcall(function()
+            self:CreateMultiDropdown(element, itemFrame)
+        end)
+        if not multiDropdownSuccess then
+            warn("RadiantUI: Failed to create multi-dropdown '" .. (element.Name or "Unknown") .. "'")
+            label.Text = element.Name .. " (Error)"
+            label.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
     elseif element.Type == 'Input' then
         self:CreateInput(element, itemFrame)
     elseif element.Type == 'ColorPicker' then
@@ -1201,6 +1221,17 @@ end
 
 -- Modulare Dropdown-Basis-Funktion für sowohl normale als auch Multi-Dropdowns
 function RadiantUI:CreateDropdownBase(element, parent, isMultiSelect)
+    -- Erweiterte Validierung
+    if not parent then
+        warn("RadiantUI: Cannot create dropdown '" .. (element.Name or "Unknown") .. "' - parent is nil!")
+        return nil
+    end
+    
+    if not parent.Parent then
+        warn("RadiantUI: Cannot create dropdown '" .. (element.Name or "Unknown") .. "' - parent has no Parent!")
+        return nil
+    end
+    
     local config = element.Config or {}
     local options = config.Options or {}
     local placeholder = config.Placeholder or 'Select...'
@@ -1209,8 +1240,10 @@ function RadiantUI:CreateDropdownBase(element, parent, isMultiSelect)
     -- Validierung
     if #options == 0 then
         warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
-        return
+        return nil
     end
+    
+    print("RadiantUI: Creating dropdown '" .. (element.Name or "Unknown") .. "' with " .. #options .. " options")
     
     -- State Management
     local dropdownState = {
@@ -1240,27 +1273,46 @@ function RadiantUI:CreateDropdownBase(element, parent, isMultiSelect)
     
     -- Create main dropdown structure
     local components = self:CreateDropdownStructure(parent, placeholder)
+    if not components or not components.frame then
+        warn("RadiantUI: Failed to create dropdown structure for '" .. (element.Name or "Unknown") .. "'")
+        return nil
+    end
     
-    -- Setup dropdown functionality
-    self:SetupDropdownSearch(components, options, dropdownState, element, isMultiSelect, placeholder)
-    self:SetupDropdownToggle(components, dropdownState, options, element, isMultiSelect, placeholder)
-    self:SetupDropdownOptions(components, element, options, dropdownState, isMultiSelect, placeholder)
-    self:SetupDropdownCloseOnClickOutside(components, dropdownState, options, element, isMultiSelect, placeholder)
+    -- Setup dropdown functionality mit Fehlerbehandlung
+    local success = pcall(function()
+        self:SetupDropdownSearch(components, options, dropdownState, element, isMultiSelect, placeholder)
+        self:SetupDropdownToggle(components, dropdownState, options, element, isMultiSelect, placeholder)
+        self:SetupDropdownOptions(components, element, options, dropdownState, isMultiSelect, placeholder)
+        self:SetupDropdownCloseOnClickOutside(components, dropdownState, options, element, isMultiSelect, placeholder)
+    end)
+    
+    if not success then
+        warn("RadiantUI: Failed to setup dropdown functionality for '" .. (element.Name or "Unknown") .. "'")
+        return nil
+    end
     
     -- Initialize with all options and set initial display
     spawn(function()
         wait(0.1)
-        self:RefreshDropdownOptions(components, options, dropdownState, element, isMultiSelect, placeholder)
+        local initSuccess = pcall(function()
+            self:RefreshDropdownOptions(components, options, dropdownState, element, isMultiSelect, placeholder)
+            
+            -- Set initial button text based on default value
+            if isMultiSelect then
+                if element.Value and #element.Value > 0 then
+                    self:UpdateDropdownButtonText(components.button, element.Value, placeholder, true)
+                end
+            else
+                if element.Value then
+                    self:UpdateDropdownButtonText(components.button, element.Value, placeholder, false)
+                end
+            end
+        end)
         
-        -- Set initial button text based on default value
-        if isMultiSelect then
-            if element.Value and #element.Value > 0 then
-                self:UpdateDropdownButtonText(components.button, element.Value, placeholder, true)
-            end
+        if initSuccess then
+            print("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' initialized successfully")
         else
-            if element.Value then
-                self:UpdateDropdownButtonText(components.button, element.Value, placeholder, false)
-            end
+            warn("RadiantUI: Failed to initialize dropdown '" .. (element.Name or "Unknown") .. "'")
         end
     end)
     
