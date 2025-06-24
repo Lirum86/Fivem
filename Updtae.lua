@@ -925,9 +925,8 @@ function RadiantUI:AddElement(section, elementType, config)
         return
     end
     
-    -- Debug output to track element creation
-    local elementName = config.Name or "Element"
-    print("RadiantUI: Adding element '" .. elementName .. "' of type '" .. elementType .. "'")
+    -- Element name determination
+    local elementName = config.Name or config.Title or "Element"
     
     local element = {
         Type = elementType,
@@ -967,9 +966,6 @@ function RadiantUI:AddElement(section, elementType, config)
 end
 
 function RadiantUI:CreateElement(element, parent, layoutOrder)
-    -- Debug output to verify element name
-    print("RadiantUI: Creating element '" .. (element.Name or "UNNAMED") .. "' of type '" .. (element.Type or "UNKNOWN") .. "'")
-    
     local itemFrame = Instance.new('Frame')
     itemFrame.Size = UDim2.new(1, 0, 0, 30)
     itemFrame.BackgroundTransparency = 1
@@ -981,16 +977,13 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
     label.Size = UDim2.new(0.55, 0, 1, 0)
     label.Position = UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = element.Name or "Element" -- Use the actual element name
+    label.Text = element.Name or element.Config.Name or element.Config.Title or "Element" -- Use the actual element name
     label.TextColor3 = self.Config.Theme.TextSecondary
     label.TextSize = 13
     label.Font = Enum.Font.Gotham
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.TextYAlignment = Enum.TextYAlignment.Center
     label.Parent = itemFrame
-    
-    -- Debug output to verify label text
-    print("RadiantUI: Label text set to: '" .. label.Text .. "'")
     
     element.Frame = itemFrame
     
@@ -1002,7 +995,6 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         self:CreateButton(element, itemFrame)
         -- For buttons, hide the label since button shows its own text
         label.Text = ""
-        print("RadiantUI: Button label hidden")
     elseif element.Type == 'Dropdown' then
         self:CreateDropdown(element, itemFrame)
     elseif element.Type == 'MultiDropdown' then
@@ -1204,31 +1196,29 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
-    print("RadiantUI: [NEW] Creating dropdown for:", element.Name)
     
-    -- ROBUST configuration validation
+    -- VERBESSERTE configuration validation - weniger streng
     local config = element.Config or {}
     local options = {}
     
-    -- Ensure we have valid options array
+    -- Ensure we have valid options array - WENIGER STRENGE VALIDATION
     if config.Options and type(config.Options) == "table" and #config.Options > 0 then
         for i, opt in ipairs(config.Options) do
-            if type(opt) == "string" and opt ~= "" then
-                table.insert(options, opt)
+            -- Akzeptiere auch nicht-string Werte und konvertiere sie
+            if opt ~= nil and opt ~= "" then
+                table.insert(options, tostring(opt))
             end
         end
     end
     
-    -- Fallback if no valid options found
+    -- Fallback nur wenn wirklich KEINE Optionen vorhanden
     if #options == 0 then
         options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No valid options provided for dropdown '" .. element.Name .. "', using fallback options")
+        warn("RadiantUI: No valid options provided for dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback options")
     end
     
     local placeholder = config.Placeholder or "Select..."
     local defaultValue = config.Default
-    
-    print("RadiantUI: [NEW] Validated options:", table.concat(options, ", "))
     
     -- Initialize element state
     element.Value = defaultValue
@@ -1386,7 +1376,7 @@ function RadiantUI:CreateDropdown(element, parent)
      closeDropdown = function()
          if not dropdownState.isOpen then return end
          
-         print("RadiantUI: [NEW] Closing dropdown")
+
          dropdownState.isOpen = false
          
          -- Animate closing
@@ -1460,7 +1450,7 @@ function RadiantUI:CreateDropdown(element, parent)
         
                  -- Click handler mit verbesserter Event-Behandlung
          local clickHandler = optionBtn.MouseButton1Click:Connect(function()
-             print("RadiantUI: [NEW] Option clicked:", optionText)
+
              
              -- Update state
              dropdownState.selectedValue = optionText
@@ -1489,7 +1479,7 @@ function RadiantUI:CreateDropdown(element, parent)
          -- Zusätzlicher Input-Handler für bessere Klick-Erkennung
          local inputHandler = optionBtn.InputBegan:Connect(function(input)
              if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                 print("RadiantUI: [NEW] Input detected on option:", optionText)
+
                  
                  -- Trigger the same logic as click
                  dropdownState.selectedValue = optionText
@@ -1515,12 +1505,12 @@ function RadiantUI:CreateDropdown(element, parent)
          table.insert(dropdownState.connections, clickHandler)
          table.insert(dropdownState.connections, inputHandler)
          
-         print("RadiantUI: [NEW] Created option button:", optionText)
+
         return optionBtn
     end
     
     local function refreshOptions()
-        print("RadiantUI: [NEW] Refreshing options list with", #dropdownState.filteredOptions, "options")
+
         clearOptionsList()
         
         for i, option in ipairs(dropdownState.filteredOptions) do
@@ -1534,7 +1524,7 @@ function RadiantUI:CreateDropdown(element, parent)
     local function openDropdown()
         if dropdownState.isOpen then return end
         
-        print("RadiantUI: [NEW] Opening dropdown")
+
         dropdownState.isOpen = true
         
         -- DYNAMISCHER Z-INDEX für bessere Überlappung
@@ -1640,29 +1630,29 @@ function RadiantUI:CreateDropdown(element, parent)
         end
     end)
     
-    print("RadiantUI: [NEW] Dropdown successfully created with", #options, "options")
+
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
-    print("RadiantUI: [NEW] Creating multi-dropdown for:", element.Name)
     
-    -- ROBUST configuration validation
+    -- VERBESSERTE configuration validation - weniger streng
     local config = element.Config or {}
     local options = {}
     
-    -- Ensure we have valid options array
+    -- Ensure we have valid options array - WENIGER STRENGE VALIDATION  
     if config.Options and type(config.Options) == "table" and #config.Options > 0 then
         for i, opt in ipairs(config.Options) do
-            if type(opt) == "string" and opt ~= "" then
-                table.insert(options, opt)
+            -- Akzeptiere auch nicht-string Werte und konvertiere sie
+            if opt ~= nil and opt ~= "" then
+                table.insert(options, tostring(opt))
             end
         end
     end
     
-    -- Fallback if no valid options found
+    -- Fallback nur wenn wirklich KEINE Optionen vorhanden
     if #options == 0 then
         options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No valid options provided for multi-dropdown '" .. element.Name .. "', using fallback options")
+        warn("RadiantUI: No valid options provided for multi-dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback options")
     end
     
     local placeholder = config.Placeholder or "Select..."
@@ -1671,8 +1661,6 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     if type(defaultValues) ~= "table" then
         defaultValues = {}
     end
-    
-    print("RadiantUI: [NEW] Multi-dropdown validated options:", table.concat(options, ", "))
     
     -- Initialize element state
     element.Value = defaultValues
@@ -1858,7 +1846,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
      closeDropdown = function()
          if not dropdownState.isOpen then return end
          
-         print("RadiantUI: [NEW] Closing multi-dropdown")
+
          dropdownState.isOpen = false
          
          -- Animate closing
@@ -1968,14 +1956,10 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         
                  -- OPTIMIERTER Click handler - KEIN automatisches Schließen!
          local clickHandler = clickButton.MouseButton1Click:Connect(function()
-             print("RadiantUI: [MULTI] Option clicked:", optionText, "- Current state:", dropdownState.selectedValues[optionText])
-             
              -- Toggle selection
              local wasSelected = dropdownState.selectedValues[optionText]
              dropdownState.selectedValues[optionText] = not wasSelected
              local isNowSelected = dropdownState.selectedValues[optionText]
-             
-             print("RadiantUI: [MULTI] Option", optionText, "toggled from", wasSelected, "to", isNowSelected)
              
              -- Update checkbox visuell mit Animation
              TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
@@ -1987,8 +1971,6 @@ function RadiantUI:CreateMultiDropdown(element, parent)
              
              -- Update button text and trigger callback
              updateButtonText()
-             
-             print("RadiantUI: [MULTI] Selection updated - Dropdown bleibt offen!")
          end)
         
                  -- Store connections
@@ -1996,12 +1978,12 @@ function RadiantUI:CreateMultiDropdown(element, parent)
          table.insert(dropdownState.connections, hoverOut)
          table.insert(dropdownState.connections, clickHandler)
          
-         print("RadiantUI: [NEW] Created multi-option button:", optionText)
+
         return optionFrame
     end
     
     local function refreshOptions()
-        print("RadiantUI: [NEW] Refreshing multi-options list with", #dropdownState.filteredOptions, "options")
+
         clearOptionsList()
         
         for i, option in ipairs(dropdownState.filteredOptions) do
@@ -2015,7 +1997,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     local function openDropdown()
         if dropdownState.isOpen then return end
         
-        print("RadiantUI: [NEW] Opening multi-dropdown")
+
         dropdownState.isOpen = true
         
         -- DYNAMISCHER Z-INDEX für bessere Überlappung (Multi-Dropdown)
@@ -2134,7 +2116,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         end
     end)
     
-    print("RadiantUI: [NEW] Multi-dropdown successfully created with", #options, "options")
+
 end
 
 function RadiantUI:CreateInput(element, parent)
