@@ -1352,21 +1352,58 @@ function RadiantUI:CreateDropdown(element, parent)
         optionsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
     end)
     
-    -- Helper functions
-    local function updateButtonText(text)
-        if mainButton and mainButton.Parent then
-            mainButton.Text = text or placeholder
-            mainButton.TextColor3 = text and self.Config.Theme.Text or self.Config.Theme.TextSecondary
-        end
-    end
-    
-    local function clearOptionsList()
-        for _, child in pairs(optionsList:GetChildren()) do
-            if child:IsA('TextButton') then
-                child:Destroy()
-            end
-        end
-    end
+         -- Helper functions
+     local function updateButtonText(text)
+         if mainButton and mainButton.Parent then
+             mainButton.Text = text or placeholder
+             mainButton.TextColor3 = text and self.Config.Theme.Text or self.Config.Theme.TextSecondary
+         end
+     end
+     
+     local function clearOptionsList()
+         for _, child in pairs(optionsList:GetChildren()) do
+             if child:IsA('TextButton') then
+                 child:Destroy()
+             end
+         end
+     end
+     
+     -- closeDropdown function definition (MUSS VOR createOptionButton stehen!)
+     local closeDropdown
+     closeDropdown = function()
+         if not dropdownState.isOpen then return end
+         
+         print("RadiantUI: [NEW] Closing dropdown")
+         dropdownState.isOpen = false
+         
+         -- Animate closing
+         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+             Size = UDim2.new(1, 0, 0, 0)
+         }):Play()
+         
+         TweenService:Create(arrow, TweenInfo.new(0.3), {
+             Rotation = 0
+         }):Play()
+         
+         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
+             Color = Color3.fromRGB(85, 85, 85),
+             Transparency = 0.3
+         }):Play()
+         
+         -- Hide after animation
+         spawn(function()
+             wait(0.3)
+             if not dropdownState.isOpen then
+                 menuContainer.Visible = false
+                 searchInput.Text = ""
+                 -- Reset filtered options
+                 dropdownState.filteredOptions = {}
+                 for _, opt in ipairs(dropdownState.originalOptions) do
+                     table.insert(dropdownState.filteredOptions, opt)
+                 end
+             end
+         end)
+     end
     
          local function createOptionButton(optionText, index)
          local optionBtn = Instance.new('TextButton')
@@ -1506,40 +1543,7 @@ function RadiantUI:CreateDropdown(element, parent)
         }):Play()
     end
     
-         local function closeDropdown()
-         if not dropdownState.isOpen then return end
-         
-         print("RadiantUI: [NEW] Closing dropdown")
-         dropdownState.isOpen = false
-         
-         -- Animate closing
-         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-             Size = UDim2.new(1, 0, 0, 0)
-         }):Play()
-         
-         TweenService:Create(arrow, TweenInfo.new(0.3), {
-             Rotation = 0
-         }):Play()
-         
-         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-             Color = Color3.fromRGB(85, 85, 85),
-             Transparency = 0.3
-         }):Play()
-         
-         -- Hide after animation
-         spawn(function()
-             wait(0.3)
-             if not dropdownState.isOpen then
-                 menuContainer.Visible = false
-                 searchInput.Text = ""
-                 -- Reset filtered options
-                 dropdownState.filteredOptions = {}
-                 for _, opt in ipairs(dropdownState.originalOptions) do
-                     table.insert(dropdownState.filteredOptions, opt)
-                 end
-             end
-         end)
-     end
+
     
     -- Event connections
     local buttonClick = mainButton.MouseButton1Click:Connect(function()
@@ -1789,44 +1793,81 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         optionsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
     end)
     
-    -- Helper functions
-    local function updateButtonText()
-        local selectedCount = 0
-        local selectedList = {}
-        
-        for value, isSelected in pairs(dropdownState.selectedValues) do
-            if isSelected then
-                selectedCount = selectedCount + 1
-                table.insert(selectedList, value)
-            end
-        end
-        
-        element.Value = selectedList
-        
-        if selectedCount == 0 then
-            mainButton.Text = placeholder
-            mainButton.TextColor3 = self.Config.Theme.TextSecondary
-        elseif selectedCount == 1 then
-            mainButton.Text = selectedList[1]
-            mainButton.TextColor3 = self.Config.Theme.Text
-        else
-            mainButton.Text = selectedCount .. " selected"
-            mainButton.TextColor3 = self.Config.Theme.Text
-        end
-        
-        -- Execute callback
-        if element.Callback then
-            pcall(element.Callback, selectedList)
-        end
-    end
-    
-    local function clearOptionsList()
-        for _, child in pairs(optionsList:GetChildren()) do
-            if child:IsA('Frame') and child.Name:find('OptionFrame') then
-                child:Destroy()
-            end
-        end
-    end
+         -- Helper functions
+     local function updateButtonText()
+         local selectedCount = 0
+         local selectedList = {}
+         
+         for value, isSelected in pairs(dropdownState.selectedValues) do
+             if isSelected then
+                 selectedCount = selectedCount + 1
+                 table.insert(selectedList, value)
+             end
+         end
+         
+         element.Value = selectedList
+         
+         if selectedCount == 0 then
+             mainButton.Text = placeholder
+             mainButton.TextColor3 = self.Config.Theme.TextSecondary
+         elseif selectedCount == 1 then
+             mainButton.Text = selectedList[1]
+             mainButton.TextColor3 = self.Config.Theme.Text
+         else
+             mainButton.Text = selectedCount .. " selected"
+             mainButton.TextColor3 = self.Config.Theme.Text
+         end
+         
+         -- Execute callback
+         if element.Callback then
+             pcall(element.Callback, selectedList)
+         end
+     end
+     
+     local function clearOptionsList()
+         for _, child in pairs(optionsList:GetChildren()) do
+             if child:IsA('Frame') and child.Name:find('OptionFrame') then
+                 child:Destroy()
+             end
+         end
+     end
+     
+     -- closeDropdown function definition (MUSS VOR createOptionButton stehen!)
+     local closeDropdown
+     closeDropdown = function()
+         if not dropdownState.isOpen then return end
+         
+         print("RadiantUI: [NEW] Closing multi-dropdown")
+         dropdownState.isOpen = false
+         
+         -- Animate closing
+         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+             Size = UDim2.new(1, 0, 0, 0)
+         }):Play()
+         
+         TweenService:Create(arrow, TweenInfo.new(0.3), {
+             Rotation = 0
+         }):Play()
+         
+         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
+             Color = Color3.fromRGB(85, 85, 85),
+             Transparency = 0.3
+         }):Play()
+         
+         -- Hide after animation
+         spawn(function()
+             wait(0.3)
+             if not dropdownState.isOpen then
+                 menuContainer.Visible = false
+                 searchInput.Text = ""
+                 -- Reset filtered options
+                 dropdownState.filteredOptions = {}
+                 for _, opt in ipairs(dropdownState.originalOptions) do
+                     table.insert(dropdownState.filteredOptions, opt)
+                 end
+             end
+         end)
+     end
     
     local function createOptionButton(optionText, index)
                  local optionFrame = Instance.new('Frame')
@@ -2001,40 +2042,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         }):Play()
     end
     
-         local function closeDropdown()
-         if not dropdownState.isOpen then return end
-         
-         print("RadiantUI: [NEW] Closing multi-dropdown")
-         dropdownState.isOpen = false
-         
-         -- Animate closing
-         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-             Size = UDim2.new(1, 0, 0, 0)
-         }):Play()
-         
-         TweenService:Create(arrow, TweenInfo.new(0.3), {
-             Rotation = 0
-         }):Play()
-         
-         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-             Color = Color3.fromRGB(85, 85, 85),
-             Transparency = 0.3
-         }):Play()
-         
-         -- Hide after animation
-         spawn(function()
-             wait(0.3)
-             if not dropdownState.isOpen then
-                 menuContainer.Visible = false
-                 searchInput.Text = ""
-                 -- Reset filtered options
-                 dropdownState.filteredOptions = {}
-                 for _, opt in ipairs(dropdownState.originalOptions) do
-                     table.insert(dropdownState.filteredOptions, opt)
-                 end
-             end
-         end)
-     end
+
     
     -- Event connections
     local buttonClick = mainButton.MouseButton1Click:Connect(function()
