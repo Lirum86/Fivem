@@ -1192,10 +1192,14 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
+    print("RadiantUI: Creating dropdown for element:", element.Name)
+    
     local config = element.Config or {}
     local options = config.Options or {}
     local placeholder = config.Placeholder or 'Select...'
     local defaultValue = config.Default
+    
+    print("RadiantUI: Dropdown options:", table.concat(options, ", "))
     
     if #options == 0 then
         warn("RadiantUI: Dropdown '" .. (element.Name or "Unknown") .. "' has no options!")
@@ -1359,7 +1363,9 @@ function RadiantUI:CreateDropdown(element, parent)
             dropdownButton.Text = option
             dropdownButton.TextColor3 = self.Config.Theme.Text
             element.Value = option
-            element.Callback(option)
+            if element.Callback then
+                element.Callback(option)
+            end
             
             -- Close dropdown
             isOpen = false
@@ -1498,10 +1504,15 @@ function RadiantUI:CreateDropdown(element, parent)
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
+    print("RadiantUI: Creating multi-dropdown for element:", element.Name)
+    
     local config = element.Config or {}
     local options = config.Options or {}
     local placeholder = config.Placeholder or 'Select...'
     local defaultValues = config.Default or {}
+    
+    print("RadiantUI: Multi-dropdown options:", table.concat(options, ", "))
+    print("RadiantUI: Multi-dropdown defaults:", table.concat(defaultValues, ", "))
     
     if #options == 0 then
         warn("RadiantUI: MultiDropdown '" .. (element.Name or "Unknown") .. "' has no options!")
@@ -1723,7 +1734,9 @@ function RadiantUI:CreateMultiDropdown(element, parent)
             checkMark.Text = selectedValues[option] and '✓' or ''
             
             updateButtonText()
-            element.Callback(element.Value)
+            if element.Callback then
+                element.Callback(element.Value)
+            end
         end)
         
         return optionButton
@@ -1852,8 +1865,6 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         refreshOptions()
     end
 end
-
-
 
 function RadiantUI:CreateInput(element, parent)
     local inputFrame = Instance.new('Frame')
