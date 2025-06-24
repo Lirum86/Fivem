@@ -925,8 +925,18 @@ function RadiantUI:AddElement(section, elementType, config)
         return
     end
     
-    -- Element name determination
-    local elementName = config.Name or config.Title or "Element"
+    -- Element name determination mit Debug
+    local elementName = config.Name or config.Title or ("Element_" .. elementType)
+    
+    -- Debug: Element-Erstellung verfolgen
+    if elementName == ("Element_" .. elementType) then
+        print("RadiantUI DEBUG: Element ohne Namen erstellt für Typ:", elementType)
+        local configKeys = {}
+        for key, _ in pairs(config or {}) do
+            table.insert(configKeys, key)
+        end
+        print("RadiantUI DEBUG: Config keys:", table.concat(configKeys, ", "))
+    end
     
     local element = {
         Type = elementType,
@@ -1197,28 +1207,30 @@ end
 
 function RadiantUI:CreateDropdown(element, parent)
     
-    -- VERBESSERTE configuration validation - weniger streng
+    -- FLEXIBLE configuration validation
     local config = element.Config or {}
-    local options = {}
+    local options = config.Options or {}
     
-    -- Ensure we have valid options array - WENIGER STRENGE VALIDATION
-    if config.Options and type(config.Options) == "table" and #config.Options > 0 then
-        for i, opt in ipairs(config.Options) do
-            -- Akzeptiere auch nicht-string Werte und konvertiere sie
-            if opt ~= nil and opt ~= "" then
-                table.insert(options, tostring(opt))
-            end
+    -- Direkte Verwendung der Options wenn vorhanden
+    if type(options) == "table" and #options > 0 then
+        -- Konvertiere alle zu Strings für Sicherheit
+        for i, opt in ipairs(options) do
+            options[i] = tostring(opt or "")
         end
-    end
-    
-    -- Fallback nur wenn wirklich KEINE Optionen vorhanden
-    if #options == 0 then
+    else
+        -- Nur bei komplett fehlenden Options Fallback verwenden
         options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No valid options provided for dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback options")
+        warn("RadiantUI: No options provided for dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback")
     end
     
     local placeholder = config.Placeholder or "Select..."
     local defaultValue = config.Default
+    
+    -- Debug: Options-Status protokollieren
+    print("RadiantUI DEBUG Dropdown '" .. (element.Name or "UNNAMED") .. "':")
+    print("  - Eingegangene Options:", #(config.Options or {}))
+    print("  - Finale Options:", #options)
+    print("  - Erste 3 Options:", table.concat({options[1] or "nil", options[2] or "nil", options[3] or "nil"}, ", "))
     
     -- Initialize element state
     element.Value = defaultValue
@@ -1635,24 +1647,20 @@ end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
     
-    -- VERBESSERTE configuration validation - weniger streng
+    -- FLEXIBLE configuration validation
     local config = element.Config or {}
-    local options = {}
+    local options = config.Options or {}
     
-    -- Ensure we have valid options array - WENIGER STRENGE VALIDATION  
-    if config.Options and type(config.Options) == "table" and #config.Options > 0 then
-        for i, opt in ipairs(config.Options) do
-            -- Akzeptiere auch nicht-string Werte und konvertiere sie
-            if opt ~= nil and opt ~= "" then
-                table.insert(options, tostring(opt))
-            end
+    -- Direkte Verwendung der Options wenn vorhanden
+    if type(options) == "table" and #options > 0 then
+        -- Konvertiere alle zu Strings für Sicherheit
+        for i, opt in ipairs(options) do
+            options[i] = tostring(opt or "")
         end
-    end
-    
-    -- Fallback nur wenn wirklich KEINE Optionen vorhanden
-    if #options == 0 then
+    else
+        -- Nur bei komplett fehlenden Options Fallback verwenden
         options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No valid options provided for multi-dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback options")
+        warn("RadiantUI: No options provided for multi-dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback")
     end
     
     local placeholder = config.Placeholder or "Select..."
@@ -1661,6 +1669,12 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     if type(defaultValues) ~= "table" then
         defaultValues = {}
     end
+    
+    -- Debug: Options-Status protokollieren
+    print("RadiantUI DEBUG MultiDropdown '" .. (element.Name or "UNNAMED") .. "':")
+    print("  - Eingegangene Options:", #(config.Options or {}))
+    print("  - Finale Options:", #options)
+    print("  - Erste 3 Options:", table.concat({options[1] or "nil", options[2] or "nil", options[3] or "nil"}, ", "))
     
     -- Initialize element state
     element.Value = defaultValues
