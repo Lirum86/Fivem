@@ -15,8 +15,8 @@ local UserInputService = game:GetService('UserInputService')
 local RunService = game:GetService('RunService')
 
 -- Constants
-local MAX_USER_TABS = 4
-local SETTINGS_TAB_INDEX = 5
+local MAX_USER_TABS = 6  -- Erhöht für mehr User-Tabs
+local SETTINGS_TAB_INDEX = 7  -- Angepasst für neuen Index
 
 -- Default Configuration
 local DEFAULT_CONFIG = {
