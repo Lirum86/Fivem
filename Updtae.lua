@@ -1368,44 +1368,44 @@ function RadiantUI:CreateDropdown(element, parent)
         end
     end
     
-    local function createOptionButton(optionText, index)
-        local optionBtn = Instance.new('TextButton')
-        optionBtn.Size = UDim2.new(1, -8, 0, 28)
-        optionBtn.Position = UDim2.new(0, 4, 0, 0)
-        optionBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        optionBtn.BackgroundTransparency = 0.3
-        optionBtn.BorderSizePixel = 0
-        optionBtn.Text = optionText
-        optionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        optionBtn.TextSize = 12
-        optionBtn.Font = Enum.Font.Gotham
-        optionBtn.TextXAlignment = Enum.TextXAlignment.Left
-        optionBtn.LayoutOrder = index
-        optionBtn.ZIndex = 22
-        optionBtn.Parent = optionsList
-        
-        local optionCorner = Instance.new('UICorner')
-        optionCorner.CornerRadius = UDim.new(0, 4)
-        optionCorner.Parent = optionBtn
-        
-        local optionPadding = Instance.new('UIPadding')
-        optionPadding.PaddingLeft = UDim.new(0, 8)
-        optionPadding.Parent = optionBtn
-        
-        -- Hover effects
-        local hoverIn = optionBtn.MouseEnter:Connect(function()
-            TweenService:Create(optionBtn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-                BackgroundTransparency = 0.1
-            }):Play()
-        end)
-        
-        local hoverOut = optionBtn.MouseLeave:Connect(function()
-            TweenService:Create(optionBtn, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-                BackgroundTransparency = 0.3
-            }):Play()
-        end)
+         local function createOptionButton(optionText, index)
+         local optionBtn = Instance.new('TextButton')
+         optionBtn.Size = UDim2.new(1, -8, 0, 28)
+         optionBtn.Position = UDim2.new(0, 4, 0, 0)
+         optionBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+         optionBtn.BackgroundTransparency = 1  -- Komplett transparent am Anfang
+         optionBtn.BorderSizePixel = 0
+         optionBtn.Text = optionText
+         optionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+         optionBtn.TextSize = 12
+         optionBtn.Font = Enum.Font.Gotham
+         optionBtn.TextXAlignment = Enum.TextXAlignment.Left
+         optionBtn.LayoutOrder = index
+         optionBtn.ZIndex = 22
+         optionBtn.Parent = optionsList
+         
+         local optionCorner = Instance.new('UICorner')
+         optionCorner.CornerRadius = UDim.new(0, 4)
+         optionCorner.Parent = optionBtn
+         
+         local optionPadding = Instance.new('UIPadding')
+         optionPadding.PaddingLeft = UDim.new(0, 8)
+         optionPadding.Parent = optionBtn
+         
+         -- Hover effects - Nur beim Hover sichtbar machen
+         local hoverIn = optionBtn.MouseEnter:Connect(function()
+             TweenService:Create(optionBtn, TweenInfo.new(0.2), {
+                 BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                 BackgroundTransparency = 0.2
+             }):Play()
+         end)
+         
+         local hoverOut = optionBtn.MouseLeave:Connect(function()
+             TweenService:Create(optionBtn, TweenInfo.new(0.2), {
+                 BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+                 BackgroundTransparency = 1  -- Zurück zu transparent
+             }):Play()
+         end)
         
         -- Click handler
         local clickHandler = optionBtn.MouseButton1Click:Connect(function()
@@ -1471,40 +1471,40 @@ function RadiantUI:CreateDropdown(element, parent)
         }):Play()
     end
     
-    function closeDropdown()
-        if not dropdownState.isOpen then return end
-        
-        print("RadiantUI: [NEW] Closing dropdown")
-        dropdownState.isOpen = false
-        
-        -- Animate closing
-        TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(1, 0, 0, 0)
-        }):Play()
-        
-        TweenService:Create(arrow, TweenInfo.new(0.3), {
-            Rotation = 0
-        }):Play()
-        
-        TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-            Color = Color3.fromRGB(85, 85, 85),
-            Transparency = 0.3
-        }):Play()
-        
-        -- Hide after animation
-        spawn(function()
-            wait(0.3)
-            if not dropdownState.isOpen then
-                menuContainer.Visible = false
-                searchInput.Text = ""
-                -- Reset filtered options
-                dropdownState.filteredOptions = {}
-                for _, opt in ipairs(dropdownState.originalOptions) do
-                    table.insert(dropdownState.filteredOptions, opt)
-                end
-            end
-        end)
-    end
+         local function closeDropdown()
+         if not dropdownState.isOpen then return end
+         
+         print("RadiantUI: [NEW] Closing dropdown")
+         dropdownState.isOpen = false
+         
+         -- Animate closing
+         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+             Size = UDim2.new(1, 0, 0, 0)
+         }):Play()
+         
+         TweenService:Create(arrow, TweenInfo.new(0.3), {
+             Rotation = 0
+         }):Play()
+         
+         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
+             Color = Color3.fromRGB(85, 85, 85),
+             Transparency = 0.3
+         }):Play()
+         
+         -- Hide after animation
+         spawn(function()
+             wait(0.3)
+             if not dropdownState.isOpen then
+                 menuContainer.Visible = false
+                 searchInput.Text = ""
+                 -- Reset filtered options
+                 dropdownState.filteredOptions = {}
+                 for _, opt in ipairs(dropdownState.originalOptions) do
+                     table.insert(dropdownState.filteredOptions, opt)
+                 end
+             end
+         end)
+     end
     
     -- Event connections
     local buttonClick = mainButton.MouseButton1Click:Connect(function()
@@ -1794,16 +1794,16 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     end
     
     local function createOptionButton(optionText, index)
-        local optionFrame = Instance.new('Frame')
-        optionFrame.Name = 'OptionFrame_' .. index
-        optionFrame.Size = UDim2.new(1, -8, 0, 28)
-        optionFrame.Position = UDim2.new(0, 4, 0, 0)
-        optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        optionFrame.BackgroundTransparency = 0.3
-        optionFrame.BorderSizePixel = 0
-        optionFrame.LayoutOrder = index
-        optionFrame.ZIndex = 22
-        optionFrame.Parent = optionsList
+                 local optionFrame = Instance.new('Frame')
+         optionFrame.Name = 'OptionFrame_' .. index
+         optionFrame.Size = UDim2.new(1, -8, 0, 28)
+         optionFrame.Position = UDim2.new(0, 4, 0, 0)
+         optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+         optionFrame.BackgroundTransparency = 1  -- Komplett transparent am Anfang
+         optionFrame.BorderSizePixel = 0
+         optionFrame.LayoutOrder = index
+         optionFrame.ZIndex = 22
+         optionFrame.Parent = optionsList
         
         local frameCorner = Instance.new('UICorner')
         frameCorner.CornerRadius = UDim.new(0, 4)
@@ -1853,20 +1853,20 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         clickButton.ZIndex = 25
         clickButton.Parent = optionFrame
         
-        -- Hover effects
-        local hoverIn = clickButton.MouseEnter:Connect(function()
-            TweenService:Create(optionFrame, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-                BackgroundTransparency = 0.1
-            }):Play()
-        end)
-        
-        local hoverOut = clickButton.MouseLeave:Connect(function()
-            TweenService:Create(optionFrame, TweenInfo.new(0.2), {
-                BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-                BackgroundTransparency = 0.3
-            }):Play()
-        end)
+                 -- Hover effects - Nur beim Hover sichtbar machen
+         local hoverIn = clickButton.MouseEnter:Connect(function()
+             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+                 BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+                 BackgroundTransparency = 0.2
+             }):Play()
+         end)
+         
+         local hoverOut = clickButton.MouseLeave:Connect(function()
+             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+                 BackgroundColor3 = Color3.fromRGB(45, 45, 45),
+                 BackgroundTransparency = 1  -- Zurück zu transparent
+             }):Play()
+         end)
         
         -- Click handler
         local clickHandler = clickButton.MouseButton1Click:Connect(function()
@@ -1927,40 +1927,40 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         }):Play()
     end
     
-    function closeDropdown()
-        if not dropdownState.isOpen then return end
-        
-        print("RadiantUI: [NEW] Closing multi-dropdown")
-        dropdownState.isOpen = false
-        
-        -- Animate closing
-        TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(1, 0, 0, 0)
-        }):Play()
-        
-        TweenService:Create(arrow, TweenInfo.new(0.3), {
-            Rotation = 0
-        }):Play()
-        
-        TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-            Color = Color3.fromRGB(85, 85, 85),
-            Transparency = 0.3
-        }):Play()
-        
-        -- Hide after animation
-        spawn(function()
-            wait(0.3)
-            if not dropdownState.isOpen then
-                menuContainer.Visible = false
-                searchInput.Text = ""
-                -- Reset filtered options
-                dropdownState.filteredOptions = {}
-                for _, opt in ipairs(dropdownState.originalOptions) do
-                    table.insert(dropdownState.filteredOptions, opt)
-                end
-            end
-        end)
-    end
+         local function closeDropdown()
+         if not dropdownState.isOpen then return end
+         
+         print("RadiantUI: [NEW] Closing multi-dropdown")
+         dropdownState.isOpen = false
+         
+         -- Animate closing
+         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+             Size = UDim2.new(1, 0, 0, 0)
+         }):Play()
+         
+         TweenService:Create(arrow, TweenInfo.new(0.3), {
+             Rotation = 0
+         }):Play()
+         
+         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
+             Color = Color3.fromRGB(85, 85, 85),
+             Transparency = 0.3
+         }):Play()
+         
+         -- Hide after animation
+         spawn(function()
+             wait(0.3)
+             if not dropdownState.isOpen then
+                 menuContainer.Visible = false
+                 searchInput.Text = ""
+                 -- Reset filtered options
+                 dropdownState.filteredOptions = {}
+                 for _, opt in ipairs(dropdownState.originalOptions) do
+                     table.insert(dropdownState.filteredOptions, opt)
+                 end
+             end
+         end)
+     end
     
     -- Event connections
     local buttonClick = mainButton.MouseButton1Click:Connect(function()
