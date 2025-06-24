@@ -792,6 +792,9 @@ function RadiantUI:AddSection(tabIndex, config)
         AddDropdown = function(elementConfig)
             return self:AddElement(section, 'Dropdown', elementConfig)
         end,
+        AddMultiDropdown = function(elementConfig)
+            return self:AddElement(section, 'MultiDropdown', elementConfig)
+        end,
         AddInput = function(elementConfig)
             return self:AddElement(section, 'Input', elementConfig)
         end,
