@@ -1206,6 +1206,12 @@ function RadiantUI:CreateDropdown(element, parent)
     end
     
     print("RadiantUI: Dropdown options:", table.concat(options, ", "))
+    print("RadiantUI: Config received:", config and "YES" or "NO")
+    if config then
+        print("RadiantUI: Config.Options:", config.Options and table.concat(config.Options, ", ") or "NIL")
+        print("RadiantUI: Config.Default:", config.Default or "NIL")
+        print("RadiantUI: Config.Placeholder:", config.Placeholder or "NIL")
+    end
     
     -- Element state initialization
     element.Value = defaultValue
