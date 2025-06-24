@@ -1314,7 +1314,7 @@ function RadiantUI:CreateDropdown(element, parent)
     searchBox.ZIndex = 17
     searchBox.Parent = searchFrame
     
-    -- Options container
+    -- Options container with FIXED properties
     local optionsFrame = Instance.new('ScrollingFrame')
     optionsFrame.Size = UDim2.new(1, 0, 0, 120)
     optionsFrame.Position = UDim2.new(0, 0, 0, 44)
@@ -1374,13 +1374,16 @@ function RadiantUI:CreateDropdown(element, parent)
     -- Create option button
     local function createOption(option, index)
         if not option or type(option) ~= "string" then
+            print("RadiantUI: Invalid option:", option, "type:", type(option))
             return nil
         end
+        
+        print("RadiantUI: Creating option button for:", option)
         
         local optionButton = Instance.new('TextButton')
         optionButton.Size = UDim2.new(1, -8, 0, 28)
         optionButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        optionButton.BackgroundTransparency = 0.9
+        optionButton.BackgroundTransparency = 0.5  -- More visible
         optionButton.BorderSizePixel = 0
         optionButton.Text = option
         optionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1389,6 +1392,7 @@ function RadiantUI:CreateDropdown(element, parent)
         optionButton.TextXAlignment = Enum.TextXAlignment.Left
         optionButton.LayoutOrder = index
         optionButton.ZIndex = 17
+        optionButton.Visible = true  -- Explizit sichtbar setzen
         optionButton.Parent = optionsFrame
         
         local optionPadding = Instance.new('UIPadding')
