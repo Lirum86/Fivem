@@ -1363,9 +1363,13 @@ function RadiantUI:CreateDropdown(element, parent)
             dropdownButton.Text = option
             dropdownButton.TextColor3 = self.Config.Theme.Text
             element.Value = option
-            if element.Callback then
-                element.Callback(option)
-            end
+            
+            -- Safe callback execution with error handling
+            pcall(function()
+                if element.Callback then
+                    element.Callback(option)
+                end
+            end)
             
             -- Close dropdown
             isOpen = false
@@ -1734,9 +1738,13 @@ function RadiantUI:CreateMultiDropdown(element, parent)
             checkMark.Text = selectedValues[option] and '✓' or ''
             
             updateButtonText()
-            if element.Callback then
-                element.Callback(element.Value)
-            end
+            
+            -- Safe callback execution with error handling
+            pcall(function()
+                if element.Callback then
+                    element.Callback(element.Value)
+                end
+            end)
         end)
         
         return optionButton
