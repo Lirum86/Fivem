@@ -539,7 +539,7 @@ function RadiantUI:AddTab(config)
     local tabIndex = #self.Tabs + 1
     local tab = {
         Name = config.Name or "Tab " .. tabIndex,
-        Icon = config.Icon or "rbxassetid://82459568409030",
+        Icon = config.Icon or "rbxassetid://4483345998",
         IconActive = config.IconActive or config.Icon,
         Sections = {},
         Content = nil,
@@ -925,18 +925,8 @@ function RadiantUI:AddElement(section, elementType, config)
         return
     end
     
-    -- Element name determination mit Debug
+    -- Element name determination
     local elementName = config.Name or config.Title or ("Element_" .. elementType)
-    
-    -- Debug: Element-Erstellung verfolgen
-    if elementName == ("Element_" .. elementType) then
-        print("RadiantUI DEBUG: Element ohne Namen erstellt für Typ:", elementType)
-        local configKeys = {}
-        for key, _ in pairs(config or {}) do
-            table.insert(configKeys, key)
-        end
-        print("RadiantUI DEBUG: Config keys:", table.concat(configKeys, ", "))
-    end
     
     local element = {
         Type = elementType,
@@ -1207,30 +1197,37 @@ end
 
 function RadiantUI:CreateDropdown(element, parent)
     
-    -- FLEXIBLE configuration validation
+    -- UNIFIED configuration validation with hierarchical fallback
     local config = element.Config or {}
-    local options = config.Options or {}
     
-    -- Direkte Verwendung der Options wenn vorhanden
+    -- PRIORITY SYSTEM für Options:
+    -- 1. element.Config.Options (primär)
+    -- 2. element.Options (sekundär) 
+    -- 3. config.Options (tertiär)
+    -- 4. Fallback Options (nur als letzte Option)
+    local options = config.Options or element.Options or {}
+    
+    -- Validate and sanitize options
     if type(options) == "table" and #options > 0 then
-        -- Konvertiere alle zu Strings für Sicherheit
+        -- Konvertiere alle zu Strings und filtere leere Werte
+        local validOptions = {}
         for i, opt in ipairs(options) do
-            options[i] = tostring(opt or "")
+            local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1") -- Trim whitespace
+            if sanitized ~= "" then
+                table.insert(validOptions, sanitized)
+            end
         end
+        options = validOptions
     else
-        -- Nur bei komplett fehlenden Options Fallback verwenden
-        options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No options provided for dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback")
+        -- Fallback nur wenn WIRKLICH keine Options gefunden
+        options = {"Select Option 1", "Select Option 2", "Select Option 3"}
+        warn("RadiantUI: No valid options for dropdown '" .. (element.Name or "Dropdown") .. "', using fallback")
     end
     
     local placeholder = config.Placeholder or "Select..."
     local defaultValue = config.Default
     
-    -- Debug: Options-Status protokollieren
-    print("RadiantUI DEBUG Dropdown '" .. (element.Name or "UNNAMED") .. "':")
-    print("  - Eingegangene Options:", #(config.Options or {}))
-    print("  - Finale Options:", #options)
-    print("  - Erste 3 Options:", table.concat({options[1] or "nil", options[2] or "nil", options[3] or "nil"}, ", "))
+    -- Options validation complete
     
     -- Initialize element state
     element.Value = defaultValue
@@ -1460,9 +1457,15 @@ function RadiantUI:CreateDropdown(element, parent)
              }):Play()
          end)
         
-                 -- Click handler mit verbesserter Event-Behandlung
+                                  -- Click handler mit Debounce und verbesserter Event-Behandlung
+         local lastClickTime = 0
          local clickHandler = optionBtn.MouseButton1Click:Connect(function()
-
+             -- DEBOUNCE: Ignoriere Klicks die zu schnell aufeinander folgen
+             local currentTime = tick()
+             if currentTime - lastClickTime < 0.2 then
+                 return
+             end
+             lastClickTime = currentTime
              
              -- Update state
              dropdownState.selectedValue = optionText
@@ -1544,6 +1547,13 @@ function RadiantUI:CreateDropdown(element, parent)
         menuContainer.ZIndex = dropdownState.baseZIndex
         searchInput.ZIndex = dropdownState.baseZIndex + 1
         optionsList.ZIndex = dropdownState.baseZIndex + 1
+        
+        -- REKURSIV Z-Index für alle bestehenden Options setzen
+        for _, child in pairs(optionsList:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.ZIndex = dropdownState.baseZIndex + 2
+            end
+        end
         
         menuContainer.Visible = true
         
@@ -1647,20 +1657,31 @@ end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
     
-    -- FLEXIBLE configuration validation
+    -- UNIFIED configuration validation with hierarchical fallback  
     local config = element.Config or {}
-    local options = config.Options or {}
     
-    -- Direkte Verwendung der Options wenn vorhanden
+    -- PRIORITY SYSTEM für Multi-Dropdown Options:
+    -- 1. element.Config.Options (primär)
+    -- 2. element.Options (sekundär)
+    -- 3. config.Options (tertiär) 
+    -- 4. Fallback Options (nur als letzte Option)
+    local options = config.Options or element.Options or {}
+    
+    -- Validate and sanitize multi-dropdown options
     if type(options) == "table" and #options > 0 then
-        -- Konvertiere alle zu Strings für Sicherheit
+        -- Konvertiere alle zu Strings und filtere leere Werte
+        local validOptions = {}
         for i, opt in ipairs(options) do
-            options[i] = tostring(opt or "")
+            local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1") -- Trim whitespace
+            if sanitized ~= "" then
+                table.insert(validOptions, sanitized)
+            end
         end
+        options = validOptions
     else
-        -- Nur bei komplett fehlenden Options Fallback verwenden
-        options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No options provided for multi-dropdown '" .. (element.Name or "UNNAMED") .. "', using fallback")
+        -- Fallback nur wenn WIRKLICH keine Options gefunden
+        options = {"Multi Option 1", "Multi Option 2", "Multi Option 3"}
+        warn("RadiantUI: No valid options for multi-dropdown '" .. (element.Name or "MultiDropdown") .. "', using fallback")
     end
     
     local placeholder = config.Placeholder or "Select..."
@@ -1670,11 +1691,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         defaultValues = {}
     end
     
-    -- Debug: Options-Status protokollieren
-    print("RadiantUI DEBUG MultiDropdown '" .. (element.Name or "UNNAMED") .. "':")
-    print("  - Eingegangene Options:", #(config.Options or {}))
-    print("  - Finale Options:", #options)
-    print("  - Erste 3 Options:", table.concat({options[1] or "nil", options[2] or "nil", options[3] or "nil"}, ", "))
+    -- Multi-dropdown options validation complete
     
     -- Initialize element state
     element.Value = defaultValues
@@ -2019,6 +2036,18 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         menuContainer.ZIndex = dropdownState.baseZIndex
         searchInput.ZIndex = dropdownState.baseZIndex + 1
         optionsList.ZIndex = dropdownState.baseZIndex + 1
+        
+        -- REKURSIV Z-Index für alle bestehenden Options setzen
+        for _, child in pairs(optionsList:GetChildren()) do
+            if child:IsA("Frame") and child.Name:find("OptionFrame") then
+                child.ZIndex = dropdownState.baseZIndex + 1
+                for _, subChild in pairs(child:GetChildren()) do
+                    if subChild:IsA("GuiObject") then
+                        subChild.ZIndex = dropdownState.baseZIndex + 2
+                    end
+                end
+            end
+        end
         
         menuContainer.Visible = true
         
@@ -2675,8 +2704,8 @@ end
 function RadiantUI:CreateSettingsTab()
     self.SettingsTab = {
         Name = "Settings",
-        Icon = "rbxassetid://108115865520282",
-        IconActive = "rbxassetid://105710018760458",
+        Icon = "rbxassetid://4483345998",
+        IconActive = "rbxassetid://4483345998",
         Sections = {},
         Content = nil,
         Button = nil
