@@ -1966,61 +1966,35 @@ function RadiantUI:CreateMultiDropdown(element, parent)
              }):Play()
          end)
         
-                 -- Click handler mit verbesserter Event-Behandlung  
+                 -- OPTIMIERTER Click handler - KEIN automatisches Schließen!
          local clickHandler = clickButton.MouseButton1Click:Connect(function()
-             print("RadiantUI: [NEW] Multi-option clicked:", optionText)
+             print("RadiantUI: [MULTI] Option clicked:", optionText, "- Current state:", dropdownState.selectedValues[optionText])
              
              -- Toggle selection
-             dropdownState.selectedValues[optionText] = not dropdownState.selectedValues[optionText]
+             local wasSelected = dropdownState.selectedValues[optionText]
+             dropdownState.selectedValues[optionText] = not wasSelected
+             local isNowSelected = dropdownState.selectedValues[optionText]
              
-             -- Update checkbox
-             checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-             checkmark.Text = dropdownState.selectedValues[optionText] and "✓" or ""
+             print("RadiantUI: [MULTI] Option", optionText, "toggled from", wasSelected, "to", isNowSelected)
+             
+             -- Update checkbox visuell mit Animation
+             TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+                 BackgroundColor3 = isNowSelected and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+             }):Play()
+             
+             -- Update checkmark
+             checkmark.Text = isNowSelected and "✓" or ""
              
              -- Update button text and trigger callback
              updateButtonText()
-         end)
-         
-         -- Zusätzlicher Input-Handler für bessere Klick-Erkennung
-         local inputHandler = clickButton.InputBegan:Connect(function(input)
-             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                 print("RadiantUI: [NEW] Multi-input detected on option:", optionText)
-                 
-                 -- Toggle selection
-                 dropdownState.selectedValues[optionText] = not dropdownState.selectedValues[optionText]
-                 
-                 -- Update checkbox
-                 checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-                 checkmark.Text = dropdownState.selectedValues[optionText] and "✓" or ""
-                 
-                 -- Update button text and trigger callback
-                 updateButtonText()
-             end
-         end)
-         
-         -- Alternative: Frame-Click Handler als Backup
-         local frameClickHandler = optionFrame.InputBegan:Connect(function(input)
-             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                 print("RadiantUI: [NEW] Frame-click detected on option:", optionText)
-                 
-                 -- Toggle selection
-                 dropdownState.selectedValues[optionText] = not dropdownState.selectedValues[optionText]
-                 
-                 -- Update checkbox
-                 checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-                 checkmark.Text = dropdownState.selectedValues[optionText] and "✓" or ""
-                 
-                 -- Update button text and trigger callback
-                 updateButtonText()
-             end
+             
+             print("RadiantUI: [MULTI] Selection updated - Dropdown bleibt offen!")
          end)
         
                  -- Store connections
          table.insert(dropdownState.connections, hoverIn)
          table.insert(dropdownState.connections, hoverOut)
          table.insert(dropdownState.connections, clickHandler)
-         table.insert(dropdownState.connections, inputHandler)
-         table.insert(dropdownState.connections, frameClickHandler)
          
          print("RadiantUI: [NEW] Created multi-option button:", optionText)
         return optionFrame
@@ -2114,17 +2088,20 @@ function RadiantUI:CreateMultiDropdown(element, parent)
                               mouse.Y < menuPos.Y - guiInset.Y or
                               mouse.Y > menuPos.Y + menuSize.Y - guiInset.Y
             
-            if outsideContainer and outsideMenu then
-                closeDropdown()
-            end
+            -- MULTI-DROPDOWN: Schließt sich NICHT automatisch!
+            -- Nur über Hauptbutton schließbar für bessere Benutzererfahrung
+            -- if outsideContainer and outsideMenu then
+            --     closeDropdown()
+            -- end
         end
     end)
     
     -- Store main connections
     table.insert(dropdownState.connections, buttonClick)
     table.insert(dropdownState.connections, searchChanged)
-    table.insert(dropdownState.connections, clickOutside)
-    table.insert(self.Connections, clickOutside)
+    -- clickOutside Handler deaktiviert für Multi-Dropdown
+    -- table.insert(dropdownState.connections, clickOutside)
+    -- table.insert(self.Connections, clickOutside)
     
     -- Initialize button text
     updateButtonText()
