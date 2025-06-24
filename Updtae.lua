@@ -37,6 +37,15 @@ local DEFAULT_CONFIG = {
     EnableNotifications = true
 }
 
+-- GLOBALER Z-INDEX MANAGER für Dropdown-Überlappung
+local DROPDOWN_Z_INDEX_BASE = 1000
+local DROPDOWN_Z_INDEX_COUNTER = 0
+
+local function getNextDropdownZIndex()
+    DROPDOWN_Z_INDEX_COUNTER = DROPDOWN_Z_INDEX_COUNTER + 10
+    return DROPDOWN_Z_INDEX_BASE + DROPDOWN_Z_INDEX_COUNTER
+end
+
 function RadiantUI.new(config)
     local self = setmetatable({}, RadiantUI)
     
@@ -1227,7 +1236,8 @@ function RadiantUI:CreateDropdown(element, parent)
         originalOptions = options,
         filteredOptions = {},
         selectedValue = defaultValue,
-        connections = {}
+        connections = {},
+        baseZIndex = 0  -- Wird beim Öffnen gesetzt
     }
     
     -- Copy options to filtered list
@@ -1290,7 +1300,7 @@ function RadiantUI:CreateDropdown(element, parent)
     menuContainer.BorderSizePixel = 0
     menuContainer.Visible = false
     menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = 1000  -- SEHR HOHER Z-INDEX für bessere Überlappung
+    menuContainer.ZIndex = 1000  -- Initial Z-Index (wird dynamisch überschrieben)
     menuContainer.Parent = container
     
     local menuCorner = Instance.new('UICorner')
@@ -1316,7 +1326,7 @@ function RadiantUI:CreateDropdown(element, parent)
     searchInput.TextSize = 11
     searchInput.Font = Enum.Font.Gotham
     searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = 1001  -- HÖHERER Z-INDEX für bessere Überlappung
+    searchInput.ZIndex = 1001  -- Initial Z-Index (wird dynamisch überschrieben)
     searchInput.Parent = menuContainer
     
     local searchCorner = Instance.new('UICorner')
@@ -1338,7 +1348,7 @@ function RadiantUI:CreateDropdown(element, parent)
     optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
     optionsList.ScrollBarImageTransparency = 0.3
     optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = 1001  -- HÖHERER Z-INDEX für bessere Überlappung
+    optionsList.ZIndex = 1001  -- Initial Z-Index (wird dynamisch überschrieben)
     optionsList.Parent = menuContainer
     
     local listLayout = Instance.new('UIListLayout')
@@ -1418,7 +1428,7 @@ function RadiantUI:CreateDropdown(element, parent)
          optionBtn.Font = Enum.Font.Gotham
          optionBtn.TextXAlignment = Enum.TextXAlignment.Left
          optionBtn.LayoutOrder = index
-         optionBtn.ZIndex = 1002  -- Noch höherer Z-Index für bessere Überlappung
+         optionBtn.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Options
          optionBtn.Active = true  -- Macht Button aktiv für Events
          optionBtn.Parent = optionsList
          
@@ -1523,6 +1533,13 @@ function RadiantUI:CreateDropdown(element, parent)
         
         print("RadiantUI: [NEW] Opening dropdown")
         dropdownState.isOpen = true
+        
+        -- DYNAMISCHER Z-INDEX für bessere Überlappung
+        dropdownState.baseZIndex = getNextDropdownZIndex()
+        menuContainer.ZIndex = dropdownState.baseZIndex
+        searchInput.ZIndex = dropdownState.baseZIndex + 1
+        optionsList.ZIndex = dropdownState.baseZIndex + 1
+        
         menuContainer.Visible = true
         
         -- Refresh options before showing
@@ -1663,7 +1680,8 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         originalOptions = options,
         filteredOptions = {},
         selectedValues = {},
-        connections = {}
+        connections = {},
+        baseZIndex = 0  -- Wird beim Öffnen gesetzt
     }
     
     -- Copy options to filtered list
@@ -1731,7 +1749,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     menuContainer.BorderSizePixel = 0
     menuContainer.Visible = false
     menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = 2000  -- SEHR HOHER Z-INDEX für Multi-Dropdown Überlappung
+    menuContainer.ZIndex = 2000  -- Initial Z-Index (wird dynamisch überschrieben)
     menuContainer.Parent = container
     
     local menuCorner = Instance.new('UICorner')
@@ -1757,7 +1775,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     searchInput.TextSize = 11
     searchInput.Font = Enum.Font.Gotham
     searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = 2001  -- Höherer Z-Index für Multi-Dropdown
+    searchInput.ZIndex = 2001  -- Initial Z-Index (wird dynamisch überschrieben)
     searchInput.Parent = menuContainer
     
     local searchCorner = Instance.new('UICorner')
@@ -1779,7 +1797,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
         optionsList.ScrollBarImageTransparency = 0.3
     optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = 2001  -- HÖHERER Z-INDEX für Multi-Dropdown Überlappung
+    optionsList.ZIndex = 2001  -- Initial Z-Index (wird dynamisch überschrieben)
     optionsList.Parent = menuContainer
     
     local listLayout = Instance.new('UIListLayout')
@@ -1878,7 +1896,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
          optionFrame.BackgroundTransparency = 1  -- Komplett transparent am Anfang
          optionFrame.BorderSizePixel = 0
          optionFrame.LayoutOrder = index
-         optionFrame.ZIndex = 2001  -- Höherer Z-Index für Multi-Dropdown
+         optionFrame.ZIndex = dropdownState.baseZIndex + 1  -- Dynamischer Z-Index für Multi-Dropdown Frame
          optionFrame.Parent = optionsList
         
         local frameCorner = Instance.new('UICorner')
@@ -1891,7 +1909,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         checkbox.Position = UDim2.new(0, 8, 0.5, -8)
         checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
         checkbox.BorderSizePixel = 0
-        checkbox.ZIndex = 2001  -- Höherer Z-Index für Multi-Dropdown
+        checkbox.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Checkbox
         checkbox.Parent = optionFrame
         
         local checkboxCorner = Instance.new('UICorner')
@@ -1905,7 +1923,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
         checkmark.TextSize = 10
         checkmark.Font = Enum.Font.GothamBold
-        checkmark.ZIndex = 2002  -- Höchster Z-Index für Multi-Dropdown
+        checkmark.ZIndex = dropdownState.baseZIndex + 3  -- Dynamischer Z-Index für Checkmark
         checkmark.Parent = checkbox
         
         -- Text label
@@ -1918,7 +1936,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         textLabel.TextSize = 12
         textLabel.Font = Enum.Font.Gotham
         textLabel.TextXAlignment = Enum.TextXAlignment.Left
-        textLabel.ZIndex = 2001  -- Höherer Z-Index für Multi-Dropdown
+        textLabel.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Text Label
         textLabel.Parent = optionFrame
         
                  -- Click button
@@ -1926,7 +1944,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
          clickButton.Size = UDim2.new(1, 0, 1, 0)
          clickButton.BackgroundTransparency = 1
          clickButton.Text = ""
-         clickButton.ZIndex = 2002  -- Höchster Z-Index für Multi-Dropdown Überlappung
+         clickButton.ZIndex = dropdownState.baseZIndex + 4  -- Höchster dynamischer Z-Index für Click Button
          clickButton.Active = true  -- Macht Button aktiv für Events
          clickButton.Parent = optionFrame
         
@@ -2022,6 +2040,13 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         
         print("RadiantUI: [NEW] Opening multi-dropdown")
         dropdownState.isOpen = true
+        
+        -- DYNAMISCHER Z-INDEX für bessere Überlappung (Multi-Dropdown)
+        dropdownState.baseZIndex = getNextDropdownZIndex()
+        menuContainer.ZIndex = dropdownState.baseZIndex
+        searchInput.ZIndex = dropdownState.baseZIndex + 1
+        optionsList.ZIndex = dropdownState.baseZIndex + 1
+        
         menuContainer.Visible = true
         
         -- Refresh options before showing
