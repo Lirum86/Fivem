@@ -1211,6 +1211,15 @@ function RadiantUI:CreateDropdown(element, parent)
     -- 4. Fallback Options (nur als letzte Option)
     local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
     
+    -- DEBUG: Log dropdown creation für besseres Debugging
+    if not options or #options == 0 then
+        print("DEBUG: Dropdown '" .. (element.Name or "Unknown") .. "' has no options:")
+        print("  element.Options:", element.Options)
+        print("  element.Config:", element.Config)
+        print("  element.Config.Options:", element.Config and element.Config.Options)
+        print("  config.Options:", config.Options)
+    end
+    
 
     
     -- Validate and sanitize options
@@ -1672,6 +1681,15 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     -- 3. config.Options (Fallback - tertiär) 
     -- 4. Fallback Options (nur als letzte Option)
     local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
+    
+    -- DEBUG: Log multi-dropdown creation für besseres Debugging
+    if not options or #options == 0 then
+        print("DEBUG: MultiDropdown '" .. (element.Name or "Unknown") .. "' has no options:")
+        print("  element.Options:", element.Options)
+        print("  element.Config:", element.Config)
+        print("  element.Config.Options:", element.Config and element.Config.Options)
+        print("  config.Options:", config.Options)
+    end
     
 
     
