@@ -978,7 +978,7 @@ function RadiantUI:AddElement(section, elementType, config)
     -- STEP 4: KRITISCHER FIX - Element-Objekt mit GARANTIERTER Options-Zuweisung
     local element = {
         Type = actualElementType,
-        Name = elementName,
+        Name = actualConfig.Name or actualConfig.Title, -- ✅ DIREKTER ZUGRIFF auf Config
         Config = actualConfig, -- Original Config für Rückwärtskompatibilität
         Frame = nil,
         
@@ -1079,12 +1079,15 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
     itemFrame.LayoutOrder = layoutOrder
     itemFrame.Parent = parent
     
-    -- Proper label creation with element name
+    -- ✅ KORRIGIERTE Label-Text-Zuordnung:
     local label = Instance.new('TextLabel')
     label.Size = UDim2.new(0.55, 0, 1, 0)
     label.Position = UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.Text = element.Name or element.Config.Name or element.Config.Title or "Element" -- Use the actual element name
+    
+    -- ✅ RICHTIGE REIHENFOLGE - Config.Name hat Priorität:
+    label.Text = element.Config.Name or element.Config.Title or element.Name or "Element"
+    
     label.TextColor3 = self.Config.Theme.TextSecondary
     label.TextSize = 13
     label.Font = Enum.Font.Gotham
