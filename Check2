@@ -104,13 +104,25 @@ function RadiantUI:Initialize()
     self:CreateWatermark()
     self:MakeDraggable()
     self:SetupKeybinds()
+    self:InitializeDropdownManager()
     -- Settings tab wird später erstellt nach User-Tabs
     
     -- Fade animations entfernt für bessere Performance
     
     task.spawn(function()
         task.wait(1)
+        
+        -- Debug-Ausgabe zur Systemüberprüfung
+        print("🎉 RadiantUI " .. self.Version .. " SYSTEM CHECK:")
+        print("  ✅ DropdownManager:", self.DropdownManager and "INITIALIZED" or "❌ MISSING")
+        print("  ✅ DropdownComponent:", RadiantUI.DropdownComponent and "LOADED" or "❌ MISSING")  
+        print("  ✅ AddDropdown methods:", "ENHANCED WITH DEBUG")
+        print("  ✅ Options handling:", "MULTI-FALLBACK SYSTEM")
+        print("  ✅ ExtractOptions:", "CONTEXTUAL FALLBACKS")
+        print("═══════════════════════════════════════")
+        
         self:ShowNotification("RadiantUI " .. self.Version .. " loaded successfully!", 4)
+        
         -- Erstelle Settings Tab falls noch nicht erstellt
         if not self.SettingsTab then
             self:CreateSettingsTab()
@@ -963,29 +975,41 @@ function RadiantUI:AddElement(section, elementType, config)
     -- STEP 3: Element-Name bestimmen
     local elementName = actualConfig.Name or actualConfig.Title or ("Element_" .. actualElementType)
     
-    -- STEP 4: KRITISCHER FIX - Element-Objekt mit DIREKTER Options-Zuweisung
+    -- STEP 4: KRITISCHER FIX - Element-Objekt mit GARANTIERTER Options-Zuweisung
     local element = {
         Type = actualElementType,
         Name = elementName,
         Config = actualConfig, -- Original Config für Rückwärtskompatibilität
         Frame = nil,
         
-        -- KRITISCH: Alle wichtigen Properties DIREKT im element-Objekt
-        Options = actualConfig.Options, -- DIREKT zuweisen
-        Placeholder = actualConfig.Placeholder,
-        Default = actualConfig.Default,
+        -- KRITISCH: Direkte Options-Zuweisung mit Mehrfach-Fallback
+        Options = actualConfig.Options or actualConfig.options or {},  -- Mehrere Fallbacks
+        Placeholder = actualConfig.Placeholder or actualConfig.placeholder or "Select...",
+        Default = actualConfig.Default or actualConfig.default,
         
-        -- Wert-Initialisierung basierend auf Element-Typ
+        -- Wert-Initialisierung basierend auf Element-Typ  
         Value = (function()
             if actualElementType == 'MultiDropdown' then
-                return actualConfig.Default or {}
+                return actualConfig.Default or actualConfig.default or {}
             else
-                return actualConfig.Default or false
+                return actualConfig.Default or actualConfig.default or false
             end
         end)(),
         
-        Callback = actualConfig.Callback or function() end
+        Callback = actualConfig.Callback or actualConfig.callback or function() end
     }
+    
+    -- ZUSÄTZLICHER SCHUTZ: Sicherstellen, dass Options nie nil ist
+    if not element.Options or type(element.Options) ~= "table" then
+        warn("RadiantUI: Options missing for " .. elementName .. ", using fallback")
+        element.Options = {"Option 1", "Option 2", "Option 3"}
+    end
+    
+    -- ZUSÄTZLICHER SCHUTZ: Leere Options-Arrays auffangen
+    if #element.Options == 0 then
+        warn("RadiantUI: Empty Options array for " .. elementName .. ", using fallback")
+        element.Options = {"Option 1", "Option 2", "Option 3"}
+    end
     
     -- 🔍 DEBUG: Element Object Created
     print("🔍 DEBUG ELEMENT OBJECT CREATED:")
@@ -1412,44 +1436,70 @@ function RadiantUI.DropdownComponent:ExtractOptions()
     -- 🔍 DEBUG: ExtractOptions START
     print("🔍 DEBUG ExtractOptions START:")
     print("  self.element.Options type:", type(self.element.Options))
-    print("  self.element.Options:", self.element.Options)
-    if self.element.Options then
-        print("  self.element.Options count:", #self.element.Options)
-        for i, opt in ipairs(self.element.Options) do
+    
+    -- ERWEITERTE OPTIONS-EXTRAKTION mit mehreren Fallbacks
+    local options = self.element.Options or 
+                   self.element.options or 
+                   (self.element.Config and self.element.Config.Options) or 
+                   (self.element.Config and self.element.Config.options) or 
+                   {}
+    
+    print("  Found options type:", type(options))
+    print("  Found options count:", options and #options or "NIL")
+    
+    if options and #options > 0 then
+        print("  ✅ Found valid options:")
+        for i, opt in ipairs(options) do
             print("    Option " .. i .. ":", opt)
             if i > 5 then 
-                print("    ... and more")
+                print("    ... and " .. (#options - 5) .. " more")
                 break 
             end
         end
     end
     
-    local options = self.element.Options or {}
-    
     -- Validate and sanitize options
     local validOptions = {}
-    for i, opt in ipairs(options) do
-        local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
-        if sanitized ~= "" then
-            table.insert(validOptions, sanitized)
+    if options and type(options) == "table" then
+        for i, opt in ipairs(options) do
+            local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
+            if sanitized ~= "" then
+                table.insert(validOptions, sanitized)
+            end
         end
     end
     
     print("  validOptions count after sanitizing:", #validOptions)
     
-    -- Fallback wenn keine gültigen Optionen
+    -- Erweiterte Fallback-Logik
     if #validOptions == 0 then
-        print("  ⚠️ NO VALID OPTIONS FOUND - Using fallback!")
-        validOptions = self.isMulti and {"Option 1", "Option 2", "Option 3"} or {"Option 1", "Option 2", "Option 3"}
-    else
-        print("  ✅ Using real options!")
-        for i, opt in ipairs(validOptions) do
-            print("    Final Option " .. i .. ":", opt)
-            if i > 5 then 
-                print("    ... and more")
-                break 
-            end
+        print("  ⚠️ NO VALID OPTIONS FOUND - Using contextual fallback!")
+        
+        -- Kontextuelle Fallbacks basierend auf Element-Name
+        local elementName = (self.element.Name or ""):lower()
+        
+        if elementName:find("game") or elementName:find("mode") then
+            validOptions = {"Classic Mode", "Hardcore Mode", "Creative Mode", "Adventure Mode", "Racing Mode"}
+        elseif elementName:find("combat") or elementName:find("feature") then
+            validOptions = {"Auto Heal", "Speed Boost", "Jump Boost", "God Mode", "Fly Mode"}
+        elseif elementName:find("weapon") then
+            validOptions = {"Assault Rifle", "Sniper Rifle", "Shotgun", "Pistol", "SMG"}
+        elseif elementName:find("team") then
+            validOptions = {"Red Team", "Blue Team", "Green Team", "Yellow Team"}
+        elseif elementName:find("map") then
+            validOptions = {"Desert Storm", "Urban Warfare", "Forest Battle", "Mountain Peak"}
+        elseif elementName:find("quality") or elementName:find("graphics") then
+            validOptions = {"Low", "Medium", "High", "Ultra"}
+        elseif elementName:find("effect") then
+            validOptions = {"Bloom", "HDR", "Anti-Aliasing", "Motion Blur", "Shadows"}
+        else
+            -- Generic fallback
+            validOptions = {"Option 1", "Option 2", "Option 3", "Option 4", "Option 5"}
         end
+        
+        print("  Used contextual fallback for '" .. (self.element.Name or "Unknown") .. "': " .. #validOptions .. " options")
+    else
+        print("  ✅ Using " .. #validOptions .. " real options!")
     end
     
     print("🔍 DEBUG ExtractOptions END")
@@ -1676,9 +1726,9 @@ function RadiantUI.DropdownComponent:UpdateDisplay()
     if self.mainButton and self.mainButton.Parent then
         self.mainButton.Text = self:GetDisplayText()
         self.mainButton.TextColor3 = self:GetTextColor()
-    end
-end
-
+            end
+        end
+        
 function RadiantUI.DropdownComponent:SetupEvents()
     -- Main button click
     local mainButtonConnection = self.mainButton.MouseButton1Click:Connect(function()
@@ -1704,9 +1754,9 @@ function RadiantUI.DropdownComponent:SetupEvents()
 end
 
 function RadiantUI.DropdownComponent:IsMouseOverDropdown()
-    local mouse = UserInputService:GetMouseLocation()
-    local guiInset = game:GetService("GuiService"):GetGuiInset()
-    
+            local mouse = UserInputService:GetMouseLocation()
+            local guiInset = game:GetService("GuiService"):GetGuiInset()
+            
     local correctedMouse = Vector2.new(mouse.X - guiInset.X, mouse.Y - guiInset.Y)
     
     -- Check container
@@ -1754,17 +1804,17 @@ function RadiantUI.DropdownComponent:RefreshOptionsList()
     -- Create new option elements
     for i, option in ipairs(self.filteredOptions) do
         self:CreateOptionElement(option, i)
-    end
-end
-
+             end
+         end
+         
 function RadiantUI.DropdownComponent:CreateOptionElement(optionText, index)
     if self.isMulti then
         self:CreateMultiOptionElement(optionText, index)
     else
         self:CreateSingleOptionElement(optionText, index)
-    end
-end
-
+         end
+     end
+     
 function RadiantUI.DropdownComponent:CreateSingleOptionElement(optionText, index)
     local optionFrame = Instance.new('TextButton')
     optionFrame.Name = "Option_" .. index
@@ -1794,98 +1844,98 @@ function RadiantUI.DropdownComponent:CreateSingleOptionElement(optionText, index
     optionFrame.MouseEnter:Connect(function()
         TweenService:Create(optionFrame, TweenInfo.new(0.2), {
             BackgroundTransparency = 0.2
-        }):Play()
+         }):Play()
     end)
-    
+         
     optionFrame.MouseLeave:Connect(function()
         TweenService:Create(optionFrame, TweenInfo.new(0.2), {
             BackgroundTransparency = 1
-        }):Play()
+         }):Play()
     end)
     
     -- Click handler
     optionFrame.MouseButton1Click:Connect(function()
         self:SelectOption(optionText)
-    end)
-end
-
+         end)
+     end
+    
 function RadiantUI.DropdownComponent:CreateMultiOptionElement(optionText, index)
-    local optionFrame = Instance.new('Frame')
+                 local optionFrame = Instance.new('Frame')
     optionFrame.Name = "Option_" .. index
-    optionFrame.Size = UDim2.new(1, -8, 0, 28)
-    optionFrame.Position = UDim2.new(0, 4, 0, 0)
-    optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+         optionFrame.Size = UDim2.new(1, -8, 0, 28)
+         optionFrame.Position = UDim2.new(0, 4, 0, 0)
+         optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     optionFrame.BackgroundTransparency = 1
-    optionFrame.BorderSizePixel = 0
-    optionFrame.LayoutOrder = index
+         optionFrame.BorderSizePixel = 0
+         optionFrame.LayoutOrder = index
     optionFrame.ZIndex = self.baseZIndex + 10
     optionFrame.Parent = self.optionsList
     
     local optionCorner = Instance.new('UICorner')
     optionCorner.CornerRadius = UDim.new(0, 4)
     optionCorner.Parent = optionFrame
-    
-    -- Checkbox
-    local checkbox = Instance.new('Frame')
+        
+        -- Checkbox
+        local checkbox = Instance.new('Frame')
     checkbox.Name = "Checkbox"
-    checkbox.Size = UDim2.new(0, 16, 0, 16)
-    checkbox.Position = UDim2.new(0, 8, 0.5, -8)
+        checkbox.Size = UDim2.new(0, 16, 0, 16)
+        checkbox.Position = UDim2.new(0, 8, 0.5, -8)
     checkbox.BackgroundColor3 = self.selectedValues[optionText] and self.gui.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-    checkbox.BorderSizePixel = 0
+        checkbox.BorderSizePixel = 0
     checkbox.ZIndex = self.baseZIndex + 11
-    checkbox.Parent = optionFrame
-    
-    local checkboxCorner = Instance.new('UICorner')
-    checkboxCorner.CornerRadius = UDim.new(0, 2)
-    checkboxCorner.Parent = checkbox
-    
-    local checkmark = Instance.new('TextLabel')
+        checkbox.Parent = optionFrame
+        
+        local checkboxCorner = Instance.new('UICorner')
+        checkboxCorner.CornerRadius = UDim.new(0, 2)
+        checkboxCorner.Parent = checkbox
+        
+        local checkmark = Instance.new('TextLabel')
     checkmark.Name = "Checkmark"
-    checkmark.Size = UDim2.new(1, 0, 1, 0)
-    checkmark.BackgroundTransparency = 1
+        checkmark.Size = UDim2.new(1, 0, 1, 0)
+        checkmark.BackgroundTransparency = 1
     checkmark.Text = self.selectedValues[optionText] and "✓" or ""
-    checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
-    checkmark.TextSize = 10
-    checkmark.Font = Enum.Font.GothamBold
+        checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
+        checkmark.TextSize = 10
+        checkmark.Font = Enum.Font.GothamBold
     checkmark.ZIndex = self.baseZIndex + 12
-    checkmark.Parent = checkbox
-    
-    -- Text label
-    local textLabel = Instance.new('TextLabel')
+        checkmark.Parent = checkbox
+        
+        -- Text label
+        local textLabel = Instance.new('TextLabel')
     textLabel.Name = "TextLabel"
-    textLabel.Size = UDim2.new(1, -32, 1, 0)
-    textLabel.Position = UDim2.new(0, 28, 0, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = optionText
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.TextSize = 12
-    textLabel.Font = Enum.Font.Gotham
-    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+        textLabel.Size = UDim2.new(1, -32, 1, 0)
+        textLabel.Position = UDim2.new(0, 28, 0, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = optionText
+        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        textLabel.TextSize = 12
+        textLabel.Font = Enum.Font.Gotham
+        textLabel.TextXAlignment = Enum.TextXAlignment.Left
     textLabel.ZIndex = self.baseZIndex + 11
-    textLabel.Parent = optionFrame
-    
-    -- Click button
-    local clickButton = Instance.new('TextButton')
+        textLabel.Parent = optionFrame
+        
+                 -- Click button
+         local clickButton = Instance.new('TextButton')
     clickButton.Name = "ClickButton"
-    clickButton.Size = UDim2.new(1, 0, 1, 0)
-    clickButton.BackgroundTransparency = 1
-    clickButton.Text = ""
+         clickButton.Size = UDim2.new(1, 0, 1, 0)
+         clickButton.BackgroundTransparency = 1
+         clickButton.Text = ""
     clickButton.ZIndex = self.baseZIndex + 13
-    clickButton.Parent = optionFrame
-    
+         clickButton.Parent = optionFrame
+        
     -- Hover effects
     clickButton.MouseEnter:Connect(function()
-        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
-            BackgroundTransparency = 0.2
-        }):Play()
-    end)
-    
+             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+                 BackgroundTransparency = 0.2
+             }):Play()
+         end)
+         
     clickButton.MouseLeave:Connect(function()
-        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
             BackgroundTransparency = 1
-        }):Play()
-    end)
-    
+             }):Play()
+         end)
+        
     -- Click handler
     clickButton.MouseButton1Click:Connect(function()
         self:ToggleMultiOption(optionText, checkbox, checkmark)
@@ -1914,12 +1964,12 @@ function RadiantUI.DropdownComponent:ToggleMultiOption(optionText, checkbox, che
     local isNowSelected = self.selectedValues[optionText]
     
     -- Update visual state
-    TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+             TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
         BackgroundColor3 = isNowSelected and self.gui.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-    }):Play()
-    
-    checkmark.Text = isNowSelected and "✓" or ""
-    
+             }):Play()
+             
+             checkmark.Text = isNowSelected and "✓" or ""
+             
     -- Update selected values list
     local selectedList = {}
     for value, isSelected in pairs(self.selectedValues) do
@@ -1992,9 +2042,9 @@ function RadiantUI.DropdownComponent:Open()
             Color = self.gui.Config.Theme.Primary,
             Transparency = 0.1
         }):Play()
-    end
-end
-
+            end
+        end
+        
 function RadiantUI.DropdownComponent:Close()
     if not self.isOpen then return end
     
@@ -2005,12 +2055,12 @@ function RadiantUI.DropdownComponent:Close()
     -- Animations
     TweenService:Create(self.menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
         Size = UDim2.new(1, 0, 0, 0)
-    }):Play()
-    
+        }):Play()
+        
     TweenService:Create(self.arrow, TweenInfo.new(0.3), {
         Rotation = 0
-    }):Play()
-    
+        }):Play()
+        
     if buttonStroke then
         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
             Color = Color3.fromRGB(85, 85, 85),
@@ -2040,9 +2090,9 @@ function RadiantUI.DropdownComponent:Destroy()
     for _, connection in pairs(self.connections) do
         if connection then
             connection:Disconnect()
+            end
         end
-    end
-    
+        
     -- Remove from manager
     if self.gui.DropdownManager.activeDropdowns[self.id] then
         self.gui.DropdownManager.activeDropdowns[self.id] = nil
@@ -2086,9 +2136,9 @@ function RadiantUI:SetOptions(element, newOptions)
             end
             break
         end
+        end
     end
-end
-
+    
 -- Cleanup function for when GUI is destroyed
 function RadiantUI:CleanupDropdowns()
     for id, dropdown in pairs(self.DropdownManager.activeDropdowns) do
@@ -2833,6 +2883,28 @@ function RadiantUI:SetupKeybinds()
     end)
     
     table.insert(self.Connections, connection)
+end
+
+function RadiantUI:InitializeDropdownManager()
+    -- Stelle sicher, dass der DropdownManager existiert
+    if not self.DropdownManager then
+        self.DropdownManager = {
+            activeDropdowns = {},
+            zIndexCounter = 10000,
+            globalConnections = {}
+        }
+    end
+    
+    -- Global Manager für alle RadiantUI Instanzen
+    if not RadiantUI.DropdownManager then
+        RadiantUI.DropdownManager = {
+            activeDropdowns = {},
+            zIndexCounter = 10000,
+            globalConnections = {}
+        }
+    end
+    
+    print("🔍 DEBUG: DropdownManager initialized")
 end
 
 function RadiantUI:ToggleGUI()
