@@ -907,50 +907,82 @@ function RadiantUI:CreateSection(section, parentColumn, layoutOrder)
 end
 
 function RadiantUI:AddElement(section, elementType, config)
-    -- Handle both direct calls and section AddElement calls
+    -- STEP 1: Parameter-Validierung und Normalisierung
+    local actualElementType, actualConfig
+    
     if type(elementType) == "table" and elementType.Type then
-        -- This is a call from section:AddElement({Type = 'MultiDropdown', ...})
-        config = elementType
-        elementType = config.Type
+        -- Direkter Aufruf: section:AddElement({Type = 'MultiDropdown', Options = {...}})
+        actualElementType = elementType.Type
+        actualConfig = elementType -- Komplette Struktur beibehalten
+    else
+        -- Normaler Aufruf: section:AddMultiDropdown({Options = {...}})
+        actualElementType = elementType
+        actualConfig = config or {}
     end
     
-    -- Ensure we have valid elementType and config
-    if not elementType then
+    -- STEP 2: Validierung der Parameter
+    if not actualElementType then
         warn("RadiantUI: elementType is nil in AddElement call")
-        return
+        return nil
     end
     
-    if not config then
+    if not actualConfig then
         warn("RadiantUI: config is nil in AddElement call")
-        return
+        return nil
     end
     
-    -- Element name determination
-    local elementName = config.Name or config.Title or ("Element_" .. elementType)
+    -- STEP 3: Element-Name bestimmen
+    local elementName = actualConfig.Name or actualConfig.Title or ("Element_" .. actualElementType)
     
-    -- CRITICAL FIX: Direkter Transfer aller Config-Properties zum element
+    -- STEP 4: KRITISCHER FIX - Element-Objekt mit DIREKTER Options-Zuweisung
     local element = {
-        Type = elementType,
+        Type = actualElementType,
         Name = elementName,
-        Config = config,
+        Config = actualConfig, -- Original Config für Rückwärtskompatibilität
         Frame = nil,
-        Value = config.Default or false,
-        Callback = config.Callback or function() end,
-        -- CRITICAL: Direkte Options-Zuweisung für Dropdown/MultiDropdown
-        Options = config.Options,
-        Placeholder = config.Placeholder,
-        Default = config.Default
+        
+        -- KRITISCH: Alle wichtigen Properties DIREKT im element-Objekt
+        Options = actualConfig.Options, -- DIREKT zuweisen
+        Placeholder = actualConfig.Placeholder,
+        Default = actualConfig.Default,
+        
+        -- Wert-Initialisierung basierend auf Element-Typ
+        Value = (function()
+            if actualElementType == 'MultiDropdown' then
+                return actualConfig.Default or {}
+            else
+                return actualConfig.Default or false
+            end
+        end)(),
+        
+        Callback = actualConfig.Callback or function() end
     }
     
-    -- Config-Transfer verification completed successfully
+    -- STEP 5: DEBUG - Options-Validierung (NUR für Dropdowns)
+    if actualElementType == 'Dropdown' or actualElementType == 'MultiDropdown' then
+        print("=== ADDELEMENT DEBUG ===")
+        print("Element Type:", actualElementType)
+        print("Element Name:", elementName)
+        print("actualConfig.Options:", actualConfig.Options)
+        print("element.Options after assignment:", element.Options)
+        print("Options type:", type(element.Options))
+        if element.Options then
+            print("Options count:", #element.Options)
+            print("First option:", element.Options[1])
+        end
+        print("========================")
+    end
     
+    -- STEP 6: Element zur Section hinzufügen
     table.insert(section.Elements, element)
     
+    -- STEP 7: Sofortige Erstellung falls ItemsFrame existiert
     if section.ItemsFrame then
         self:CreateElement(element, section.ItemsFrame, #section.Elements)
         self:UpdateSectionHeight(section)
     end
     
+    -- STEP 8: Return-Objekt mit Utility-Funktionen
     return {
         SetValue = function(value)
             element.Value = value
@@ -960,6 +992,16 @@ function RadiantUI:AddElement(section, elementType, config)
         end,
         GetValue = function()
             return element.Value
+        end,
+        SetOptions = function(newOptions) -- NEUE FUNKTION!
+            element.Options = newOptions
+            if element.Config then
+                element.Config.Options = newOptions
+            end
+            -- Refresh dropdown falls geöffnet
+            if element.UpdateFunction then
+                element.UpdateFunction(element.Value)
+            end
         end,
         SetVisible = function(visible)
             if element.Frame then
@@ -1203,38 +1245,54 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
+    -- STEP 1: Erweiterte Debug-Ausgabe
+    print("=== CREATEDROPDOWN DEBUG ===")
+    print("Element received:")
+    print("  element.Type:", element.Type)
+    print("  element.Name:", element.Name)
+    print("  element.Options:", element.Options)
+    print("  element.Config:", element.Config)
+    if element.Config then
+        print("  element.Config.Options:", element.Config.Options)
+    end
+    print("============================")
     
-    -- SIMPLIFIED Options validation - nur 2 Stellen prüfen
-    local config = element.Config or {}
+    -- STEP 2: ROBUSTE Options-Ermittlung mit Fallback-Kette
+    local options = nil
     
-    -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
-    local options = element.Options or (element.Config and element.Config.Options) or {}
-    
-    -- Options validation completed
-    
-
-    
-    -- Validate and sanitize options
-    if type(options) == "table" and #options > 0 then
-        -- Konvertiere alle zu Strings und filtere leere Werte
-        local validOptions = {}
-        for i, opt in ipairs(options) do
-            local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1") -- Trim whitespace
-            if sanitized ~= "" then
-                table.insert(validOptions, sanitized)
-            end
-        end
-        options = validOptions
+    -- Priority 1: Direkte Options im element
+    if element.Options and type(element.Options) == "table" and #element.Options > 0 then
+        options = element.Options
+        print("OPTIONS SOURCE: element.Options (direct)")
+    -- Priority 2: Options in element.Config
+    elseif element.Config and element.Config.Options and type(element.Config.Options) == "table" and #element.Config.Options > 0 then
+        options = element.Config.Options
+        print("OPTIONS SOURCE: element.Config.Options")
     else
-        -- Fallback nur wenn WIRKLICH keine Options gefunden
-        options = {"Select Option 1", "Select Option 2", "Select Option 3"}
+        -- Fallback: Standard-Options
+        options = {"Option 1", "Option 2", "Option 3"}
         warn("RadiantUI: No valid options for dropdown '" .. (element.Name or "Dropdown") .. "', using fallback")
+        print("OPTIONS SOURCE: Fallback")
     end
     
-    local placeholder = element.Placeholder or config.Placeholder or "Select..."
-    local defaultValue = element.Default or config.Default
+    -- STEP 3: Options-Sanitization
+    local validOptions = {}
+    for i, opt in ipairs(options) do
+        local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
+        if sanitized ~= "" then
+            table.insert(validOptions, sanitized)
+        end
+    end
+    options = validOptions
     
-    -- Options validation complete
+    print("FINAL OPTIONS COUNT:", #options)
+    print("FINAL OPTIONS:", table.concat(options, ", "))
+    
+    -- STEP 4: Config-Parameter ermitteln
+    local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
+    local defaultValue = element.Default or (element.Config and element.Config.Default)
+    
+    -- Ab hier: Rest der CreateDropdown Funktion bleibt gleich...
     
     -- Initialize element state
     element.Value = defaultValue
@@ -1665,42 +1723,60 @@ function RadiantUI:CreateDropdown(element, parent)
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
+    -- STEP 1: Erweiterte Debug-Ausgabe
+    print("=== CREATEMULTIDROPDOWN DEBUG ===")
+    print("Element received:")
+    print("  element.Type:", element.Type)
+    print("  element.Name:", element.Name)
+    print("  element.Options:", element.Options)
+    print("  element.Config:", element.Config)
+    if element.Config then
+        print("  element.Config.Options:", element.Config.Options)
+    end
+    print("=================================")
     
-    -- SIMPLIFIED Options validation - nur 2 Stellen prüfen  
-    local config = element.Config or {}
+    -- STEP 2: ROBUSTE Options-Ermittlung mit Fallback-Kette
+    local options = nil
     
-    -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
-    local options = element.Options or (element.Config and element.Config.Options) or {}
-    
-    -- Options validation completed
-    
-
-    
-    -- Validate and sanitize multi-dropdown options
-    if type(options) == "table" and #options > 0 then
-        -- Konvertiere alle zu Strings und filtere leere Werte
-        local validOptions = {}
-        for i, opt in ipairs(options) do
-            local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1") -- Trim whitespace
-            if sanitized ~= "" then
-                table.insert(validOptions, sanitized)
-            end
-        end
-        options = validOptions
+    -- Priority 1: Direkte Options im element
+    if element.Options and type(element.Options) == "table" and #element.Options > 0 then
+        options = element.Options
+        print("OPTIONS SOURCE: element.Options (direct)")
+    -- Priority 2: Options in element.Config
+    elseif element.Config and element.Config.Options and type(element.Config.Options) == "table" and #element.Config.Options > 0 then
+        options = element.Config.Options
+        print("OPTIONS SOURCE: element.Config.Options")
     else
-        -- Fallback nur wenn WIRKLICH keine Options gefunden
+        -- Fallback: Standard-Options
         options = {"Multi Option 1", "Multi Option 2", "Multi Option 3"}
         warn("RadiantUI: No valid options for multi-dropdown '" .. (element.Name or "MultiDropdown") .. "', using fallback")
+        print("OPTIONS SOURCE: Fallback")
     end
     
-    local placeholder = element.Placeholder or config.Placeholder or "Select..."
-    local defaultValues = element.Default or config.Default or {}
+    -- STEP 3: Options-Sanitization
+    local validOptions = {}
+    for i, opt in ipairs(options) do
+        local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
+        if sanitized ~= "" then
+            table.insert(validOptions, sanitized)
+        end
+    end
+    options = validOptions
+    
+    print("FINAL OPTIONS COUNT:", #options)
+    print("FINAL OPTIONS:", table.concat(options, ", "))
+    
+    -- STEP 4: Config-Parameter ermitteln
+    local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
+    local defaultValues = element.Default or (element.Config and element.Config.Default) or {}
     
     if type(defaultValues) ~= "table" then
         defaultValues = {}
     end
     
-    -- Multi-dropdown options validation complete
+
+    
+    -- Ab hier: Rest der CreateMultiDropdown Funktion bleibt gleich...
     
     -- Initialize element state
     element.Value = defaultValues
