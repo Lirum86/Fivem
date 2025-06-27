@@ -1032,9 +1032,11 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         -- For buttons, hide the label since button shows its own text
         label.Text = ""
     elseif element.Type == 'Dropdown' then
-        self:CreateDropdown(element, itemFrame)
+        -- Use new dropdown system - CORRECT parameter order: gui, element, parent, isMulti
+        local dropdown = DropdownComponent.new(self, element, itemFrame, false) -- false = not multi
     elseif element.Type == 'MultiDropdown' then
-        self:CreateMultiDropdown(element, itemFrame)
+        -- Use new multi-dropdown system - CORRECT parameter order: gui, element, parent, isMulti  
+        local multiDropdown = DropdownComponent.new(self, element, itemFrame, true) -- true = multi
     elseif element.Type == 'Input' then
         self:CreateInput(element, itemFrame)
     elseif element.Type == 'ColorPicker' then
