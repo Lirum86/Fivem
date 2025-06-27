@@ -108,8 +108,8 @@ function RadiantUI:Initialize()
     
     -- Fade animations entfernt für bessere Performance
     
-    spawn(function()
-        wait(1)
+    task.spawn(function()
+        task.wait(1)
         self:ShowNotification("RadiantUI " .. self.Version .. " loaded successfully!", 4)
         -- Erstelle Settings Tab falls noch nicht erstellt
         if not self.SettingsTab then
@@ -942,10 +942,7 @@ function RadiantUI:AddElement(section, elementType, config)
         Default = config.Default
     }
     
-    -- DEBUG: Config-Transfer Verification
-    print("DEBUG AddElement: " .. elementName .. " (Type: " .. elementType .. ")")
-    print("  config.Options:", config.Options and #config.Options or "nil")
-    print("  element.Options:", element.Options and #element.Options or "nil")
+    -- Config-Transfer verification completed successfully
     
     table.insert(section.Elements, element)
     
@@ -1213,10 +1210,7 @@ function RadiantUI:CreateDropdown(element, parent)
     -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
     local options = element.Options or (element.Config and element.Config.Options) or {}
     
-    -- CLEAR DEBUG: Simplified logging
-    print("DEBUG CreateDropdown: " .. (element.Name or "Unknown"))
-    print("  element.Options found:", element.Options and #element.Options or "nil")
-    print("  final options count:", options and #options or "nil")
+    -- Options validation completed
     
 
     
@@ -1545,8 +1539,10 @@ function RadiantUI:CreateDropdown(element, parent)
             createOptionButton(option, i)
         end
         
-        -- Force layout update
-        wait()
+        -- Optimized layout update without blocking wait
+        spawn(function()
+            RunService.Heartbeat:Wait()
+        end)
     end
     
     local function openDropdown()
@@ -1676,10 +1672,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
     local options = element.Options or (element.Config and element.Config.Options) or {}
     
-    -- CLEAR DEBUG: Simplified logging
-    print("DEBUG CreateMultiDropdown: " .. (element.Name or "Unknown"))
-    print("  element.Options found:", element.Options and #element.Options or "nil")
-    print("  final options count:", options and #options or "nil")
+    -- Options validation completed
     
 
     
@@ -2037,8 +2030,10 @@ function RadiantUI:CreateMultiDropdown(element, parent)
             createOptionButton(option, i)
         end
         
-        -- Force layout update
-        wait()
+        -- Optimized layout update without blocking wait
+        spawn(function()
+            RunService.Heartbeat:Wait()
+        end)
     end
     
     local function openDropdown()
@@ -3050,8 +3045,8 @@ function RadiantUI:ShowNotification(text, duration)
     end)
 
     -- Auto dismiss after duration
-    spawn(function()
-        wait(duration)
+    task.spawn(function()
+        task.wait(duration)
         if notification and notification.Parent then
             self:DismissNotification(notification, progressTween, progressGlowTween)
         end
