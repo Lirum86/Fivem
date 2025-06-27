@@ -928,6 +928,7 @@ function RadiantUI:AddElement(section, elementType, config)
     -- Element name determination
     local elementName = config.Name or config.Title or ("Element_" .. elementType)
     
+    -- CRITICAL FIX: Direkter Transfer aller Config-Properties zum element
     local element = {
         Type = elementType,
         Name = elementName,
@@ -935,11 +936,16 @@ function RadiantUI:AddElement(section, elementType, config)
         Frame = nil,
         Value = config.Default or false,
         Callback = config.Callback or function() end,
-        -- WICHTIG: Direkte Übertragung von wichtigen Properties für Dropdowns
+        -- CRITICAL: Direkte Options-Zuweisung für Dropdown/MultiDropdown
         Options = config.Options,
         Placeholder = config.Placeholder,
         Default = config.Default
     }
+    
+    -- DEBUG: Config-Transfer Verification
+    print("DEBUG AddElement: " .. elementName .. " (Type: " .. elementType .. ")")
+    print("  config.Options:", config.Options and #config.Options or "nil")
+    print("  element.Options:", element.Options and #element.Options or "nil")
     
     table.insert(section.Elements, element)
     
@@ -1201,24 +1207,16 @@ end
 
 function RadiantUI:CreateDropdown(element, parent)
     
-    -- UNIFIED configuration validation with hierarchical fallback
+    -- SIMPLIFIED Options validation - nur 2 Stellen prüfen
     local config = element.Config or {}
     
-    -- VERBESSERTE PRIORITY SYSTEM für Options:
-    -- 1. element.Options (DIREKTE Parameter - primär)
-    -- 2. element.Config.Options (Config-Wrapper - sekundär) 
-    -- 3. config.Options (Fallback - tertiär)
-    -- 4. Fallback Options (nur als letzte Option)
-    local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
+    -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
+    local options = element.Options or (element.Config and element.Config.Options) or {}
     
-    -- DEBUG: Log dropdown creation für besseres Debugging
-    if not options or #options == 0 then
-        print("DEBUG: Dropdown '" .. (element.Name or "Unknown") .. "' has no options:")
-        print("  element.Options:", element.Options)
-        print("  element.Config:", element.Config)
-        print("  element.Config.Options:", element.Config and element.Config.Options)
-        print("  config.Options:", config.Options)
-    end
+    -- CLEAR DEBUG: Simplified logging
+    print("DEBUG CreateDropdown: " .. (element.Name or "Unknown"))
+    print("  element.Options found:", element.Options and #element.Options or "nil")
+    print("  final options count:", options and #options or "nil")
     
 
     
@@ -1672,24 +1670,16 @@ end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
     
-    -- UNIFIED configuration validation with hierarchical fallback  
+    -- SIMPLIFIED Options validation - nur 2 Stellen prüfen  
     local config = element.Config or {}
     
-    -- VERBESSERTE PRIORITY SYSTEM für Multi-Dropdown Options:
-    -- 1. element.Options (DIREKTE Parameter - primär)
-    -- 2. element.Config.Options (Config-Wrapper - sekundär)
-    -- 3. config.Options (Fallback - tertiär) 
-    -- 4. Fallback Options (nur als letzte Option)
-    local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
+    -- SIMPLIFIED PRIORITY: element.Options hat Vorrang, dann element.Config.Options
+    local options = element.Options or (element.Config and element.Config.Options) or {}
     
-    -- DEBUG: Log multi-dropdown creation für besseres Debugging
-    if not options or #options == 0 then
-        print("DEBUG: MultiDropdown '" .. (element.Name or "Unknown") .. "' has no options:")
-        print("  element.Options:", element.Options)
-        print("  element.Config:", element.Config)
-        print("  element.Config.Options:", element.Config and element.Config.Options)
-        print("  config.Options:", config.Options)
-    end
+    -- CLEAR DEBUG: Simplified logging
+    print("DEBUG CreateMultiDropdown: " .. (element.Name or "Unknown"))
+    print("  element.Options found:", element.Options and #element.Options or "nil")
+    print("  final options count:", options and #options or "nil")
     
 
     
