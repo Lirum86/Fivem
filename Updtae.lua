@@ -958,20 +958,7 @@ function RadiantUI:AddElement(section, elementType, config)
         Callback = actualConfig.Callback or function() end
     }
     
-    -- STEP 5: DEBUG - Options-Validierung (NUR für Dropdowns)
-    if actualElementType == 'Dropdown' or actualElementType == 'MultiDropdown' then
-        print("=== ADDELEMENT DEBUG ===")
-        print("Element Type:", actualElementType)
-        print("Element Name:", elementName)
-        print("actualConfig.Options:", actualConfig.Options)
-        print("element.Options after assignment:", element.Options)
-        print("Options type:", type(element.Options))
-        if element.Options then
-            print("Options count:", #element.Options)
-            print("First option:", element.Options[1])
-        end
-        print("========================")
-    end
+    -- STEP 5: Options successfully transferred to element object
     
     -- STEP 6: Element zur Section hinzufügen
     table.insert(section.Elements, element)
@@ -1245,37 +1232,10 @@ function RadiantUI:CreateButton(element, parent)
 end
 
 function RadiantUI:CreateDropdown(element, parent)
-    -- STEP 1: Erweiterte Debug-Ausgabe
-    print("=== CREATEDROPDOWN DEBUG ===")
-    print("Element received:")
-    print("  element.Type:", element.Type)
-    print("  element.Name:", element.Name)
-    print("  element.Options:", element.Options)
-    print("  element.Config:", element.Config)
-    if element.Config then
-        print("  element.Config.Options:", element.Config.Options)
-    end
-    print("============================")
+    -- ROBUSTE Options-Ermittlung mit Fallback-Kette
+    local options = element.Options or (element.Config and element.Config.Options) or {"Option 1", "Option 2", "Option 3"}
     
-    -- STEP 2: ROBUSTE Options-Ermittlung mit Fallback-Kette
-    local options = nil
-    
-    -- Priority 1: Direkte Options im element
-    if element.Options and type(element.Options) == "table" and #element.Options > 0 then
-        options = element.Options
-        print("OPTIONS SOURCE: element.Options (direct)")
-    -- Priority 2: Options in element.Config
-    elseif element.Config and element.Config.Options and type(element.Config.Options) == "table" and #element.Config.Options > 0 then
-        options = element.Config.Options
-        print("OPTIONS SOURCE: element.Config.Options")
-    else
-        -- Fallback: Standard-Options
-        options = {"Option 1", "Option 2", "Option 3"}
-        warn("RadiantUI: No valid options for dropdown '" .. (element.Name or "Dropdown") .. "', using fallback")
-        print("OPTIONS SOURCE: Fallback")
-    end
-    
-    -- STEP 3: Options-Sanitization
+    -- Options-Sanitization
     local validOptions = {}
     for i, opt in ipairs(options) do
         local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
@@ -1285,10 +1245,7 @@ function RadiantUI:CreateDropdown(element, parent)
     end
     options = validOptions
     
-    print("FINAL OPTIONS COUNT:", #options)
-    print("FINAL OPTIONS:", table.concat(options, ", "))
-    
-    -- STEP 4: Config-Parameter ermitteln
+    -- Config-Parameter ermitteln
     local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
     local defaultValue = element.Default or (element.Config and element.Config.Default)
     
@@ -1723,37 +1680,10 @@ function RadiantUI:CreateDropdown(element, parent)
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
-    -- STEP 1: Erweiterte Debug-Ausgabe
-    print("=== CREATEMULTIDROPDOWN DEBUG ===")
-    print("Element received:")
-    print("  element.Type:", element.Type)
-    print("  element.Name:", element.Name)
-    print("  element.Options:", element.Options)
-    print("  element.Config:", element.Config)
-    if element.Config then
-        print("  element.Config.Options:", element.Config.Options)
-    end
-    print("=================================")
+    -- ROBUSTE Options-Ermittlung mit Fallback-Kette
+    local options = element.Options or (element.Config and element.Config.Options) or {"Multi Option 1", "Multi Option 2", "Multi Option 3"}
     
-    -- STEP 2: ROBUSTE Options-Ermittlung mit Fallback-Kette
-    local options = nil
-    
-    -- Priority 1: Direkte Options im element
-    if element.Options and type(element.Options) == "table" and #element.Options > 0 then
-        options = element.Options
-        print("OPTIONS SOURCE: element.Options (direct)")
-    -- Priority 2: Options in element.Config
-    elseif element.Config and element.Config.Options and type(element.Config.Options) == "table" and #element.Config.Options > 0 then
-        options = element.Config.Options
-        print("OPTIONS SOURCE: element.Config.Options")
-    else
-        -- Fallback: Standard-Options
-        options = {"Multi Option 1", "Multi Option 2", "Multi Option 3"}
-        warn("RadiantUI: No valid options for multi-dropdown '" .. (element.Name or "MultiDropdown") .. "', using fallback")
-        print("OPTIONS SOURCE: Fallback")
-    end
-    
-    -- STEP 3: Options-Sanitization
+    -- Options-Sanitization
     local validOptions = {}
     for i, opt in ipairs(options) do
         local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
@@ -1763,10 +1693,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     end
     options = validOptions
     
-    print("FINAL OPTIONS COUNT:", #options)
-    print("FINAL OPTIONS:", table.concat(options, ", "))
-    
-    -- STEP 4: Config-Parameter ermitteln
+    -- Config-Parameter ermitteln
     local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
     local defaultValues = element.Default or (element.Config and element.Config.Default) or {}
     
