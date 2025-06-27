@@ -790,9 +790,15 @@ function RadiantUI:AddSection(tabIndex, config)
             return self:AddElement(section, 'Button', elementConfig)
         end,
         AddDropdown = function(elementConfig)
+            print("🔍 DEBUG Section:AddDropdown called with:")
+            print("  elementConfig.Name:", elementConfig and elementConfig.Name)
+            print("  elementConfig.Options:", elementConfig and elementConfig.Options and #elementConfig.Options or "NIL")
             return self:AddElement(section, 'Dropdown', elementConfig)
         end,
         AddMultiDropdown = function(elementConfig)
+            print("🔍 DEBUG Section:AddMultiDropdown called with:")
+            print("  elementConfig.Name:", elementConfig and elementConfig.Name)
+            print("  elementConfig.Options:", elementConfig and elementConfig.Options and #elementConfig.Options or "NIL")
             return self:AddElement(section, 'MultiDropdown', elementConfig)
         end,
         AddInput = function(elementConfig)
@@ -920,6 +926,29 @@ function RadiantUI:AddElement(section, elementType, config)
         actualConfig = config or {}
     end
     
+    -- 🔍 DEBUG: AddElement Input
+    print("═══════════════════════════════════════")
+    print("🔍 DEBUG AddElement INPUT:")
+    print("  elementType:", elementType)
+    print("  actualElementType:", actualElementType)
+    if actualConfig then
+        print("  actualConfig.Name:", actualConfig.Name)
+        print("  actualConfig.Options type:", type(actualConfig.Options))
+        if actualConfig.Options then
+            print("  actualConfig.Options count:", #actualConfig.Options)
+            if #actualConfig.Options > 0 then
+                print("  actualConfig.Options[1]:", actualConfig.Options[1])
+                print("  actualConfig.Options[2]:", actualConfig.Options[2])
+                print("  actualConfig.Options[3]:", actualConfig.Options[3])
+            end
+        end
+        print("  actualConfig.Placeholder:", actualConfig.Placeholder)
+        print("  actualConfig.Default:", actualConfig.Default)
+    else
+        print("  actualConfig: NIL!")
+    end
+    print("═══════════════════════════════════════")
+    
     -- STEP 2: Validierung der Parameter
     if not actualElementType then
         warn("RadiantUI: elementType is nil in AddElement call")
@@ -957,6 +986,24 @@ function RadiantUI:AddElement(section, elementType, config)
         
         Callback = actualConfig.Callback or function() end
     }
+    
+    -- 🔍 DEBUG: Element Object Created
+    print("🔍 DEBUG ELEMENT OBJECT CREATED:")
+    print("  element.Name:", element.Name)
+    print("  element.Type:", element.Type)
+    print("  element.Options type:", type(element.Options))
+    if element.Options then
+        print("  element.Options count:", #element.Options)
+        if #element.Options > 0 then
+            print("  element.Options[1]:", element.Options[1])
+            print("  element.Options[2]:", element.Options[2])
+            print("  element.Options[3]:", element.Options[3])
+        end
+    else
+        print("  element.Options: NIL!")
+    end
+    print("  element.Placeholder:", element.Placeholder)
+    print("  element.Default:", element.Default)
     
     -- STEP 5: Options successfully transferred to element object
     
@@ -1032,11 +1079,15 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         -- For buttons, hide the label since button shows its own text
         label.Text = ""
     elseif element.Type == 'Dropdown' then
+        print("🔍 DEBUG CreateElement: Creating Dropdown for element:", element.Name)
         -- Use new dropdown system - CORRECT parameter order: gui, element, parent, isMulti
         local dropdown = self.DropdownComponent.new(self, element, itemFrame, false) -- false = not multi
+        print("🔍 DEBUG CreateElement: Dropdown created successfully")
     elseif element.Type == 'MultiDropdown' then
+        print("🔍 DEBUG CreateElement: Creating MultiDropdown for element:", element.Name)
         -- Use new multi-dropdown system - CORRECT parameter order: gui, element, parent, isMulti  
         local multiDropdown = self.DropdownComponent.new(self, element, itemFrame, true) -- true = multi
+        print("🔍 DEBUG CreateElement: MultiDropdown created successfully")
     elseif element.Type == 'Input' then
         self:CreateInput(element, itemFrame)
     elseif element.Type == 'ColorPicker' then
@@ -1265,6 +1316,45 @@ RadiantUI.DropdownComponent.__index = RadiantUI.DropdownComponent
 function RadiantUI.DropdownComponent.new(gui, element, parent, isMulti)
     local self = setmetatable({}, RadiantUI.DropdownComponent)
     
+    -- 🔍 DEBUG: DropdownComponent.new INPUT
+    print("═══════════════════════════════════════")
+    print("🔍 DEBUG DropdownComponent.new INPUT:")
+    print("  gui:", gui and "EXISTS" or "NIL")
+    print("  element:", element and "EXISTS" or "NIL")
+    if element then
+        print("  element.Name:", element.Name)
+        print("  element.Type:", element.Type)
+        print("  element.Options type:", type(element.Options))
+        if element.Options then
+            print("  element.Options count:", #element.Options)
+            if #element.Options > 0 then
+                print("  element.Options[1]:", element.Options[1])
+                print("  element.Options[2]:", element.Options[2])
+                print("  element.Options[3]:", element.Options[3])
+            end
+        else
+            print("  element.Options: NIL!")
+        end
+        print("  element.Placeholder:", element.Placeholder)
+        print("  element.Default:", element.Default)
+        
+        -- Also check Config fallback
+        if element.Config then
+            print("  element.Config.Options type:", type(element.Config.Options))
+            if element.Config.Options then
+                print("  element.Config.Options count:", #element.Config.Options)
+                if #element.Config.Options > 0 then
+                    print("  element.Config.Options[1]:", element.Config.Options[1])
+                end
+            else
+                print("  element.Config.Options: NIL!")
+            end
+        end
+    end
+    print("  parent:", parent and "EXISTS" or "NIL")
+    print("  isMulti:", isMulti)
+    print("═══════════════════════════════════════")
+    
     -- Core Properties
     self.gui = gui
     self.element = element
@@ -1278,6 +1368,12 @@ function RadiantUI.DropdownComponent.new(gui, element, parent, isMulti)
     self.placeholder = element.Placeholder or "Select..."
     self.defaultValue = element.Default
     self.callback = element.Callback or function() end
+    
+    -- 🔍 DEBUG: Configuration Set
+    print("🔍 DEBUG Configuration Set:")
+    print("  self.options count:", self.options and #self.options or "NIL")
+    print("  self.placeholder:", self.placeholder)
+    print("  self.defaultValue:", self.defaultValue)
     
     -- State Management
     self.filteredOptions = {}
@@ -1302,10 +1398,32 @@ function RadiantUI.DropdownComponent.new(gui, element, parent, isMulti)
     -- Register in manager
     gui.DropdownManager.activeDropdowns[self.id] = self
     
+    -- 🔍 DEBUG: DropdownComponent.new COMPLETE
+    print("🔍 DEBUG DropdownComponent.new COMPLETE:")
+    print("  ID:", self.id)
+    print("  Final options count:", self.options and #self.options or "NIL")
+    print("  Final placeholder:", self.placeholder)
+    print("═══════════════════════════════════════")
+    
     return self
 end
 
 function RadiantUI.DropdownComponent:ExtractOptions()
+    -- 🔍 DEBUG: ExtractOptions START
+    print("🔍 DEBUG ExtractOptions START:")
+    print("  self.element.Options type:", type(self.element.Options))
+    print("  self.element.Options:", self.element.Options)
+    if self.element.Options then
+        print("  self.element.Options count:", #self.element.Options)
+        for i, opt in ipairs(self.element.Options) do
+            print("    Option " .. i .. ":", opt)
+            if i > 5 then 
+                print("    ... and more")
+                break 
+            end
+        end
+    end
+    
     local options = self.element.Options or {}
     
     -- Validate and sanitize options
@@ -1317,11 +1435,24 @@ function RadiantUI.DropdownComponent:ExtractOptions()
         end
     end
     
+    print("  validOptions count after sanitizing:", #validOptions)
+    
     -- Fallback wenn keine gültigen Optionen
     if #validOptions == 0 then
+        print("  ⚠️ NO VALID OPTIONS FOUND - Using fallback!")
         validOptions = self.isMulti and {"Option 1", "Option 2", "Option 3"} or {"Option 1", "Option 2", "Option 3"}
+    else
+        print("  ✅ Using real options!")
+        for i, opt in ipairs(validOptions) do
+            print("    Final Option " .. i .. ":", opt)
+            if i > 5 then 
+                print("    ... and more")
+                break 
+            end
+        end
     end
     
+    print("🔍 DEBUG ExtractOptions END")
     return validOptions
 end
 
@@ -1389,6 +1520,14 @@ function RadiantUI.DropdownComponent:BuildUI()
     self.mainButton.Font = Enum.Font.Gotham
     self.mainButton.TextXAlignment = Enum.TextXAlignment.Left
     self.mainButton.Parent = buttonFrame
+    
+    -- 🔍 DEBUG: BuildUI MainButton
+    print("🔍 DEBUG BuildUI MainButton:")
+    print("  mainButton.Text:", self.mainButton.Text)
+    print("  options available:", self.options and #self.options or "NIL")
+    if self.options and #self.options > 0 then
+        print("  first option:", self.options[1])
+    end
     
     -- Arrow indicator
     self.arrow = Instance.new('TextLabel')
@@ -1485,6 +1624,7 @@ end
 -- ===== DROPDOWN COMPONENT METHODS =====
 
 function RadiantUI.DropdownComponent:GetDisplayText()
+    local displayText
     if self.isMulti then
         local count = 0
         local selectedList = {}
@@ -1496,15 +1636,24 @@ function RadiantUI.DropdownComponent:GetDisplayText()
         end
         
         if count == 0 then
-            return self.placeholder
+            displayText = self.placeholder
         elseif count == 1 then
-            return selectedList[1]
+            displayText = selectedList[1]
         else
-            return count .. " selected"
+            displayText = count .. " selected"
         end
     else
-        return self.selectedValue or self.placeholder
+        displayText = self.selectedValue or self.placeholder
     end
+    
+    -- 🔍 DEBUG: GetDisplayText
+    print("🔍 DEBUG GetDisplayText:")
+    print("  isMulti:", self.isMulti)
+    print("  placeholder:", self.placeholder)
+    print("  selectedValue:", self.selectedValue)
+    print("  displayText:", displayText)
+    
+    return displayText
 end
 
 function RadiantUI.DropdownComponent:GetTextColor()
