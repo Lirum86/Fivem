@@ -934,7 +934,11 @@ function RadiantUI:AddElement(section, elementType, config)
         Config = config,
         Frame = nil,
         Value = config.Default or false,
-        Callback = config.Callback or function() end
+        Callback = config.Callback or function() end,
+        -- WICHTIG: Direkte Übertragung von wichtigen Properties für Dropdowns
+        Options = config.Options,
+        Placeholder = config.Placeholder,
+        Default = config.Default
     }
     
     table.insert(section.Elements, element)
@@ -1200,12 +1204,14 @@ function RadiantUI:CreateDropdown(element, parent)
     -- UNIFIED configuration validation with hierarchical fallback
     local config = element.Config or {}
     
-    -- PRIORITY SYSTEM für Options:
-    -- 1. element.Config.Options (primär)
-    -- 2. element.Options (sekundär) 
-    -- 3. config.Options (tertiär)
+    -- VERBESSERTE PRIORITY SYSTEM für Options:
+    -- 1. element.Options (DIREKTE Parameter - primär)
+    -- 2. element.Config.Options (Config-Wrapper - sekundär) 
+    -- 3. config.Options (Fallback - tertiär)
     -- 4. Fallback Options (nur als letzte Option)
-    local options = config.Options or element.Options or {}
+    local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
+    
+
     
     -- Validate and sanitize options
     if type(options) == "table" and #options > 0 then
@@ -1224,8 +1230,8 @@ function RadiantUI:CreateDropdown(element, parent)
         warn("RadiantUI: No valid options for dropdown '" .. (element.Name or "Dropdown") .. "', using fallback")
     end
     
-    local placeholder = config.Placeholder or "Select..."
-    local defaultValue = config.Default
+    local placeholder = element.Placeholder or config.Placeholder or "Select..."
+    local defaultValue = element.Default or config.Default
     
     -- Options validation complete
     
@@ -1660,12 +1666,14 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     -- UNIFIED configuration validation with hierarchical fallback  
     local config = element.Config or {}
     
-    -- PRIORITY SYSTEM für Multi-Dropdown Options:
-    -- 1. element.Config.Options (primär)
-    -- 2. element.Options (sekundär)
-    -- 3. config.Options (tertiär) 
+    -- VERBESSERTE PRIORITY SYSTEM für Multi-Dropdown Options:
+    -- 1. element.Options (DIREKTE Parameter - primär)
+    -- 2. element.Config.Options (Config-Wrapper - sekundär)
+    -- 3. config.Options (Fallback - tertiär) 
     -- 4. Fallback Options (nur als letzte Option)
-    local options = config.Options or element.Options or {}
+    local options = element.Options or (element.Config and element.Config.Options) or config.Options or {}
+    
+
     
     -- Validate and sanitize multi-dropdown options
     if type(options) == "table" and #options > 0 then
@@ -1684,8 +1692,8 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         warn("RadiantUI: No valid options for multi-dropdown '" .. (element.Name or "MultiDropdown") .. "', using fallback")
     end
     
-    local placeholder = config.Placeholder or "Select..."
-    local defaultValues = config.Default or {}
+    local placeholder = element.Placeholder or config.Placeholder or "Select..."
+    local defaultValues = element.Default or config.Default or {}
     
     if type(defaultValues) ~= "table" then
         defaultValues = {}
