@@ -1033,10 +1033,10 @@ function RadiantUI:CreateElement(element, parent, layoutOrder)
         label.Text = ""
     elseif element.Type == 'Dropdown' then
         -- Use new dropdown system - CORRECT parameter order: gui, element, parent, isMulti
-        local dropdown = DropdownComponent.new(self, element, itemFrame, false) -- false = not multi
+        local dropdown = self.DropdownComponent.new(self, element, itemFrame, false) -- false = not multi
     elseif element.Type == 'MultiDropdown' then
         -- Use new multi-dropdown system - CORRECT parameter order: gui, element, parent, isMulti  
-        local multiDropdown = DropdownComponent.new(self, element, itemFrame, true) -- true = multi
+        local multiDropdown = self.DropdownComponent.new(self, element, itemFrame, true) -- true = multi
     elseif element.Type == 'Input' then
         self:CreateInput(element, itemFrame)
     elseif element.Type == 'ColorPicker' then
@@ -1258,12 +1258,12 @@ function RadiantUI:CloseAllDropdowns(except)
     end
 end
 
--- Dropdown-Komponenten-Klasse
-local DropdownComponent = {}
-DropdownComponent.__index = DropdownComponent
+-- Dropdown-Komponenten-Klasse (Teil von RadiantUI)
+RadiantUI.DropdownComponent = {}
+RadiantUI.DropdownComponent.__index = RadiantUI.DropdownComponent
 
-function DropdownComponent.new(gui, element, parent, isMulti)
-    local self = setmetatable({}, DropdownComponent)
+function RadiantUI.DropdownComponent.new(gui, element, parent, isMulti)
+    local self = setmetatable({}, RadiantUI.DropdownComponent)
     
     -- Core Properties
     self.gui = gui
@@ -1305,7 +1305,7 @@ function DropdownComponent.new(gui, element, parent, isMulti)
     return self
 end
 
-function DropdownComponent:ExtractOptions()
+function RadiantUI.DropdownComponent:ExtractOptions()
     local options = self.element.Options or {}
     
     -- Validate and sanitize options
@@ -1325,7 +1325,7 @@ function DropdownComponent:ExtractOptions()
     return validOptions
 end
 
-function DropdownComponent:Initialize()
+function RadiantUI.DropdownComponent:Initialize()
     -- Copy options to filtered list
     self.filteredOptions = {}
     for _, option in ipairs(self.options) do
@@ -1349,7 +1349,7 @@ function DropdownComponent:Initialize()
     self.element.Value = self.selectedValue
 end
 
-function DropdownComponent:BuildUI()
+function RadiantUI.DropdownComponent:BuildUI()
     -- Main container
     self.container = Instance.new('Frame')
     self.container.Name = "DropdownContainer_" .. self.id
@@ -1406,7 +1406,7 @@ function DropdownComponent:BuildUI()
     self:BuildMenuContainer()
 end
 
-function DropdownComponent:BuildMenuContainer()
+function RadiantUI.DropdownComponent:BuildMenuContainer()
     self.menuContainer = Instance.new('Frame')
     self.menuContainer.Name = "MenuContainer"
     self.menuContainer.Size = UDim2.new(1, 0, 0, 0)
@@ -1484,7 +1484,7 @@ end
 
 -- ===== DROPDOWN COMPONENT METHODS =====
 
-function DropdownComponent:GetDisplayText()
+function RadiantUI.DropdownComponent:GetDisplayText()
     if self.isMulti then
         local count = 0
         local selectedList = {}
@@ -1507,7 +1507,7 @@ function DropdownComponent:GetDisplayText()
     end
 end
 
-function DropdownComponent:GetTextColor()
+function RadiantUI.DropdownComponent:GetTextColor()
     local hasSelection = false
     if self.isMulti then
         for _, isSelected in pairs(self.selectedValues or {}) do
@@ -1523,14 +1523,14 @@ function DropdownComponent:GetTextColor()
     return hasSelection and self.gui.Config.Theme.Text or self.gui.Config.Theme.TextSecondary
 end
 
-function DropdownComponent:UpdateDisplay()
+function RadiantUI.DropdownComponent:UpdateDisplay()
     if self.mainButton and self.mainButton.Parent then
         self.mainButton.Text = self:GetDisplayText()
         self.mainButton.TextColor3 = self:GetTextColor()
     end
 end
 
-function DropdownComponent:SetupEvents()
+function RadiantUI.DropdownComponent:SetupEvents()
     -- Main button click
     local mainButtonConnection = self.mainButton.MouseButton1Click:Connect(function()
         self:Toggle()
@@ -1554,7 +1554,7 @@ function DropdownComponent:SetupEvents()
     table.insert(self.connections, outsideClickConnection)
 end
 
-function DropdownComponent:IsMouseOverDropdown()
+function RadiantUI.DropdownComponent:IsMouseOverDropdown()
     local mouse = UserInputService:GetMouseLocation()
     local guiInset = game:GetService("GuiService"):GetGuiInset()
     
@@ -1581,7 +1581,7 @@ function DropdownComponent:IsMouseOverDropdown()
            correctedMouse.Y >= containerBounds.top and correctedMouse.Y <= containerBounds.bottom
 end
 
-function DropdownComponent:FilterOptions()
+function RadiantUI.DropdownComponent:FilterOptions()
     local searchText = self.searchInput.Text:lower()
     self.filteredOptions = {}
     
@@ -1594,7 +1594,7 @@ function DropdownComponent:FilterOptions()
     self:RefreshOptionsList()
 end
 
-function DropdownComponent:RefreshOptionsList()
+function RadiantUI.DropdownComponent:RefreshOptionsList()
     -- Clear existing options
     for _, child in pairs(self.optionsList:GetChildren()) do
         if child:IsA('GuiObject') and child.Name:find('Option_') then
@@ -1608,7 +1608,7 @@ function DropdownComponent:RefreshOptionsList()
     end
 end
 
-function DropdownComponent:CreateOptionElement(optionText, index)
+function RadiantUI.DropdownComponent:CreateOptionElement(optionText, index)
     if self.isMulti then
         self:CreateMultiOptionElement(optionText, index)
     else
@@ -1616,7 +1616,7 @@ function DropdownComponent:CreateOptionElement(optionText, index)
     end
 end
 
-function DropdownComponent:CreateSingleOptionElement(optionText, index)
+function RadiantUI.DropdownComponent:CreateSingleOptionElement(optionText, index)
     local optionFrame = Instance.new('TextButton')
     optionFrame.Name = "Option_" .. index
     optionFrame.Size = UDim2.new(1, -8, 0, 28)
@@ -1660,7 +1660,7 @@ function DropdownComponent:CreateSingleOptionElement(optionText, index)
     end)
 end
 
-function DropdownComponent:CreateMultiOptionElement(optionText, index)
+function RadiantUI.DropdownComponent:CreateMultiOptionElement(optionText, index)
     local optionFrame = Instance.new('Frame')
     optionFrame.Name = "Option_" .. index
     optionFrame.Size = UDim2.new(1, -8, 0, 28)
@@ -1743,7 +1743,7 @@ function DropdownComponent:CreateMultiOptionElement(optionText, index)
     end)
 end
 
-function DropdownComponent:SelectOption(optionText)
+function RadiantUI.DropdownComponent:SelectOption(optionText)
     self.selectedValue = optionText
     self.element.Value = optionText
     self:UpdateDisplay()
@@ -1759,7 +1759,7 @@ function DropdownComponent:SelectOption(optionText)
     self:Close()
 end
 
-function DropdownComponent:ToggleMultiOption(optionText, checkbox, checkmark)
+function RadiantUI.DropdownComponent:ToggleMultiOption(optionText, checkbox, checkmark)
     local wasSelected = self.selectedValues[optionText]
     self.selectedValues[optionText] = not wasSelected
     local isNowSelected = self.selectedValues[optionText]
@@ -1792,7 +1792,7 @@ function DropdownComponent:ToggleMultiOption(optionText, checkbox, checkmark)
     end)
 end
 
-function DropdownComponent:Open()
+function RadiantUI.DropdownComponent:Open()
     if self.isOpen then return end
     
     -- Close other dropdowns
@@ -1846,7 +1846,7 @@ function DropdownComponent:Open()
     end
 end
 
-function DropdownComponent:Close()
+function RadiantUI.DropdownComponent:Close()
     if not self.isOpen then return end
     
     self.isOpen = false
@@ -1878,7 +1878,7 @@ function DropdownComponent:Close()
     end)
 end
 
-function DropdownComponent:Toggle()
+function RadiantUI.DropdownComponent:Toggle()
     if self.isOpen then
         self:Close()
     else
@@ -1886,7 +1886,7 @@ function DropdownComponent:Toggle()
     end
 end
 
-function DropdownComponent:Destroy()
+function RadiantUI.DropdownComponent:Destroy()
     -- Disconnect all connections
     for _, connection in pairs(self.connections) do
         if connection then
@@ -1909,13 +1909,13 @@ end
 
 function RadiantUI:CreateDropdown(element, parent)
     -- Create new dropdown component
-    local dropdown = DropdownComponent.new(self, element, parent, false)
+    local dropdown = self.DropdownComponent.new(self, element, parent, false)
     return dropdown
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
     -- Create new multi-dropdown component
-    local dropdown = DropdownComponent.new(self, element, parent, true)
+    local dropdown = self.DropdownComponent.new(self, element, parent, true)
     return dropdown
 end
 
