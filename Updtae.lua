@@ -1254,6 +1254,12 @@ function RadiantUI:CreateDropdown(element, parent)
     -- Initialize element state
     element.Value = defaultValue
     
+    -- Z-INDEX MANAGEMENT - HÖHERE BASE-WERTE
+    local DROPDOWN_Z_INDEX_BASE = 5000
+    if not self.dropdownZIndexCounter then
+        self.dropdownZIndexCounter = 0
+    end
+    
     -- State management object
     local dropdownState = {
         isOpen = false,
@@ -1261,7 +1267,7 @@ function RadiantUI:CreateDropdown(element, parent)
         filteredOptions = {},
         selectedValue = defaultValue,
         connections = {},
-        baseZIndex = 0  -- Wird beim Öffnen gesetzt
+        baseZIndex = 0  -- Wird beim Öffnen dynamisch gesetzt
     }
     
     -- Copy options to filtered list
@@ -1316,7 +1322,7 @@ function RadiantUI:CreateDropdown(element, parent)
     arrow.Font = Enum.Font.Gotham
     arrow.Parent = buttonFrame
     
-    -- Dropdown menu container - VERBESSERTES OVERLAPPING
+    -- Dropdown menu container - VERBESSERTES OVERLAPPING MIT HÖHEREM Z-INDEX
     local menuContainer = Instance.new('Frame')
     menuContainer.Size = UDim2.new(1, 0, 0, 0)
     menuContainer.Position = UDim2.new(0, 0, 1, 2)
@@ -1324,7 +1330,7 @@ function RadiantUI:CreateDropdown(element, parent)
     menuContainer.BorderSizePixel = 0
     menuContainer.Visible = false
     menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = 1000  -- Initial Z-Index (wird dynamisch überschrieben)
+    menuContainer.ZIndex = DROPDOWN_Z_INDEX_BASE  -- HÖHERER Z-INDEX BASE
     menuContainer.Parent = container
     
     local menuCorner = Instance.new('UICorner')
@@ -1337,7 +1343,7 @@ function RadiantUI:CreateDropdown(element, parent)
     menuStroke.Transparency = 0.4
     menuStroke.Parent = menuContainer
     
-    -- Search input
+    -- Search input - VERBESSERTER Z-INDEX
     local searchInput = Instance.new('TextBox')
     searchInput.Size = UDim2.new(1, -16, 0, 28)
     searchInput.Position = UDim2.new(0, 8, 0, 8)
@@ -1350,7 +1356,7 @@ function RadiantUI:CreateDropdown(element, parent)
     searchInput.TextSize = 11
     searchInput.Font = Enum.Font.Gotham
     searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = 1001  -- Initial Z-Index (wird dynamisch überschrieben)
+    searchInput.ZIndex = DROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
     searchInput.Parent = menuContainer
     
     local searchCorner = Instance.new('UICorner')
@@ -1362,7 +1368,7 @@ function RadiantUI:CreateDropdown(element, parent)
     searchPadding.PaddingRight = UDim.new(0, 8)
     searchPadding.Parent = searchInput
     
-    -- Options scroll frame
+    -- Options scroll frame - VERBESSERTER Z-INDEX
     local optionsList = Instance.new('ScrollingFrame')
     optionsList.Size = UDim2.new(1, 0, 0, 120)
     optionsList.Position = UDim2.new(0, 0, 0, 44)
@@ -1372,7 +1378,7 @@ function RadiantUI:CreateDropdown(element, parent)
     optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
     optionsList.ScrollBarImageTransparency = 0.3
     optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = 1001  -- Initial Z-Index (wird dynamisch überschrieben)
+    optionsList.ZIndex = DROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
     optionsList.Parent = menuContainer
     
     local listLayout = Instance.new('UIListLayout')
@@ -1452,7 +1458,7 @@ function RadiantUI:CreateDropdown(element, parent)
          optionBtn.Font = Enum.Font.Gotham
          optionBtn.TextXAlignment = Enum.TextXAlignment.Left
          optionBtn.LayoutOrder = index
-         optionBtn.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Options
+         optionBtn.ZIndex = dropdownState.baseZIndex + 10  -- HÖHERER Z-INDEX für Options
          optionBtn.Active = true  -- Macht Button aktiv für Events
          optionBtn.Parent = optionsList
          
@@ -1479,7 +1485,7 @@ function RadiantUI:CreateDropdown(element, parent)
              }):Play()
          end)
         
-                                  -- Click handler mit Debounce und verbesserter Event-Behandlung
+                                  -- VEREINFACHTER CLICK HANDLER - NUR EINER! (Fix für doppelte Events)
          local lastClickTime = 0
          local clickHandler = optionBtn.MouseButton1Click:Connect(function()
              -- DEBOUNCE: Ignoriere Klicks die zu schnell aufeinander folgen
@@ -1512,35 +1518,11 @@ function RadiantUI:CreateDropdown(element, parent)
                  closeDropdown()
              end)
          end)
-         
-         -- Zusätzlicher Input-Handler für bessere Klick-Erkennung
-         local inputHandler = optionBtn.InputBegan:Connect(function(input)
-             if input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-                 
-                 -- Trigger the same logic as click
-                 dropdownState.selectedValue = optionText
-                 element.Value = optionText
-                 updateButtonText(optionText)
-                 
-                 spawn(function()
-                     if element.Callback and type(element.Callback) == "function" then
-                         pcall(element.Callback, optionText)
-                     end
-                 end)
-                 
-                 spawn(function()
-                     wait(0.1)
-                     closeDropdown()
-                 end)
-             end
-         end)
         
-                 -- Store connections
+                 -- Store connections (ohne inputHandler)
          table.insert(dropdownState.connections, hoverIn)
          table.insert(dropdownState.connections, hoverOut)
          table.insert(dropdownState.connections, clickHandler)
-         table.insert(dropdownState.connections, inputHandler)
          
 
         return optionBtn
@@ -1563,19 +1545,21 @@ function RadiantUI:CreateDropdown(element, parent)
     local function openDropdown()
         if dropdownState.isOpen then return end
         
-
         dropdownState.isOpen = true
         
-        -- DYNAMISCHER Z-INDEX für bessere Überlappung
-        dropdownState.baseZIndex = getNextDropdownZIndex()
+        -- VERBESSERTE Z-INDEX VERWALTUNG mit höheren Werten
+        self.dropdownZIndexCounter = self.dropdownZIndexCounter + 100
+        dropdownState.baseZIndex = DROPDOWN_Z_INDEX_BASE + self.dropdownZIndexCounter
+        
+        -- ALLE UI-Elemente mit korrekten Z-Index versehen
         menuContainer.ZIndex = dropdownState.baseZIndex
-        searchInput.ZIndex = dropdownState.baseZIndex + 1
-        optionsList.ZIndex = dropdownState.baseZIndex + 1
+        searchInput.ZIndex = dropdownState.baseZIndex + 5
+        optionsList.ZIndex = dropdownState.baseZIndex + 5
         
         -- REKURSIV Z-Index für alle bestehenden Options setzen
         for _, child in pairs(optionsList:GetChildren()) do
             if child:IsA("TextButton") then
-                child.ZIndex = dropdownState.baseZIndex + 2
+                child.ZIndex = dropdownState.baseZIndex + 10
             end
         end
         
@@ -1583,6 +1567,14 @@ function RadiantUI:CreateDropdown(element, parent)
         
         -- Refresh options before showing
         refreshOptions()
+        
+        -- VERBESSERTE SEARCH INPUT FOCUS mit Verzögerung
+        spawn(function()
+            wait(0.1)  -- Kurze Verzögerung für UI-Stabilität
+            if dropdownState.isOpen and searchInput and searchInput.Parent then
+                searchInput:CaptureFocus()
+            end
+        end)
         
         -- Animate opening
         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
@@ -1708,6 +1700,12 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     -- Initialize element state
     element.Value = defaultValues
     
+    -- Z-INDEX MANAGEMENT FÜR MULTI-DROPDOWN - HÖHERE BASE-WERTE
+    local MULTIDROPDOWN_Z_INDEX_BASE = 5200  -- Höher als normale Dropdowns
+    if not self.multiDropdownZIndexCounter then
+        self.multiDropdownZIndexCounter = 0
+    end
+    
     -- State management object
     local dropdownState = {
         isOpen = false,
@@ -1715,7 +1713,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         filteredOptions = {},
         selectedValues = {},
         connections = {},
-        baseZIndex = 0  -- Wird beim Öffnen gesetzt
+        baseZIndex = 0  -- Wird beim Öffnen dynamisch gesetzt
     }
     
     -- Copy options to filtered list
@@ -1775,7 +1773,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     arrow.Font = Enum.Font.Gotham
     arrow.Parent = buttonFrame
     
-    -- Dropdown menu container
+    -- Dropdown menu container - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
     local menuContainer = Instance.new('Frame')
     menuContainer.Size = UDim2.new(1, 0, 0, 0)
     menuContainer.Position = UDim2.new(0, 0, 1, 2)
@@ -1783,7 +1781,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     menuContainer.BorderSizePixel = 0
     menuContainer.Visible = false
     menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = 2000  -- Initial Z-Index (wird dynamisch überschrieben)
+    menuContainer.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE  -- HÖHERER Z-INDEX BASE
     menuContainer.Parent = container
     
     local menuCorner = Instance.new('UICorner')
@@ -1796,7 +1794,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     menuStroke.Transparency = 0.4
     menuStroke.Parent = menuContainer
     
-    -- Search input
+    -- Search input - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
     local searchInput = Instance.new('TextBox')
     searchInput.Size = UDim2.new(1, -16, 0, 28)
     searchInput.Position = UDim2.new(0, 8, 0, 8)
@@ -1809,7 +1807,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     searchInput.TextSize = 11
     searchInput.Font = Enum.Font.Gotham
     searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = 2001  -- Initial Z-Index (wird dynamisch überschrieben)
+    searchInput.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
     searchInput.Parent = menuContainer
     
     local searchCorner = Instance.new('UICorner')
@@ -1821,7 +1819,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     searchPadding.PaddingRight = UDim.new(0, 8)
     searchPadding.Parent = searchInput
     
-    -- Options scroll frame
+    -- Options scroll frame - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
     local optionsList = Instance.new('ScrollingFrame')
     optionsList.Size = UDim2.new(1, 0, 0, 120)
     optionsList.Position = UDim2.new(0, 0, 0, 44)
@@ -1829,9 +1827,9 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     optionsList.BorderSizePixel = 0
     optionsList.ScrollBarThickness = 4
     optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
-        optionsList.ScrollBarImageTransparency = 0.3
+    optionsList.ScrollBarImageTransparency = 0.3
     optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = 2001  -- Initial Z-Index (wird dynamisch überschrieben)
+    optionsList.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
     optionsList.Parent = menuContainer
     
     local listLayout = Instance.new('UIListLayout')
@@ -1930,7 +1928,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
          optionFrame.BackgroundTransparency = 1  -- Komplett transparent am Anfang
          optionFrame.BorderSizePixel = 0
          optionFrame.LayoutOrder = index
-         optionFrame.ZIndex = dropdownState.baseZIndex + 1  -- Dynamischer Z-Index für Multi-Dropdown Frame
+         optionFrame.ZIndex = dropdownState.baseZIndex + 10  -- HÖHERER Z-INDEX für Multi-Dropdown Frame
          optionFrame.Parent = optionsList
         
         local frameCorner = Instance.new('UICorner')
@@ -1943,7 +1941,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         checkbox.Position = UDim2.new(0, 8, 0.5, -8)
         checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
         checkbox.BorderSizePixel = 0
-        checkbox.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Checkbox
+        checkbox.ZIndex = dropdownState.baseZIndex + 11  -- HÖHERER Z-INDEX für Checkbox
         checkbox.Parent = optionFrame
         
         local checkboxCorner = Instance.new('UICorner')
@@ -1957,7 +1955,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
         checkmark.TextSize = 10
         checkmark.Font = Enum.Font.GothamBold
-        checkmark.ZIndex = dropdownState.baseZIndex + 3  -- Dynamischer Z-Index für Checkmark
+        checkmark.ZIndex = dropdownState.baseZIndex + 12  -- HÖHERER Z-INDEX für Checkmark
         checkmark.Parent = checkbox
         
         -- Text label
@@ -1970,7 +1968,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         textLabel.TextSize = 12
         textLabel.Font = Enum.Font.Gotham
         textLabel.TextXAlignment = Enum.TextXAlignment.Left
-        textLabel.ZIndex = dropdownState.baseZIndex + 2  -- Dynamischer Z-Index für Text Label
+        textLabel.ZIndex = dropdownState.baseZIndex + 11  -- HÖHERER Z-INDEX für Text Label
         textLabel.Parent = optionFrame
         
                  -- Click button
@@ -1978,7 +1976,7 @@ function RadiantUI:CreateMultiDropdown(element, parent)
          clickButton.Size = UDim2.new(1, 0, 1, 0)
          clickButton.BackgroundTransparency = 1
          clickButton.Text = ""
-         clickButton.ZIndex = dropdownState.baseZIndex + 4  -- Höchster dynamischer Z-Index für Click Button
+         clickButton.ZIndex = dropdownState.baseZIndex + 13  -- HÖCHSTER Z-INDEX für Click Button
          clickButton.Active = true  -- Macht Button aktiv für Events
          clickButton.Parent = optionFrame
         
@@ -2042,22 +2040,24 @@ function RadiantUI:CreateMultiDropdown(element, parent)
     local function openDropdown()
         if dropdownState.isOpen then return end
         
-
         dropdownState.isOpen = true
         
-        -- DYNAMISCHER Z-INDEX für bessere Überlappung (Multi-Dropdown)
-        dropdownState.baseZIndex = getNextDropdownZIndex()
-        menuContainer.ZIndex = dropdownState.baseZIndex
-        searchInput.ZIndex = dropdownState.baseZIndex + 1
-        optionsList.ZIndex = dropdownState.baseZIndex + 1
+        -- VERBESSERTE Z-INDEX VERWALTUNG für Multi-Dropdown mit höheren Werten
+        self.multiDropdownZIndexCounter = self.multiDropdownZIndexCounter + 100
+        dropdownState.baseZIndex = MULTIDROPDOWN_Z_INDEX_BASE + self.multiDropdownZIndexCounter
         
-        -- REKURSIV Z-Index für alle bestehenden Options setzen
+        -- ALLE UI-Elemente mit korrekten Z-Index versehen
+        menuContainer.ZIndex = dropdownState.baseZIndex
+        searchInput.ZIndex = dropdownState.baseZIndex + 5
+        optionsList.ZIndex = dropdownState.baseZIndex + 5
+        
+        -- REKURSIV Z-Index für alle bestehenden Options mit höheren Werten setzen
         for _, child in pairs(optionsList:GetChildren()) do
             if child:IsA("Frame") and child.Name:find("OptionFrame") then
-                child.ZIndex = dropdownState.baseZIndex + 1
+                child.ZIndex = dropdownState.baseZIndex + 10
                 for _, subChild in pairs(child:GetChildren()) do
                     if subChild:IsA("GuiObject") then
-                        subChild.ZIndex = dropdownState.baseZIndex + 2
+                        subChild.ZIndex = dropdownState.baseZIndex + 11
                     end
                 end
             end
@@ -2067,6 +2067,14 @@ function RadiantUI:CreateMultiDropdown(element, parent)
         
         -- Refresh options before showing
         refreshOptions()
+        
+        -- VERBESSERTE SEARCH INPUT FOCUS mit Verzögerung (Multi-Dropdown)
+        spawn(function()
+            wait(0.1)  -- Kurze Verzögerung für UI-Stabilität
+            if dropdownState.isOpen and searchInput and searchInput.Parent then
+                searchInput:CaptureFocus()
+            end
+        end)
         
         -- Animate opening
         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
