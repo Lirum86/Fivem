@@ -1231,11 +1231,82 @@ function RadiantUI:CreateButton(element, parent)
     end)
 end
 
-function RadiantUI:CreateDropdown(element, parent)
-    -- ROBUSTE Options-Ermittlung mit Fallback-Kette
-    local options = element.Options or (element.Config and element.Config.Options) or {"Option 1", "Option 2", "Option 3"}
+-- ===== NEUES DROPDOWN MANAGEMENT SYSTEM =====
+-- Globale Dropdown-Verwaltung
+if not RadiantUI.DropdownManager then
+    RadiantUI.DropdownManager = {
+        activeDropdowns = {},
+        zIndexCounter = 10000,  -- Viel höhere Basis für bessere Layering
+        globalConnections = {}
+    }
+end
+
+-- Globale Z-Index Verwaltung
+function RadiantUI:GetNextDropdownZIndex()
+    self.DropdownManager.zIndexCounter = self.DropdownManager.zIndexCounter + 50
+    return self.DropdownManager.zIndexCounter
+end
+
+-- Alle aktiven Dropdowns schließen
+function RadiantUI:CloseAllDropdowns(except)
+    for id, dropdown in pairs(self.DropdownManager.activeDropdowns) do
+        if dropdown ~= except and dropdown.isOpen then
+            dropdown:Close()
+        end
+    end
+end
+
+-- Dropdown-Komponenten-Klasse
+local DropdownComponent = {}
+DropdownComponent.__index = DropdownComponent
+
+function DropdownComponent.new(gui, element, parent, isMulti)
+    local self = setmetatable({}, DropdownComponent)
     
-    -- Options-Sanitization
+    -- Core Properties
+    self.gui = gui
+    self.element = element
+    self.parent = parent
+    self.isMulti = isMulti or false
+    self.isOpen = false
+    self.id = "dropdown_" .. tostring(math.random(100000, 999999))
+    
+    -- Configuration
+    self.options = self:ExtractOptions()
+    self.placeholder = element.Placeholder or "Select..."
+    self.defaultValue = element.Default
+    self.callback = element.Callback or function() end
+    
+    -- State Management
+    self.filteredOptions = {}
+    self.selectedValue = self.isMulti and {} or nil
+    self.selectedValues = self.isMulti and {} or nil
+    self.connections = {}
+    self.baseZIndex = 0
+    
+    -- UI Elements
+    self.container = nil
+    self.menuContainer = nil
+    self.searchInput = nil
+    self.optionsList = nil
+    self.mainButton = nil
+    self.arrow = nil
+    
+    -- Initialize
+    self:Initialize()
+    self:BuildUI()
+    self:SetupEvents()
+    
+    -- Register in manager
+    gui.DropdownManager.activeDropdowns[self.id] = self
+    
+    return self
+end
+
+function DropdownComponent:ExtractOptions()
+    local options = self.element.Options or {}
+    
+    -- Validate and sanitize options
     local validOptions = {}
     for i, opt in ipairs(options) do
         local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
@@ -1243,945 +1314,644 @@ function RadiantUI:CreateDropdown(element, parent)
             table.insert(validOptions, sanitized)
         end
     end
-    options = validOptions
     
-    -- Config-Parameter ermitteln
-    local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
-    local defaultValue = element.Default or (element.Config and element.Config.Default)
-    
-    -- Ab hier: Rest der CreateDropdown Funktion bleibt gleich...
-    
-    -- Initialize element state
-    element.Value = defaultValue
-    
-    -- Z-INDEX MANAGEMENT - HÖHERE BASE-WERTE
-    local DROPDOWN_Z_INDEX_BASE = 5000
-    if not self.dropdownZIndexCounter then
-        self.dropdownZIndexCounter = 0
+    -- Fallback wenn keine gültigen Optionen
+    if #validOptions == 0 then
+        validOptions = self.isMulti and {"Option 1", "Option 2", "Option 3"} or {"Option 1", "Option 2", "Option 3"}
     end
     
-    -- State management object
-    local dropdownState = {
-        isOpen = false,
-        originalOptions = options,
-        filteredOptions = {},
-        selectedValue = defaultValue,
-        connections = {},
-        baseZIndex = 0  -- Wird beim Öffnen dynamisch gesetzt
-    }
-    
+    return validOptions
+end
+
+function DropdownComponent:Initialize()
     -- Copy options to filtered list
-    for _, option in ipairs(options) do
-        table.insert(dropdownState.filteredOptions, option)
+    self.filteredOptions = {}
+    for _, option in ipairs(self.options) do
+        table.insert(self.filteredOptions, option)
     end
     
+    -- Initialize selection
+    if self.isMulti then
+        self.selectedValues = {}
+        if self.defaultValue then
+            for _, value in ipairs(self.defaultValue) do
+                self.selectedValues[value] = true
+            end
+        end
+        self.selectedValue = self.defaultValue or {}
+    else
+        self.selectedValue = self.defaultValue
+    end
+    
+    -- Set element value
+    self.element.Value = self.selectedValue
+end
+
+function DropdownComponent:BuildUI()
     -- Main container
-    local container = Instance.new('Frame')
-    container.Size = UDim2.new(0, 140, 0, 32)
-    container.Position = UDim2.new(1, -140, 0.5, -16)
-    container.BackgroundTransparency = 1
-    container.Parent = parent
+    self.container = Instance.new('Frame')
+    self.container.Name = "DropdownContainer_" .. self.id
+    self.container.Size = UDim2.new(0, 140, 0, 32)
+    self.container.Position = UDim2.new(1, -140, 0.5, -16)
+    self.container.BackgroundTransparency = 1
+    self.container.Parent = self.parent
     
     -- Dropdown button frame
     local buttonFrame = Instance.new('Frame')
+    buttonFrame.Name = "ButtonFrame"
     buttonFrame.Size = UDim2.new(1, 0, 1, 0)
     buttonFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     buttonFrame.BorderSizePixel = 0
-    buttonFrame.Parent = container
+    buttonFrame.Parent = self.container
     
     local buttonCorner = Instance.new('UICorner')
     buttonCorner.CornerRadius = UDim.new(0, 8)
     buttonCorner.Parent = buttonFrame
     
     local buttonStroke = Instance.new('UIStroke')
+    buttonStroke.Name = "ButtonStroke"
     buttonStroke.Thickness = 1
     buttonStroke.Color = Color3.fromRGB(85, 85, 85)
     buttonStroke.Transparency = 0.3
     buttonStroke.Parent = buttonFrame
     
     -- Main button
-    local mainButton = Instance.new('TextButton')
-    mainButton.Size = UDim2.new(1, -25, 1, 0)
-    mainButton.Position = UDim2.new(0, 8, 0, 0)
-    mainButton.BackgroundTransparency = 1
-    mainButton.Text = defaultValue or placeholder
-    mainButton.TextColor3 = defaultValue and self.Config.Theme.Text or self.Config.Theme.TextSecondary
-    mainButton.TextSize = 12
-    mainButton.Font = Enum.Font.Gotham
-    mainButton.TextXAlignment = Enum.TextXAlignment.Left
-    mainButton.Parent = buttonFrame
+    self.mainButton = Instance.new('TextButton')
+    self.mainButton.Name = "MainButton"
+    self.mainButton.Size = UDim2.new(1, -25, 1, 0)
+    self.mainButton.Position = UDim2.new(0, 8, 0, 0)
+    self.mainButton.BackgroundTransparency = 1
+    self.mainButton.Text = self:GetDisplayText()
+    self.mainButton.TextColor3 = self:GetTextColor()
+    self.mainButton.TextSize = 12
+    self.mainButton.Font = Enum.Font.Gotham
+    self.mainButton.TextXAlignment = Enum.TextXAlignment.Left
+    self.mainButton.Parent = buttonFrame
     
     -- Arrow indicator
-    local arrow = Instance.new('TextLabel')
-    arrow.Size = UDim2.new(0, 20, 1, 0)
-    arrow.Position = UDim2.new(1, -20, 0, 0)
-    arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.TextColor3 = self.Config.Theme.TextSecondary
-    arrow.TextSize = 10
-    arrow.Font = Enum.Font.Gotham
-    arrow.Parent = buttonFrame
+    self.arrow = Instance.new('TextLabel')
+    self.arrow.Name = "Arrow"
+    self.arrow.Size = UDim2.new(0, 20, 1, 0)
+    self.arrow.Position = UDim2.new(1, -20, 0, 0)
+    self.arrow.BackgroundTransparency = 1
+    self.arrow.Text = "▼"
+    self.arrow.TextColor3 = self.gui.Config.Theme.TextSecondary
+    self.arrow.TextSize = 10
+    self.arrow.Font = Enum.Font.Gotham
+    self.arrow.Parent = buttonFrame
     
-    -- Dropdown menu container - VERBESSERTES OVERLAPPING MIT HÖHEREM Z-INDEX
-    local menuContainer = Instance.new('Frame')
-    menuContainer.Size = UDim2.new(1, 0, 0, 0)
-    menuContainer.Position = UDim2.new(0, 0, 1, 2)
-    menuContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    menuContainer.BorderSizePixel = 0
-    menuContainer.Visible = false
-    menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = DROPDOWN_Z_INDEX_BASE  -- HÖHERER Z-INDEX BASE
-    menuContainer.Parent = container
+    -- Menu container (initially hidden)
+    self:BuildMenuContainer()
+end
+
+function DropdownComponent:BuildMenuContainer()
+    self.menuContainer = Instance.new('Frame')
+    self.menuContainer.Name = "MenuContainer"
+    self.menuContainer.Size = UDim2.new(1, 0, 0, 0)
+    self.menuContainer.Position = UDim2.new(0, 0, 1, 2)
+    self.menuContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    self.menuContainer.BorderSizePixel = 0
+    self.menuContainer.Visible = false
+    self.menuContainer.ClipsDescendants = true
+    self.menuContainer.ZIndex = 10000  -- Will be updated dynamically
+    self.menuContainer.Parent = self.container
     
     local menuCorner = Instance.new('UICorner')
     menuCorner.CornerRadius = UDim.new(0, 8)
-    menuCorner.Parent = menuContainer
+    menuCorner.Parent = self.menuContainer
     
     local menuStroke = Instance.new('UIStroke')
+    menuStroke.Name = "MenuStroke"
     menuStroke.Thickness = 1
     menuStroke.Color = Color3.fromRGB(70, 70, 70)
     menuStroke.Transparency = 0.4
-    menuStroke.Parent = menuContainer
+    menuStroke.Parent = self.menuContainer
     
-    -- Search input - VERBESSERTER Z-INDEX
-    local searchInput = Instance.new('TextBox')
-    searchInput.Size = UDim2.new(1, -16, 0, 28)
-    searchInput.Position = UDim2.new(0, 8, 0, 8)
-    searchInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    searchInput.BorderSizePixel = 0
-    searchInput.Text = ""
-    searchInput.PlaceholderText = "Search options..."
-    searchInput.PlaceholderColor3 = self.Config.Theme.TextSecondary
-    searchInput.TextColor3 = self.Config.Theme.Text
-    searchInput.TextSize = 11
-    searchInput.Font = Enum.Font.Gotham
-    searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = DROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
-    searchInput.Parent = menuContainer
+    -- Search input
+    self.searchInput = Instance.new('TextBox')
+    self.searchInput.Name = "SearchInput"
+    self.searchInput.Size = UDim2.new(1, -16, 0, 28)
+    self.searchInput.Position = UDim2.new(0, 8, 0, 8)
+    self.searchInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    self.searchInput.BorderSizePixel = 0
+    self.searchInput.Text = ""
+    self.searchInput.PlaceholderText = "Search options..."
+    self.searchInput.PlaceholderColor3 = self.gui.Config.Theme.TextSecondary
+    self.searchInput.TextColor3 = self.gui.Config.Theme.Text
+    self.searchInput.TextSize = 11
+    self.searchInput.Font = Enum.Font.Gotham
+    self.searchInput.TextXAlignment = Enum.TextXAlignment.Left
+    self.searchInput.ZIndex = 10005
+    self.searchInput.Parent = self.menuContainer
     
     local searchCorner = Instance.new('UICorner')
     searchCorner.CornerRadius = UDim.new(0, 6)
-    searchCorner.Parent = searchInput
+    searchCorner.Parent = self.searchInput
     
     local searchPadding = Instance.new('UIPadding')
     searchPadding.PaddingLeft = UDim.new(0, 8)
     searchPadding.PaddingRight = UDim.new(0, 8)
-    searchPadding.Parent = searchInput
+    searchPadding.Parent = self.searchInput
     
-    -- Options scroll frame - VERBESSERTER Z-INDEX
-    local optionsList = Instance.new('ScrollingFrame')
-    optionsList.Size = UDim2.new(1, 0, 0, 120)
-    optionsList.Position = UDim2.new(0, 0, 0, 44)
-    optionsList.BackgroundTransparency = 1
-    optionsList.BorderSizePixel = 0
-    optionsList.ScrollBarThickness = 4
-    optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
-    optionsList.ScrollBarImageTransparency = 0.3
-    optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = DROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
-    optionsList.Parent = menuContainer
+    -- Options list
+    self.optionsList = Instance.new('ScrollingFrame')
+    self.optionsList.Name = "OptionsList"
+    self.optionsList.Size = UDim2.new(1, 0, 0, 120)
+    self.optionsList.Position = UDim2.new(0, 0, 0, 44)
+    self.optionsList.BackgroundTransparency = 1
+    self.optionsList.BorderSizePixel = 0
+    self.optionsList.ScrollBarThickness = 4
+    self.optionsList.ScrollBarImageColor3 = self.gui.Config.Theme.Primary
+    self.optionsList.ScrollBarImageTransparency = 0.3
+    self.optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    self.optionsList.ZIndex = 10005
+    self.optionsList.Parent = self.menuContainer
     
     local listLayout = Instance.new('UIListLayout')
+    listLayout.Name = "ListLayout"
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0, 1)
+    listLayout.Padding = UDim.new(0, 2)
     listLayout.FillDirection = Enum.FillDirection.Vertical
-    listLayout.Parent = optionsList
+    listLayout.Parent = self.optionsList
     
-    -- Update canvas size when layout changes
+    -- Auto-update canvas size
     listLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-        optionsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
+        self.optionsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+    end)
+end
+
+-- ===== DROPDOWN COMPONENT METHODS =====
+
+function DropdownComponent:GetDisplayText()
+    if self.isMulti then
+        local count = 0
+        local selectedList = {}
+        for value, isSelected in pairs(self.selectedValues or {}) do
+            if isSelected then
+                count = count + 1
+                table.insert(selectedList, value)
+            end
+        end
+        
+        if count == 0 then
+            return self.placeholder
+        elseif count == 1 then
+            return selectedList[1]
+        else
+            return count .. " selected"
+        end
+    else
+        return self.selectedValue or self.placeholder
+    end
+end
+
+function DropdownComponent:GetTextColor()
+    local hasSelection = false
+    if self.isMulti then
+        for _, isSelected in pairs(self.selectedValues or {}) do
+            if isSelected then
+                hasSelection = true
+                break
+            end
+        end
+    else
+        hasSelection = self.selectedValue ~= nil
+    end
+    
+    return hasSelection and self.gui.Config.Theme.Text or self.gui.Config.Theme.TextSecondary
+end
+
+function DropdownComponent:UpdateDisplay()
+    if self.mainButton and self.mainButton.Parent then
+        self.mainButton.Text = self:GetDisplayText()
+        self.mainButton.TextColor3 = self:GetTextColor()
+    end
+end
+
+function DropdownComponent:SetupEvents()
+    -- Main button click
+    local mainButtonConnection = self.mainButton.MouseButton1Click:Connect(function()
+        self:Toggle()
+    end)
+    table.insert(self.connections, mainButtonConnection)
+    
+    -- Search functionality
+    local searchConnection = self.searchInput:GetPropertyChangedSignal('Text'):Connect(function()
+        self:FilterOptions()
+    end)
+    table.insert(self.connections, searchConnection)
+    
+    -- Outside click detection
+    local outsideClickConnection = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and self.isOpen then
+            if not self:IsMouseOverDropdown() then
+                self:Close()
+            end
+        end
+    end)
+    table.insert(self.connections, outsideClickConnection)
+end
+
+function DropdownComponent:IsMouseOverDropdown()
+    local mouse = UserInputService:GetMouseLocation()
+    local guiInset = game:GetService("GuiService"):GetGuiInset()
+    
+    local correctedMouse = Vector2.new(mouse.X - guiInset.X, mouse.Y - guiInset.Y)
+    
+    -- Check container
+    local containerPos = self.container.AbsolutePosition
+    local containerSize = self.container.AbsoluteSize
+    local containerBounds = {
+        left = containerPos.X,
+        right = containerPos.X + containerSize.X,
+        top = containerPos.Y,
+        bottom = containerPos.Y + containerSize.Y
+    }
+    
+    if self.menuContainer.Visible then
+        -- Include menu in bounds
+        local menuPos = self.menuContainer.AbsolutePosition
+        local menuSize = self.menuContainer.AbsoluteSize
+        containerBounds.bottom = math.max(containerBounds.bottom, menuPos.Y + menuSize.Y)
+    end
+    
+    return correctedMouse.X >= containerBounds.left and correctedMouse.X <= containerBounds.right and
+           correctedMouse.Y >= containerBounds.top and correctedMouse.Y <= containerBounds.bottom
+end
+
+function DropdownComponent:FilterOptions()
+    local searchText = self.searchInput.Text:lower()
+    self.filteredOptions = {}
+    
+    for _, option in ipairs(self.options) do
+        if option:lower():find(searchText, 1, true) then
+            table.insert(self.filteredOptions, option)
+        end
+    end
+    
+    self:RefreshOptionsList()
+end
+
+function DropdownComponent:RefreshOptionsList()
+    -- Clear existing options
+    for _, child in pairs(self.optionsList:GetChildren()) do
+        if child:IsA('GuiObject') and child.Name:find('Option_') then
+            child:Destroy()
+        end
+    end
+    
+    -- Create new option elements
+    for i, option in ipairs(self.filteredOptions) do
+        self:CreateOptionElement(option, i)
+    end
+end
+
+function DropdownComponent:CreateOptionElement(optionText, index)
+    if self.isMulti then
+        self:CreateMultiOptionElement(optionText, index)
+    else
+        self:CreateSingleOptionElement(optionText, index)
+    end
+end
+
+function DropdownComponent:CreateSingleOptionElement(optionText, index)
+    local optionFrame = Instance.new('TextButton')
+    optionFrame.Name = "Option_" .. index
+    optionFrame.Size = UDim2.new(1, -8, 0, 28)
+    optionFrame.Position = UDim2.new(0, 4, 0, 0)
+    optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    optionFrame.BackgroundTransparency = 1
+    optionFrame.BorderSizePixel = 0
+    optionFrame.Text = optionText
+    optionFrame.TextColor3 = Color3.fromRGB(255, 255, 255)
+    optionFrame.TextSize = 12
+    optionFrame.Font = Enum.Font.Gotham
+    optionFrame.TextXAlignment = Enum.TextXAlignment.Left
+    optionFrame.LayoutOrder = index
+    optionFrame.ZIndex = self.baseZIndex + 10
+    optionFrame.Parent = self.optionsList
+    
+    local optionCorner = Instance.new('UICorner')
+    optionCorner.CornerRadius = UDim.new(0, 4)
+    optionCorner.Parent = optionFrame
+    
+    local optionPadding = Instance.new('UIPadding')
+    optionPadding.PaddingLeft = UDim.new(0, 8)
+    optionPadding.Parent = optionFrame
+    
+    -- Hover effects
+    optionFrame.MouseEnter:Connect(function()
+        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.2
+        }):Play()
     end)
     
-         -- Helper functions
-     local function updateButtonText(text)
-         if mainButton and mainButton.Parent then
-             mainButton.Text = text or placeholder
-             mainButton.TextColor3 = text and self.Config.Theme.Text or self.Config.Theme.TextSecondary
-         end
-     end
-     
-     local function clearOptionsList()
-         for _, child in pairs(optionsList:GetChildren()) do
-             if child:IsA('TextButton') then
-                 child:Destroy()
-             end
-         end
-     end
-     
-     -- closeDropdown function definition (MUSS VOR createOptionButton stehen!)
-     local closeDropdown
-     closeDropdown = function()
-         if not dropdownState.isOpen then return end
-         
-
-         dropdownState.isOpen = false
-         
-         -- Animate closing
-         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-             Size = UDim2.new(1, 0, 0, 0)
-         }):Play()
-         
-         TweenService:Create(arrow, TweenInfo.new(0.3), {
-             Rotation = 0
-         }):Play()
-         
-         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-             Color = Color3.fromRGB(85, 85, 85),
-             Transparency = 0.3
-         }):Play()
-         
-         -- Hide after animation
-         spawn(function()
-             wait(0.3)
-             if not dropdownState.isOpen then
-                 menuContainer.Visible = false
-                 searchInput.Text = ""
-                 -- Reset filtered options
-                 dropdownState.filteredOptions = {}
-                 for _, opt in ipairs(dropdownState.originalOptions) do
-                     table.insert(dropdownState.filteredOptions, opt)
-                 end
-             end
-         end)
-     end
+    optionFrame.MouseLeave:Connect(function()
+        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 1
+        }):Play()
+    end)
     
-         local function createOptionButton(optionText, index)
-         local optionBtn = Instance.new('TextButton')
-         optionBtn.Size = UDim2.new(1, -8, 0, 28)
-         optionBtn.Position = UDim2.new(0, 4, 0, 0)
-         optionBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-         optionBtn.BackgroundTransparency = 1  -- Komplett transparent am Anfang
-         optionBtn.BorderSizePixel = 0
-         optionBtn.Text = optionText
-         optionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-         optionBtn.TextSize = 12
-         optionBtn.Font = Enum.Font.Gotham
-         optionBtn.TextXAlignment = Enum.TextXAlignment.Left
-         optionBtn.LayoutOrder = index
-         optionBtn.ZIndex = dropdownState.baseZIndex + 10  -- HÖHERER Z-INDEX für Options
-         optionBtn.Active = true  -- Macht Button aktiv für Events
-         optionBtn.Parent = optionsList
-         
-         local optionCorner = Instance.new('UICorner')
-         optionCorner.CornerRadius = UDim.new(0, 4)
-         optionCorner.Parent = optionBtn
-         
-         local optionPadding = Instance.new('UIPadding')
-         optionPadding.PaddingLeft = UDim.new(0, 8)
-         optionPadding.Parent = optionBtn
-         
-         -- Hover effects - Nur beim Hover sichtbar machen
-         local hoverIn = optionBtn.MouseEnter:Connect(function()
-             TweenService:Create(optionBtn, TweenInfo.new(0.2), {
-                 BackgroundColor3 = Color3.fromRGB(70, 70, 70),
-                 BackgroundTransparency = 0.2
-             }):Play()
-         end)
-         
-         local hoverOut = optionBtn.MouseLeave:Connect(function()
-             TweenService:Create(optionBtn, TweenInfo.new(0.2), {
-                 BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-                 BackgroundTransparency = 1  -- Zurück zu transparent
-             }):Play()
-         end)
-        
-                                  -- VEREINFACHTER CLICK HANDLER - NUR EINER! (Fix für doppelte Events)
-         local lastClickTime = 0
-         local clickHandler = optionBtn.MouseButton1Click:Connect(function()
-             -- DEBOUNCE: Ignoriere Klicks die zu schnell aufeinander folgen
-             local currentTime = tick()
-             if currentTime - lastClickTime < 0.2 then
-                 return
-             end
-             lastClickTime = currentTime
-             
-             -- Update state
-             dropdownState.selectedValue = optionText
-             element.Value = optionText
-             
-             -- Update display
-             updateButtonText(optionText)
-             
-             -- Execute callback safely
-             spawn(function()
-                 if element.Callback and type(element.Callback) == "function" then
-                     local success, err = pcall(element.Callback, optionText)
-                     if not success then
-                         warn("RadiantUI: Callback error:", err)
-                     end
-                 end
-             end)
-             
-             -- Close dropdown with delay to ensure click registers
-             spawn(function()
-                 wait(0.1)
-                 closeDropdown()
-             end)
-         end)
-        
-                 -- Store connections (ohne inputHandler)
-         table.insert(dropdownState.connections, hoverIn)
-         table.insert(dropdownState.connections, hoverOut)
-         table.insert(dropdownState.connections, clickHandler)
-         
+    -- Click handler
+    optionFrame.MouseButton1Click:Connect(function()
+        self:SelectOption(optionText)
+    end)
+end
 
-        return optionBtn
+function DropdownComponent:CreateMultiOptionElement(optionText, index)
+    local optionFrame = Instance.new('Frame')
+    optionFrame.Name = "Option_" .. index
+    optionFrame.Size = UDim2.new(1, -8, 0, 28)
+    optionFrame.Position = UDim2.new(0, 4, 0, 0)
+    optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    optionFrame.BackgroundTransparency = 1
+    optionFrame.BorderSizePixel = 0
+    optionFrame.LayoutOrder = index
+    optionFrame.ZIndex = self.baseZIndex + 10
+    optionFrame.Parent = self.optionsList
+    
+    local optionCorner = Instance.new('UICorner')
+    optionCorner.CornerRadius = UDim.new(0, 4)
+    optionCorner.Parent = optionFrame
+    
+    -- Checkbox
+    local checkbox = Instance.new('Frame')
+    checkbox.Name = "Checkbox"
+    checkbox.Size = UDim2.new(0, 16, 0, 16)
+    checkbox.Position = UDim2.new(0, 8, 0.5, -8)
+    checkbox.BackgroundColor3 = self.selectedValues[optionText] and self.gui.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+    checkbox.BorderSizePixel = 0
+    checkbox.ZIndex = self.baseZIndex + 11
+    checkbox.Parent = optionFrame
+    
+    local checkboxCorner = Instance.new('UICorner')
+    checkboxCorner.CornerRadius = UDim.new(0, 2)
+    checkboxCorner.Parent = checkbox
+    
+    local checkmark = Instance.new('TextLabel')
+    checkmark.Name = "Checkmark"
+    checkmark.Size = UDim2.new(1, 0, 1, 0)
+    checkmark.BackgroundTransparency = 1
+    checkmark.Text = self.selectedValues[optionText] and "✓" or ""
+    checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkmark.TextSize = 10
+    checkmark.Font = Enum.Font.GothamBold
+    checkmark.ZIndex = self.baseZIndex + 12
+    checkmark.Parent = checkbox
+    
+    -- Text label
+    local textLabel = Instance.new('TextLabel')
+    textLabel.Name = "TextLabel"
+    textLabel.Size = UDim2.new(1, -32, 1, 0)
+    textLabel.Position = UDim2.new(0, 28, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = optionText
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextSize = 12
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.ZIndex = self.baseZIndex + 11
+    textLabel.Parent = optionFrame
+    
+    -- Click button
+    local clickButton = Instance.new('TextButton')
+    clickButton.Name = "ClickButton"
+    clickButton.Size = UDim2.new(1, 0, 1, 0)
+    clickButton.BackgroundTransparency = 1
+    clickButton.Text = ""
+    clickButton.ZIndex = self.baseZIndex + 13
+    clickButton.Parent = optionFrame
+    
+    -- Hover effects
+    clickButton.MouseEnter:Connect(function()
+        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 0.2
+        }):Play()
+    end)
+    
+    clickButton.MouseLeave:Connect(function()
+        TweenService:Create(optionFrame, TweenInfo.new(0.2), {
+            BackgroundTransparency = 1
+        }):Play()
+    end)
+    
+    -- Click handler
+    clickButton.MouseButton1Click:Connect(function()
+        self:ToggleMultiOption(optionText, checkbox, checkmark)
+    end)
+end
+
+function DropdownComponent:SelectOption(optionText)
+    self.selectedValue = optionText
+    self.element.Value = optionText
+    self:UpdateDisplay()
+    
+    -- Execute callback
+    spawn(function()
+        local success, err = pcall(self.callback, optionText)
+        if not success then
+            warn("RadiantUI Dropdown Callback Error:", err)
+        end
+    end)
+    
+    self:Close()
+end
+
+function DropdownComponent:ToggleMultiOption(optionText, checkbox, checkmark)
+    local wasSelected = self.selectedValues[optionText]
+    self.selectedValues[optionText] = not wasSelected
+    local isNowSelected = self.selectedValues[optionText]
+    
+    -- Update visual state
+    TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+        BackgroundColor3 = isNowSelected and self.gui.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
+    }):Play()
+    
+    checkmark.Text = isNowSelected and "✓" or ""
+    
+    -- Update selected values list
+    local selectedList = {}
+    for value, isSelected in pairs(self.selectedValues) do
+        if isSelected then
+            table.insert(selectedList, value)
+        end
     end
     
-    local function refreshOptions()
-
-        clearOptionsList()
-        
-        for i, option in ipairs(dropdownState.filteredOptions) do
-            createOptionButton(option, i)
+    self.selectedValue = selectedList
+    self.element.Value = selectedList
+    self:UpdateDisplay()
+    
+    -- Execute callback
+    spawn(function()
+        local success, err = pcall(self.callback, selectedList)
+        if not success then
+            warn("RadiantUI MultiDropdown Callback Error:", err)
         end
-        
-        -- Optimized layout update without blocking wait
-        spawn(function()
-            RunService.Heartbeat:Wait()
-        end)
+    end)
+end
+
+function DropdownComponent:Open()
+    if self.isOpen then return end
+    
+    -- Close other dropdowns
+    self.gui:CloseAllDropdowns(self)
+    
+    self.isOpen = true
+    
+    -- Set Z-Index
+    self.baseZIndex = self.gui:GetNextDropdownZIndex()
+    self.menuContainer.ZIndex = self.baseZIndex
+    self.searchInput.ZIndex = self.baseZIndex + 5
+    self.optionsList.ZIndex = self.baseZIndex + 5
+    
+    -- Show menu
+    self.menuContainer.Visible = true
+    
+    -- Reset search
+    self.searchInput.Text = ""
+    self.filteredOptions = {}
+    for _, option in ipairs(self.options) do
+        table.insert(self.filteredOptions, option)
     end
     
-    local function openDropdown()
-        if dropdownState.isOpen then return end
-        
-        dropdownState.isOpen = true
-        
-        -- VERBESSERTE Z-INDEX VERWALTUNG mit höheren Werten
-        self.dropdownZIndexCounter = self.dropdownZIndexCounter + 100
-        dropdownState.baseZIndex = DROPDOWN_Z_INDEX_BASE + self.dropdownZIndexCounter
-        
-        -- ALLE UI-Elemente mit korrekten Z-Index versehen
-        menuContainer.ZIndex = dropdownState.baseZIndex
-        searchInput.ZIndex = dropdownState.baseZIndex + 5
-        optionsList.ZIndex = dropdownState.baseZIndex + 5
-        
-        -- REKURSIV Z-Index für alle bestehenden Options setzen
-        for _, child in pairs(optionsList:GetChildren()) do
-            if child:IsA("TextButton") then
-                child.ZIndex = dropdownState.baseZIndex + 10
-            end
+    -- Refresh options
+    self:RefreshOptionsList()
+    
+    -- Focus search input
+    spawn(function()
+        wait(0.1)
+        if self.isOpen and self.searchInput and self.searchInput.Parent then
+            self.searchInput:CaptureFocus()
         end
-        
-        menuContainer.Visible = true
-        
-        -- Refresh options before showing
-        refreshOptions()
-        
-        -- VERBESSERTE SEARCH INPUT FOCUS mit Verzögerung
-        spawn(function()
-            wait(0.1)  -- Kurze Verzögerung für UI-Stabilität
-            if dropdownState.isOpen and searchInput and searchInput.Parent then
-                searchInput:CaptureFocus()
-            end
-        end)
-        
-        -- Animate opening
-        TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(1, 0, 0, 172)
-        }):Play()
-        
-        TweenService:Create(arrow, TweenInfo.new(0.3), {
-            Rotation = 180
-        }):Play()
-        
+    end)
+    
+    -- Animations
+    local buttonStroke = self.container:FindFirstChild("ButtonFrame"):FindFirstChild("ButtonStroke")
+    
+    TweenService:Create(self.menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(1, 0, 0, 172)
+    }):Play()
+    
+    TweenService:Create(self.arrow, TweenInfo.new(0.3), {
+        Rotation = 180
+    }):Play()
+    
+    if buttonStroke then
         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-            Color = self.Config.Theme.Primary,
+            Color = self.gui.Config.Theme.Primary,
             Transparency = 0.1
         }):Play()
     end
-    
+end
 
+function DropdownComponent:Close()
+    if not self.isOpen then return end
     
-    -- Event connections
-    local buttonClick = mainButton.MouseButton1Click:Connect(function()
-        if dropdownState.isOpen then
-            closeDropdown()
-        else
-            openDropdown()
-        end
-    end)
+    self.isOpen = false
     
-    local searchChanged = searchInput:GetPropertyChangedSignal('Text'):Connect(function()
-        local searchText = searchInput.Text:lower()
-        dropdownState.filteredOptions = {}
-        
-        for _, option in ipairs(dropdownState.originalOptions) do
-            if option:lower():find(searchText, 1, true) then
-                table.insert(dropdownState.filteredOptions, option)
-            end
-        end
-        
-        refreshOptions()
-    end)
+    local buttonStroke = self.container:FindFirstChild("ButtonFrame"):FindFirstChild("ButtonStroke")
     
-    local clickOutside = UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownState.isOpen then
-            local mouse = UserInputService:GetMouseLocation()
-            local guiInset = game:GetService("GuiService"):GetGuiInset()
-            
-            local containerPos = container.AbsolutePosition
-            local containerSize = container.AbsoluteSize
-            local menuPos = menuContainer.AbsolutePosition  
-            local menuSize = menuContainer.AbsoluteSize
-            
-            local outsideContainer = mouse.X < containerPos.X - guiInset.X or
-                                   mouse.X > containerPos.X + containerSize.X - guiInset.X or
-                                   mouse.Y < containerPos.Y - guiInset.Y or
-                                   mouse.Y > containerPos.Y + containerSize.Y - guiInset.Y
-                                   
-            local outsideMenu = mouse.X < menuPos.X - guiInset.X or
-                              mouse.X > menuPos.X + menuSize.X - guiInset.X or
-                              mouse.Y < menuPos.Y - guiInset.Y or
-                              mouse.Y > menuPos.Y + menuSize.Y - guiInset.Y
-            
-            if outsideContainer and outsideMenu then
-                closeDropdown()
-            end
-        end
-    end)
+    -- Animations
+    TweenService:Create(self.menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+        Size = UDim2.new(1, 0, 0, 0)
+    }):Play()
     
-    -- Store main connections
-    table.insert(dropdownState.connections, buttonClick)
-    table.insert(dropdownState.connections, searchChanged)
-    table.insert(dropdownState.connections, clickOutside)
-    table.insert(self.Connections, clickOutside)
+    TweenService:Create(self.arrow, TweenInfo.new(0.3), {
+        Rotation = 0
+    }):Play()
     
-    -- Update function for external control
-    element.UpdateFunction = function(value)
-        element.Value = value
-        dropdownState.selectedValue = value
-        updateButtonText(value)
+    if buttonStroke then
+        TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
+            Color = Color3.fromRGB(85, 85, 85),
+            Transparency = 0.3
+        }):Play()
     end
     
-    -- Cleanup function
-    local cleanupConnection = container.AncestryChanged:Connect(function()
-        if not container.Parent then
-            for _, conn in pairs(dropdownState.connections) do
-                if conn.Connected then
-                    conn:Disconnect()
-                end
-            end
-            if cleanupConnection then
-                cleanupConnection:Disconnect()
-            end
+    -- Hide after animation
+    spawn(function()
+        wait(0.3)
+        if not self.isOpen then
+            self.menuContainer.Visible = false
         end
     end)
-    
+end
 
+function DropdownComponent:Toggle()
+    if self.isOpen then
+        self:Close()
+    else
+        self:Open()
+    end
+end
+
+function DropdownComponent:Destroy()
+    -- Disconnect all connections
+    for _, connection in pairs(self.connections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    
+    -- Remove from manager
+    if self.gui.DropdownManager.activeDropdowns[self.id] then
+        self.gui.DropdownManager.activeDropdowns[self.id] = nil
+    end
+    
+    -- Destroy UI
+    if self.container and self.container.Parent then
+        self.container:Destroy()
+    end
+end
+
+-- ===== NEW DROPDOWN FUNCTIONS =====
+
+function RadiantUI:CreateDropdown(element, parent)
+    -- Create new dropdown component
+    local dropdown = DropdownComponent.new(self, element, parent, false)
+    return dropdown
 end
 
 function RadiantUI:CreateMultiDropdown(element, parent)
-    -- ROBUSTE Options-Ermittlung mit Fallback-Kette
-    local options = element.Options or (element.Config and element.Config.Options) or {"Multi Option 1", "Multi Option 2", "Multi Option 3"}
-    
-    -- Options-Sanitization
-    local validOptions = {}
-    for i, opt in ipairs(options) do
-        local sanitized = tostring(opt or ""):gsub("^%s*(.-)%s*$", "%1")
-        if sanitized ~= "" then
-            table.insert(validOptions, sanitized)
-        end
-    end
-    options = validOptions
-    
-    -- Config-Parameter ermitteln
-    local placeholder = element.Placeholder or (element.Config and element.Config.Placeholder) or "Select..."
-    local defaultValues = element.Default or (element.Config and element.Config.Default) or {}
-    
-    if type(defaultValues) ~= "table" then
-        defaultValues = {}
-    end
-    
+    -- Create new multi-dropdown component
+    local dropdown = DropdownComponent.new(self, element, parent, true)
+    return dropdown
+end
 
+-- Helper function to update existing element with options
+function RadiantUI:SetOptions(element, newOptions)
+    if not element or not element.Value then return end
     
-    -- Ab hier: Rest der CreateMultiDropdown Funktion bleibt gleich...
-    
-    -- Initialize element state
-    element.Value = defaultValues
-    
-    -- Z-INDEX MANAGEMENT FÜR MULTI-DROPDOWN - HÖHERE BASE-WERTE
-    local MULTIDROPDOWN_Z_INDEX_BASE = 5200  -- Höher als normale Dropdowns
-    if not self.multiDropdownZIndexCounter then
-        self.multiDropdownZIndexCounter = 0
-    end
-    
-    -- State management object
-    local dropdownState = {
-        isOpen = false,
-        originalOptions = options,
-        filteredOptions = {},
-        selectedValues = {},
-        connections = {},
-        baseZIndex = 0  -- Wird beim Öffnen dynamisch gesetzt
-    }
-    
-    -- Copy options to filtered list
-    for _, option in ipairs(options) do
-        table.insert(dropdownState.filteredOptions, option)
-    end
-    
-    -- Initialize selected values
-    for _, value in ipairs(defaultValues) do
-        dropdownState.selectedValues[value] = true
-    end
-    
-    -- Main container
-    local container = Instance.new('Frame')
-    container.Size = UDim2.new(0, 140, 0, 32)
-    container.Position = UDim2.new(1, -140, 0.5, -16)
-    container.BackgroundTransparency = 1
-    container.Parent = parent
-    
-    -- Dropdown button frame
-    local buttonFrame = Instance.new('Frame')
-    buttonFrame.Size = UDim2.new(1, 0, 1, 0)
-    buttonFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    buttonFrame.BorderSizePixel = 0
-    buttonFrame.Parent = container
-    
-    local buttonCorner = Instance.new('UICorner')
-    buttonCorner.CornerRadius = UDim.new(0, 8)
-    buttonCorner.Parent = buttonFrame
-    
-    local buttonStroke = Instance.new('UIStroke')
-    buttonStroke.Thickness = 1
-    buttonStroke.Color = Color3.fromRGB(85, 85, 85)
-    buttonStroke.Transparency = 0.3
-    buttonStroke.Parent = buttonFrame
-    
-    -- Main button
-    local mainButton = Instance.new('TextButton')
-    mainButton.Size = UDim2.new(1, -25, 1, 0)
-    mainButton.Position = UDim2.new(0, 8, 0, 0)
-    mainButton.BackgroundTransparency = 1
-    mainButton.Text = placeholder
-    mainButton.TextColor3 = self.Config.Theme.TextSecondary
-    mainButton.TextSize = 12
-    mainButton.Font = Enum.Font.Gotham
-    mainButton.TextXAlignment = Enum.TextXAlignment.Left
-    mainButton.Parent = buttonFrame
-    
-    -- Arrow indicator
-    local arrow = Instance.new('TextLabel')
-    arrow.Size = UDim2.new(0, 20, 1, 0)
-    arrow.Position = UDim2.new(1, -20, 0, 0)
-    arrow.BackgroundTransparency = 1
-    arrow.Text = "▼"
-    arrow.TextColor3 = self.Config.Theme.TextSecondary
-    arrow.TextSize = 10
-    arrow.Font = Enum.Font.Gotham
-    arrow.Parent = buttonFrame
-    
-    -- Dropdown menu container - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
-    local menuContainer = Instance.new('Frame')
-    menuContainer.Size = UDim2.new(1, 0, 0, 0)
-    menuContainer.Position = UDim2.new(0, 0, 1, 2)
-    menuContainer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    menuContainer.BorderSizePixel = 0
-    menuContainer.Visible = false
-    menuContainer.ClipsDescendants = true
-    menuContainer.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE  -- HÖHERER Z-INDEX BASE
-    menuContainer.Parent = container
-    
-    local menuCorner = Instance.new('UICorner')
-    menuCorner.CornerRadius = UDim.new(0, 8)
-    menuCorner.Parent = menuContainer
-    
-    local menuStroke = Instance.new('UIStroke')
-    menuStroke.Thickness = 1
-    menuStroke.Color = Color3.fromRGB(70, 70, 70)
-    menuStroke.Transparency = 0.4
-    menuStroke.Parent = menuContainer
-    
-    -- Search input - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
-    local searchInput = Instance.new('TextBox')
-    searchInput.Size = UDim2.new(1, -16, 0, 28)
-    searchInput.Position = UDim2.new(0, 8, 0, 8)
-    searchInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    searchInput.BorderSizePixel = 0
-    searchInput.Text = ""
-    searchInput.PlaceholderText = "Search options..."
-    searchInput.PlaceholderColor3 = self.Config.Theme.TextSecondary
-    searchInput.TextColor3 = self.Config.Theme.Text
-    searchInput.TextSize = 11
-    searchInput.Font = Enum.Font.Gotham
-    searchInput.TextXAlignment = Enum.TextXAlignment.Left
-    searchInput.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
-    searchInput.Parent = menuContainer
-    
-    local searchCorner = Instance.new('UICorner')
-    searchCorner.CornerRadius = UDim.new(0, 6)
-    searchCorner.Parent = searchInput
-    
-    local searchPadding = Instance.new('UIPadding')
-    searchPadding.PaddingLeft = UDim.new(0, 8)
-    searchPadding.PaddingRight = UDim.new(0, 8)
-    searchPadding.Parent = searchInput
-    
-    -- Options scroll frame - HÖHERER Z-INDEX FÜR MULTI-DROPDOWN
-    local optionsList = Instance.new('ScrollingFrame')
-    optionsList.Size = UDim2.new(1, 0, 0, 120)
-    optionsList.Position = UDim2.new(0, 0, 0, 44)
-    optionsList.BackgroundTransparency = 1
-    optionsList.BorderSizePixel = 0
-    optionsList.ScrollBarThickness = 4
-    optionsList.ScrollBarImageColor3 = self.Config.Theme.Primary
-    optionsList.ScrollBarImageTransparency = 0.3
-    optionsList.CanvasSize = UDim2.new(0, 0, 0, 0)
-    optionsList.ZIndex = MULTIDROPDOWN_Z_INDEX_BASE + 5  -- HÖHERER Z-INDEX
-    optionsList.Parent = menuContainer
-    
-    local listLayout = Instance.new('UIListLayout')
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.Padding = UDim.new(0, 1)
-    listLayout.FillDirection = Enum.FillDirection.Vertical
-    listLayout.Parent = optionsList
-    
-    -- Update canvas size when layout changes
-    listLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-        optionsList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y)
-    end)
-    
-     -- Helper functions
-     local function updateButtonText()
-         local selectedCount = 0
-         local selectedList = {}
-         
-         for value, isSelected in pairs(dropdownState.selectedValues) do
-             if isSelected then
-                 selectedCount = selectedCount + 1
-                 table.insert(selectedList, value)
-             end
-         end
-         
-         element.Value = selectedList
-         
-         if selectedCount == 0 then
-             mainButton.Text = placeholder
-             mainButton.TextColor3 = self.Config.Theme.TextSecondary
-         elseif selectedCount == 1 then
-             mainButton.Text = selectedList[1]
-             mainButton.TextColor3 = self.Config.Theme.Text
-         else
-             mainButton.Text = selectedCount .. " selected"
-             mainButton.TextColor3 = self.Config.Theme.Text
-         end
-         
-         -- Execute callback
-         if element.Callback then
-             pcall(element.Callback, selectedList)
-         end
-     end
-     
-     local function clearOptionsList()
-         for _, child in pairs(optionsList:GetChildren()) do
-             if child:IsA('Frame') and child.Name:find('OptionFrame') then
-                 child:Destroy()
-             end
-         end
-     end
-     
-     -- closeDropdown function definition (MUSS VOR createOptionButton stehen!)
-     local closeDropdown
-     closeDropdown = function()
-         if not dropdownState.isOpen then return end
-         
-
-         dropdownState.isOpen = false
-         
-         -- Animate closing
-         TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-             Size = UDim2.new(1, 0, 0, 0)
-         }):Play()
-         
-         TweenService:Create(arrow, TweenInfo.new(0.3), {
-             Rotation = 0
-         }):Play()
-         
-         TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-             Color = Color3.fromRGB(85, 85, 85),
-             Transparency = 0.3
-         }):Play()
-         
-         -- Hide after animation
-         spawn(function()
-             wait(0.3)
-             if not dropdownState.isOpen then
-                 menuContainer.Visible = false
-                 searchInput.Text = ""
-                 -- Reset filtered options
-                 dropdownState.filteredOptions = {}
-                 for _, opt in ipairs(dropdownState.originalOptions) do
-                     table.insert(dropdownState.filteredOptions, opt)
-                 end
-             end
-         end)
-     end
-    
-    local function createOptionButton(optionText, index)
-                 local optionFrame = Instance.new('Frame')
-         optionFrame.Name = 'OptionFrame_' .. index
-         optionFrame.Size = UDim2.new(1, -8, 0, 28)
-         optionFrame.Position = UDim2.new(0, 4, 0, 0)
-         optionFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-         optionFrame.BackgroundTransparency = 1  -- Komplett transparent am Anfang
-         optionFrame.BorderSizePixel = 0
-         optionFrame.LayoutOrder = index
-         optionFrame.ZIndex = dropdownState.baseZIndex + 10  -- HÖHERER Z-INDEX für Multi-Dropdown Frame
-         optionFrame.Parent = optionsList
-        
-        local frameCorner = Instance.new('UICorner')
-        frameCorner.CornerRadius = UDim.new(0, 4)
-        frameCorner.Parent = optionFrame
-        
-        -- Checkbox
-        local checkbox = Instance.new('Frame')
-        checkbox.Size = UDim2.new(0, 16, 0, 16)
-        checkbox.Position = UDim2.new(0, 8, 0.5, -8)
-        checkbox.BackgroundColor3 = dropdownState.selectedValues[optionText] and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-        checkbox.BorderSizePixel = 0
-        checkbox.ZIndex = dropdownState.baseZIndex + 11  -- HÖHERER Z-INDEX für Checkbox
-        checkbox.Parent = optionFrame
-        
-        local checkboxCorner = Instance.new('UICorner')
-        checkboxCorner.CornerRadius = UDim.new(0, 2)
-        checkboxCorner.Parent = checkbox
-        
-        local checkmark = Instance.new('TextLabel')
-        checkmark.Size = UDim2.new(1, 0, 1, 0)
-        checkmark.BackgroundTransparency = 1
-        checkmark.Text = dropdownState.selectedValues[optionText] and "✓" or ""
-        checkmark.TextColor3 = Color3.fromRGB(255, 255, 255)
-        checkmark.TextSize = 10
-        checkmark.Font = Enum.Font.GothamBold
-        checkmark.ZIndex = dropdownState.baseZIndex + 12  -- HÖHERER Z-INDEX für Checkmark
-        checkmark.Parent = checkbox
-        
-        -- Text label
-        local textLabel = Instance.new('TextLabel')
-        textLabel.Size = UDim2.new(1, -32, 1, 0)
-        textLabel.Position = UDim2.new(0, 28, 0, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Text = optionText
-        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textLabel.TextSize = 12
-        textLabel.Font = Enum.Font.Gotham
-        textLabel.TextXAlignment = Enum.TextXAlignment.Left
-        textLabel.ZIndex = dropdownState.baseZIndex + 11  -- HÖHERER Z-INDEX für Text Label
-        textLabel.Parent = optionFrame
-        
-                 -- Click button
-         local clickButton = Instance.new('TextButton')
-         clickButton.Size = UDim2.new(1, 0, 1, 0)
-         clickButton.BackgroundTransparency = 1
-         clickButton.Text = ""
-         clickButton.ZIndex = dropdownState.baseZIndex + 13  -- HÖCHSTER Z-INDEX für Click Button
-         clickButton.Active = true  -- Macht Button aktiv für Events
-         clickButton.Parent = optionFrame
-        
-                 -- Hover effects - Nur beim Hover sichtbar machen
-         local hoverIn = clickButton.MouseEnter:Connect(function()
-             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
-                 BackgroundColor3 = Color3.fromRGB(70, 70, 70),
-                 BackgroundTransparency = 0.2
-             }):Play()
-         end)
-         
-         local hoverOut = clickButton.MouseLeave:Connect(function()
-             TweenService:Create(optionFrame, TweenInfo.new(0.2), {
-                 BackgroundColor3 = Color3.fromRGB(45, 45, 45),
-                 BackgroundTransparency = 1  -- Zurück zu transparent
-             }):Play()
-         end)
-        
-                 -- OPTIMIERTER Click handler - KEIN automatisches Schließen!
-         local clickHandler = clickButton.MouseButton1Click:Connect(function()
-             -- Toggle selection
-             local wasSelected = dropdownState.selectedValues[optionText]
-             dropdownState.selectedValues[optionText] = not wasSelected
-             local isNowSelected = dropdownState.selectedValues[optionText]
-             
-             -- Update checkbox visuell mit Animation
-             TweenService:Create(checkbox, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                 BackgroundColor3 = isNowSelected and self.Config.Theme.Primary or Color3.fromRGB(60, 60, 60)
-             }):Play()
-             
-             -- Update checkmark
-             checkmark.Text = isNowSelected and "✓" or ""
-             
-             -- Update button text and trigger callback
-             updateButtonText()
-         end)
-        
-                 -- Store connections
-         table.insert(dropdownState.connections, hoverIn)
-         table.insert(dropdownState.connections, hoverOut)
-         table.insert(dropdownState.connections, clickHandler)
-         
-
-        return optionFrame
-    end
-    
-    local function refreshOptions()
-
-        clearOptionsList()
-        
-        for i, option in ipairs(dropdownState.filteredOptions) do
-            createOptionButton(option, i)
-        end
-        
-        -- Optimized layout update without blocking wait
-        spawn(function()
-            RunService.Heartbeat:Wait()
-        end)
-    end
-    
-    local function openDropdown()
-        if dropdownState.isOpen then return end
-        
-        dropdownState.isOpen = true
-        
-        -- VERBESSERTE Z-INDEX VERWALTUNG für Multi-Dropdown mit höheren Werten
-        self.multiDropdownZIndexCounter = self.multiDropdownZIndexCounter + 100
-        dropdownState.baseZIndex = MULTIDROPDOWN_Z_INDEX_BASE + self.multiDropdownZIndexCounter
-        
-        -- ALLE UI-Elemente mit korrekten Z-Index versehen
-        menuContainer.ZIndex = dropdownState.baseZIndex
-        searchInput.ZIndex = dropdownState.baseZIndex + 5
-        optionsList.ZIndex = dropdownState.baseZIndex + 5
-        
-        -- REKURSIV Z-Index für alle bestehenden Options mit höheren Werten setzen
-        for _, child in pairs(optionsList:GetChildren()) do
-            if child:IsA("Frame") and child.Name:find("OptionFrame") then
-                child.ZIndex = dropdownState.baseZIndex + 10
-                for _, subChild in pairs(child:GetChildren()) do
-                    if subChild:IsA("GuiObject") then
-                        subChild.ZIndex = dropdownState.baseZIndex + 11
-                    end
-                end
+    -- Find dropdown by element
+    for id, dropdown in pairs(self.DropdownManager.activeDropdowns) do
+        if dropdown.element == element then
+            dropdown.options = newOptions or {}
+            dropdown.filteredOptions = {}
+            for _, option in ipairs(dropdown.options) do
+                table.insert(dropdown.filteredOptions, option)
             end
-        end
-        
-        menuContainer.Visible = true
-        
-        -- Refresh options before showing
-        refreshOptions()
-        
-        -- VERBESSERTE SEARCH INPUT FOCUS mit Verzögerung (Multi-Dropdown)
-        spawn(function()
-            wait(0.1)  -- Kurze Verzögerung für UI-Stabilität
-            if dropdownState.isOpen and searchInput and searchInput.Parent then
-                searchInput:CaptureFocus()
-            end
-        end)
-        
-        -- Animate opening
-        TweenService:Create(menuContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(1, 0, 0, 172)
-        }):Play()
-        
-        TweenService:Create(arrow, TweenInfo.new(0.3), {
-            Rotation = 180
-        }):Play()
-        
-        TweenService:Create(buttonStroke, TweenInfo.new(0.3), {
-            Color = self.Config.Theme.Primary,
-            Transparency = 0.1
-        }):Play()
-    end
-    
-
-    
-    -- Event connections
-    local buttonClick = mainButton.MouseButton1Click:Connect(function()
-        if dropdownState.isOpen then
-            closeDropdown()
-        else
-            openDropdown()
-        end
-    end)
-    
-    local searchChanged = searchInput:GetPropertyChangedSignal('Text'):Connect(function()
-        local searchText = searchInput.Text:lower()
-        dropdownState.filteredOptions = {}
-        
-        for _, option in ipairs(dropdownState.originalOptions) do
-            if option:lower():find(searchText, 1, true) then
-                table.insert(dropdownState.filteredOptions, option)
-            end
-        end
-        
-        refreshOptions()
-    end)
-    
-    local clickOutside = UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 and dropdownState.isOpen then
-            local mouse = UserInputService:GetMouseLocation()
-            local guiInset = game:GetService("GuiService"):GetGuiInset()
             
-            local containerPos = container.AbsolutePosition
-            local containerSize = container.AbsoluteSize
-            local menuPos = menuContainer.AbsolutePosition  
-            local menuSize = menuContainer.AbsoluteSize
-            
-            local outsideContainer = mouse.X < containerPos.X - guiInset.X or
-                                   mouse.X > containerPos.X + containerSize.X - guiInset.X or
-                                   mouse.Y < containerPos.Y - guiInset.Y or
-                                   mouse.Y > containerPos.Y + containerSize.Y - guiInset.Y
-                                   
-            local outsideMenu = mouse.X < menuPos.X - guiInset.X or
-                              mouse.X > menuPos.X + menuSize.X - guiInset.X or
-                              mouse.Y < menuPos.Y - guiInset.Y or
-                              mouse.Y > menuPos.Y + menuSize.Y - guiInset.Y
-            
-            -- MULTI-DROPDOWN: Schließt sich NICHT automatisch!
-            -- Nur über Hauptbutton schließbar für bessere Benutzererfahrung
-            -- if outsideContainer and outsideMenu then
-            --     closeDropdown()
-            -- end
-        end
-    end)
-    
-    -- Store main connections
-    table.insert(dropdownState.connections, buttonClick)
-    table.insert(dropdownState.connections, searchChanged)
-    -- clickOutside Handler deaktiviert für Multi-Dropdown
-    -- table.insert(dropdownState.connections, clickOutside)
-    -- table.insert(self.Connections, clickOutside)
-    
-    -- Initialize button text
-    updateButtonText()
-    
-    -- Update function for external control
-    element.UpdateFunction = function(values)
-        dropdownState.selectedValues = {}
-        if type(values) == "table" then
-            for _, value in ipairs(values) do
-                dropdownState.selectedValues[value] = true
+            if dropdown.isOpen then
+                dropdown:RefreshOptionsList()
             end
-        end
-        updateButtonText()
-        if dropdownState.isOpen then
-            refreshOptions()
+            break
         end
     end
-    
-    -- Cleanup function
-    local cleanupConnection = container.AncestryChanged:Connect(function()
-        if not container.Parent then
-            for _, conn in pairs(dropdownState.connections) do
-                if conn.Connected then
-                    conn:Disconnect()
-                end
-            end
-            if cleanupConnection then
-                cleanupConnection:Disconnect()
-            end
-        end
-    end)
-    
+end
 
+-- Cleanup function for when GUI is destroyed
+function RadiantUI:CleanupDropdowns()
+    for id, dropdown in pairs(self.DropdownManager.activeDropdowns) do
+        dropdown:Destroy()
+    end
+    self.DropdownManager.activeDropdowns = {}
+    
+    -- Disconnect global connections
+    for _, connection in pairs(self.DropdownManager.globalConnections) do
+        if connection then
+            connection:Disconnect()
+        end
+    end
+    self.DropdownManager.globalConnections = {}
 end
 
 function RadiantUI:CreateInput(element, parent)
